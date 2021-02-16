@@ -123,7 +123,7 @@ class MovingAverage:
         ret_by_signal = (ret * signal).sum()
         return ret_by_signal
 
-    def _get_ret_list(self, signal):
+    def get_ret_list(self, signal):
         """
         :param signal: Series(Boolean)
         :return: float
@@ -143,9 +143,9 @@ class MovingAverage:
         stat = {}
         stat["count"] = self.get_signal_total(signal)
         stat["sum"] = self.get_ret_by_signal(signal)
-        stat["mean"] = np.mean(self._get_ret_list(signal))
-        stat["max"] = np.max(self._get_ret_list(signal))
-        stat["min"] = np.min(self._get_ret_list(signal))
-        stat["std"] = np.std(self._get_ret_list(signal))
+        stat["mean"] = np.mean(self.get_ret_list(signal))
+        stat["max"] = np.max(self.get_ret_list(signal))
+        stat["min"] = np.min(self.get_ret_list(signal))
+        stat["std"] = np.std(self.get_ret_list(signal))
         return stat
 
