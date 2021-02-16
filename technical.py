@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 class MovingAverage:
 
@@ -32,16 +33,9 @@ class MovingAverage:
         :param signal: Series(Boolean)
         :return: int
         """
-        # signal[0] = False   # make in count even the signal started at beginning
-        # signal[-1] = False
-        signal_total = 0
-        if signal[0] == True:               # make in count even the signal started at beginning
-            signal_total += 1
-        if signal[len(signal)-1] == True:   # make in count even the signal ended at last one
-            signal_total += 1
-        signal_total += (signal.diff(periods=1).sum())
-        signal_total /= 2
-        return int(signal_total)
+        start, end = self._get_signal_start_end_index(signal)
+
+        return len(start)
 
     def _get_signal_start_end_index(self, signal):
         """
@@ -49,17 +43,24 @@ class MovingAverage:
         :return:
         """
         start_index, end_index = [], []
+        discard_first_sell_index, discard_last_buy_index = False, False
         int_signal = signal.astype(int).diff(1)
 
-        # buy index
+        # discard if had ahead signal or tailed signal
         if signal[0] == True:
-            start_index.append(0)
+            discard_first_sell_index = True
+        if signal[len(signal)-1] == True:
+            discard_last_buy_index = True
+
+        # buy index
         start_index.extend([index for index in int_signal[int_signal == 1].index])
+        if discard_last_buy_index:
+            start_index.pop(-1)
 
         # sell index
         end_index.extend([index for index in int_signal[int_signal == -1].index])
-        if signal[len(signal) - 1] == True:
-            end_index.append(len(signal)-1)
+        if discard_first_sell_index:
+            end_index.pop(0)
 
         return start_index, end_index
 
@@ -122,7 +123,7 @@ class MovingAverage:
         ret_by_signal = (ret * signal).sum()
         return ret_by_signal
 
-    def _get_max_ret(self, signal):
+    def _get_ret_list(self, signal):
         """
         :param signal: Series(Boolean)
         :return: float
@@ -132,6 +133,7 @@ class MovingAverage:
         rets = []
         for s,e in zip(start_index, end_index):
             rets.append(ret[s:e].sum())
+        return rets
 
     def get_ret_stat(self, signal):
         """
@@ -139,7 +141,11 @@ class MovingAverage:
         :return: signal_total, mean_ret, max_ret, min_ret, min_std
         """
         stat = {}
-        stat["total"] = self.get_signal_total(signal)
-        stat["mean"] = self.get_ret_by_signal(signal) / stat["total"]
-        stat["max"] = self._get_max_ret(signal)
+        stat["count"] = self.get_signal_total(signal)
+        stat["sum"] = self.get_ret_by_signal(signal)
+        stat["mean"] = np.mean(self._get_ret_list(signal))
+        stat["max"] = np.max(self._get_ret_list(signal))
+        stat["min"] = np.min(self._get_ret_list(signal))
+        stat["std"] = np.std(self._get_ret_list(signal))
+        return stat
 
