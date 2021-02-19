@@ -1,4 +1,4 @@
-from production.codes.lib import data, technical, graph_plot
+from production.codes.MovingAverage.lib import technical, graph_plot, data
 import MetaTrader5 as mt5
 
 mt = data.MetaTrader_Connector()
@@ -27,6 +27,6 @@ with data.Tracker(mt) as tracker:
 
     # plot graph
     ret_list = movingAverage.get_ret_list(signal)
-    graph_plot.density(ret_list,bins=100)
+    graph_plot.density(ret_list, bins=100)
 
     print()

@@ -1,9 +1,9 @@
-from production.codes.lib import data, technical, graph_plot
-from production.codes.config import *
-import MetaTrader5 as mt5
+from production.codes.MovingAverage.lib import technical, graph_plot, data
+from production.codes.common import server
+from production.codes.MovingAverage.config import *
 
 slow_index, fast_index = 68, 26
-mt = data.MetaTrader_Connector()
+mt = server.MetaTrader_Connector()
 with data.Tracker(mt) as tracker:
     df = mt.get_historical_data(start=START, end=END, symbol="USDJPY", timeframe=TIMEFRAME)
 
