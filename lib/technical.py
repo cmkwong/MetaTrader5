@@ -28,16 +28,16 @@ class MovingAverage:
             signal = fast < slow
         return signal
 
-    def get_signal_total(self, signal):
+    def get_action_total(self, signal):
         """
         :param signal: Series(Boolean)
         :return: int
         """
-        start, end = self._get_signal_start_end_index(signal)
+        start, end = self._get_action_start_end_index(signal)
 
         return len(start)
 
-    def _get_signal_start_end_index(self, signal):
+    def _get_action_start_end_index(self, signal):
         """
         :param signal: Series
         :return: list: start_index, end_index
@@ -49,29 +49,29 @@ class MovingAverage:
         # discard if had ahead signal or tailed signal
         if signal[0] == True:
             discard_first_sell_index = True
-        if signal[len(signal)-1] == True:
+        if signal[len(signal)-1] == True or signal[len(signal)-2] == True: # See Note point 6
             discard_last_buy_index = True
 
         # buy index
-        start_index.extend([index for index in int_signal[int_signal == 1].index])
+        start_index.extend([index+1 for index in int_signal[int_signal == 1].index]) # see note point 6 why added by 1
         if discard_last_buy_index:
             start_index.pop(-1)
 
         # sell index
-        end_index.extend([index for index in int_signal[int_signal == -1].index])
+        end_index.extend([index+1 for index in int_signal[int_signal == -1].index])
         if discard_first_sell_index:
             end_index.pop(0)
 
         return start_index, end_index
 
-    def get_signal_date(self, signal):
+    def get_action_date(self, signal):
         """
         :param signal: Series(Boolean)
         :return: start_date_list, end_date_list
         """
         start_date_list, end_date_list = [], []
         int_signal = signal.astype(int).diff(1)
-        start_index, end_index = self._get_signal_start_end_index(signal)
+        start_index, end_index = self._get_action_start_end_index(signal)
         # buy date
         dates = list(self.df['time'][start_index])
         start_date_list.extend([str(date) for date in dates])
@@ -82,36 +82,45 @@ class MovingAverage:
 
         return start_date_list, end_date_list
 
-    def get_signal_detail(self, signal):
+    def get_action_detail(self, signal):
         """
         :param signal: Series
         :return: details: dictionary
         """
         details = {}
-        start_dates, end_dates = self.get_signal_date(signal)
+        start_dates, end_dates = self.get_action_date(signal)
         ret_list = self.get_ret_list(signal)
         for s, e, r in zip(start_dates, end_dates, ret_list):
             key = s + '-' + e
             details[key] = r
         return details
 
+    def _get_change(self):
+        """
+        :return: change: Series
+        """
+        diffs = self.df['open'].diff(periods=1)
+        shifts = self.df['open'].shift(1)
+        change = diffs / shifts
+        return change
+
     def _get_ret(self):
         """
-        :param signal: Series(Boolean)
         :return: ret: Series
         """
-        diffs = self.df['close'].diff(periods=1)
-        shifts = self.df['close'].shift(1)
-        ret = diffs / shifts
+        change = self._get_change()
+        ret = 1 + change
         return ret
 
-    def get_ret_by_signal(self, signal):
+    def get_accum_ret(self, signal):
         """
         :param signal: Series(Boolean)
         :return: ret_by_signal: float64
         """
-        ret = self._get_ret()
-        ret_by_signal = (ret * signal).sum()
+        ret_by_signal = 1
+        ret_list = self.get_ret_list(signal)
+        for ret in ret_list:
+            ret_by_signal *= ret
         return ret_by_signal
 
     def get_ret_list(self, signal):
@@ -119,16 +128,16 @@ class MovingAverage:
         :param signal: Series(Boolean)
         :return: float
         """
-        start_index, end_index = self._get_signal_start_end_index(signal)
+        start_index, end_index = self._get_action_start_end_index(signal)
         ret = self._get_ret()
         rets = []
         for s,e in zip(start_index, end_index):
-            rets.append(ret[s:e].sum())
+            rets.append(ret[s+1:e+1].prod()) # see notes point 6
         return rets
 
     def _get_accuracy(self, signal):
         ret_list = self.get_ret_list(signal)
-        accuracy = np.sum([i > 0 for i in ret_list]) / len(ret_list)
+        accuracy = np.sum([r > 1 for r in ret_list]) / len(ret_list)
         return accuracy
 
     def get_ret_stat(self, signal, slow_index, fast_index):
@@ -140,8 +149,8 @@ class MovingAverage:
         if signal.sum() != 0:
             stat["slow"] = slow_index
             stat["fast"] = fast_index
-            stat["count"] = self.get_signal_total(signal)
-            stat["accum"] = self.get_ret_by_signal(signal)
+            stat["count"] = self.get_action_total(signal)
+            stat["accum"] = self.get_accum_ret(signal)
             stat["mean"] = np.mean(self.get_ret_list(signal))
             stat["max"] = np.max(self.get_ret_list(signal))
             stat["min"] = np.min(self.get_ret_list(signal))

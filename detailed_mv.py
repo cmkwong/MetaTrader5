@@ -1,18 +1,13 @@
 from production.codes.lib import data, technical, graph_plot
+from production.codes.config import *
 import MetaTrader5 as mt5
 
+slow_index, fast_index = 68, 26
 mt = data.MetaTrader_Connector()
 with data.Tracker(mt) as tracker:
-    df = mt.get_historical_data(start=(2021,1,1,0,0), end=(2021,2,1,0,0), symbol="USDJPY", timeframe=mt5.TIMEFRAME_M10)
-    # print(df)
-    # print(len(df))
-    # last_tick_info = mt.get_last_tick(symbol="USDJPY")
-    # print(last_tick_info['bid'])
-    # symbols = mt.get_symbols()
+    df = mt.get_historical_data(start=START, end=END, symbol="USDJPY", timeframe=TIMEFRAME)
 
-    # moving average object
-    slow_index, fast_index = 200, 1
-    movingAverage = technical.MovingAverage("USDJPY", df)
+    movingAverage = technical.MovingAverage(SYMBOL, df)
     fast = movingAverage.get_moving_average(fast_index)
     slow = movingAverage.get_moving_average(slow_index)
     signal = movingAverage.get_signal(slow=slow, fast=fast)
@@ -27,6 +22,6 @@ with data.Tracker(mt) as tracker:
 
     # plot graph
     ret_list = movingAverage.get_ret_list(signal)
-    graph_plot.density(ret_list,bins=100)
+    graph_plot.density(ret_list, bins=100)
 
     print()
