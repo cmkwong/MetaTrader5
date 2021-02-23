@@ -2,12 +2,12 @@ from production.codes.MovingAverage.lib import technical, graph_plot, data
 from production.codes.common import server
 from production.codes.MovingAverage.config import *
 
-slow_index, fast_index = 68, 26
+slow_index, fast_index = 14, 10
 mt = server.MetaTrader_Connector()
 with data.Tracker(mt) as tracker:
     df = mt.get_historical_data(start=START, end=END, symbol="USDJPY", timeframe=TIMEFRAME)
 
-    movingAverage = technical.MovingAverage(SYMBOL, df)
+    movingAverage = technical.MovingAverage(SYMBOL, df, long_mode=LONG_MODE, limit_unit=LIMIT_UNIT)
     fast = movingAverage.get_moving_average(fast_index)
     slow = movingAverage.get_moving_average(slow_index)
     signal = movingAverage.get_signal(slow=slow, fast=fast)

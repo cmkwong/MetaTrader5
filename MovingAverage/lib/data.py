@@ -27,7 +27,7 @@ class Tracker:
         self.text_line += 1
 
     def write_csv(self):
-        print("\nFrame: {}\nLong Mode: {}\nFrom: {}\nTo: {}\n".format(str(TIMEFRAME), str(LONG_MODE), START_STRING, END_STRING))
+        print("\nFrame: {}\nLong Mode: {}\nFrom: {}\nTo: {}\n".format(str(TIMEFRAME_TEXT), str(LONG_MODE), START_STRING, END_STRING))
         print("Writing csv ... ", end='')
         with open(CSV_FILE_PATH + CSV_FILE_NAME, 'w') as f:
             f.write(self.text)

@@ -3,10 +3,11 @@ import numpy as np
 
 class MovingAverage:
 
-    def __init__(self, symbol, df, long_mode=True):
+    def __init__(self, symbol, df, long_mode=True, limit_unit=0):
         self.symbol = symbol
         self.df = df
         self.long_mode = long_mode
+        self.limit_unit = limit_unit     # if larger than 0, end_index will be limited
 
     def get_moving_average(self, m):
         """
@@ -62,7 +63,25 @@ class MovingAverage:
         if discard_first_sell_index:
             end_index.pop(0)
 
+        # modify the start_index, end_index, if needed
+        if self.limit_unit > 0:
+            start_index, end_index = self._simple_limit_end_index(start_index, end_index)
+
         return start_index, end_index
+
+    def _simple_limit_end_index(self, starts, ends):
+        """
+        modify the ends_index, eg. close the trade until specific unit
+        :param starts: list [int]
+        :param ends: list [int]
+        :return: starts, ends
+        """
+        new_starts, new_ends = [], []
+        for s, e in zip(starts, ends):
+            new_starts.append(s)
+            new_end = min(s + self.limit_unit, e)
+            new_ends.append(new_end)
+        return new_starts, new_ends
 
     def get_action_date(self, signal):
         """
