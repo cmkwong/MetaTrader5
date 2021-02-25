@@ -1,11 +1,11 @@
 from production.codes.MovingAverage.lib import technical, data
-from production.codes.common import server
 from production.codes.MovingAverage.config import *
+from production.codes.Trader import Connector, Data, Executor
 
-mt = server.MetaTrader_Connector()
-with data.Tracker(mt) as tracker:
-    df = mt.get_historical_data(start=START, end=END, symbol="USDJPY", timeframe=TIMEFRAME)
-    movingAverage = technical.MovingAverage(SYMBOL, df, long_mode=LONG_MODE, limit_unit=LIMIT_UNIT)
+mt_data = Data.MetaTrader_Data(tz="Etc/UTC")
+with data.Tracker(mt_data) as tracker:
+    df = mt_data.get_historical_data(start=START, end=END, symbol=SYMBOL, timeframe=TIMEFRAME)
+    movingAverage = technical.MovingAverage(df, long_mode=LONG_MODE, limit_unit=LIMIT_UNIT)
 
     for slow_index in range(1, 201):
 

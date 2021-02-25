@@ -3,8 +3,7 @@ import numpy as np
 
 class MovingAverage:
 
-    def __init__(self, symbol, df, long_mode=True, limit_unit=0):
-        self.symbol = symbol
+    def __init__(self, df, long_mode=True, limit_unit=0):
         self.df = df
         self.long_mode = long_mode
         self.limit_unit = limit_unit     # if larger than 0, end_index will be limited
@@ -38,9 +37,10 @@ class MovingAverage:
 
         return len(start)
 
-    def _get_action_start_end_index(self, signal):
+    def _get_action_start_end_index(self, signal, backtesting=False):
         """
         :param signal: Series
+        :param backtesting: Boolean, if backtesting, discard redundant signal
         :return: list: start_index, end_index
         """
         start_index, end_index = [], []
@@ -48,10 +48,11 @@ class MovingAverage:
         int_signal = signal.astype(int).diff(1)
 
         # discard if had ahead signal or tailed signal
-        if signal[0] == True:
-            discard_first_sell_index = True
-        if signal[len(signal)-1] == True or signal[len(signal)-2] == True: # See Note point 6
-            discard_last_buy_index = True
+        if backtesting:
+            if signal[0] == True:
+                discard_first_sell_index = True
+            if signal[len(signal)-1] == True or signal[len(signal)-2] == True: # See Note point 6
+                discard_last_buy_index = True
 
         # buy index
         start_index.extend([index+1 for index in int_signal[int_signal == 1].index]) # see note point 6 why added by 1

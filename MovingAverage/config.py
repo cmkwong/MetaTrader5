@@ -14,10 +14,10 @@ TIMEFRAME_DICT = {"M1": mt5.TIMEFRAME_M1, "M2": mt5.TIMEFRAME_M2, "M3": mt5.TIME
 VERSION = 1
 MAIN_PATH = "C://Users//user//projects//MetaTrader5//production//docs"
 
-SYMBOL = "USDJPY"
+SYMBOL = "EURUSD"
 START = (2020,1,1,0,0)
 END = (2020,12,30,0,0)
-TIMEFRAME_TEXT = "D1"
+TIMEFRAME_TEXT = "H1"
 LONG_MODE = True
 LIMIT_UNIT = 5  # 0 is cancel; > 0 is activate
 
@@ -25,8 +25,9 @@ TIMEFRAME = TIMEFRAME_DICT[TIMEFRAME_TEXT]
 START_STRING = str(START[0]) + str(START[1]).zfill(2) + str(START[2]).zfill(2) + str(START[3]).zfill(2) + str(START[4]).zfill(2)
 END_STRING = str(END[0]) + str(END[1]).zfill(2) + str(END[2]).zfill(2) + str(END[3]).zfill(2) + str(END[4]).zfill(2)
 CSV_FILE_PATH = MAIN_PATH + "//" + str(VERSION) + "//"
-CSV_FILE_NAME = "T{}_Frame-{}_Long-{}_LIMIT-{}_From-{}-to-{}_result.csv".format(
+CSV_FILE_NAME = "T{}_{}_Frame-{}_Long-{}_LIMIT-{}_From-{}-to-{}_result.csv".format(
     DT_STRING,
+    SYMBOL,
     str(TIMEFRAME_TEXT),
     str(LONG_MODE),
     LIMIT_UNIT,

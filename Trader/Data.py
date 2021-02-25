@@ -1,29 +1,15 @@
 import pandas as pd
-import pytz
 import MetaTrader5 as mt5
 from datetime import datetime
+import pytz
+from production.codes.Trader.Connector import MetaTrader_Connector
 
-class MetaTrader_Connector:
+class MetaTrader_Data(MetaTrader_Connector):
+
     def __init__(self, tz="Etc/UTC"):
+        super(MetaTrader_Data, self).__init__()
         # set time zone to UTC
         self.timezone = pytz.timezone(tz)
-        self.connect_server()
-
-    def connect_server(self):
-        # connect to MetaTrader 5
-        if not mt5.initialize():
-            print("initialize() failed")
-            mt5.shutdown()
-        else:
-            print("MetaTrader Connected")
-
-    def print_terminal_info(self):
-        # request connection status and parameters
-        print(mt5.terminal_info())
-        # request account info
-        print(mt5.account_info())
-        # get data on MetaTrader 5 version
-        print(mt5.version())
 
     def get_symbol_total(self):
         """
@@ -57,7 +43,7 @@ class MetaTrader_Connector:
         # display tick field values in the form of a list
         last_tick_dict = lasttick._asdict()
         for key, value in last_tick_dict.items():
-            print("  {}={}".format(key,value))
+            print("  {}={}".format(key, value))
         return last_tick_dict
 
     def get_historical_data(self, start, end, symbol, timeframe):

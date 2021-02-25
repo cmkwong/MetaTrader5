@@ -1,4 +1,5 @@
 from production.codes.MovingAverage.config import *
+import MetaTrader5 as mt5
 
 class Tracker:
     def __init__(self, mt):
