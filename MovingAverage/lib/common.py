@@ -15,7 +15,7 @@ class Tracker:
         print("MetaTrader Shutdown.")
 
     def append_dict_into_text(self, dict):
-        if self.text_line == 0:
+        if self.text_line == 0: # header only for first line
             for key in dict.keys():
                 self.text += key + ','
             index = self.text.rindex(',')           # find the last index

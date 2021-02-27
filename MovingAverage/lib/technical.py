@@ -37,7 +37,7 @@ class MovingAverage:
 
         return len(start)
 
-    def _get_action_start_end_index(self, signal, backtesting=False):
+    def _get_action_start_end_index(self, signal, backtesting=True):
         """
         :param signal: Series
         :param backtesting: Boolean, if backtesting, discard redundant signal
@@ -176,5 +176,6 @@ class MovingAverage:
             stat["min"] = np.min(self.get_ret_list(signal))
             stat["std"] = np.std(self.get_ret_list(signal))
             stat["acc"] = self._get_accuracy(signal)
+            stat["limit"] = self.limit_unit
         return stat
 

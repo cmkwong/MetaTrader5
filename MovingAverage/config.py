@@ -17,19 +17,19 @@ MAIN_PATH = "C://Users//user//projects//MetaTrader5//production//docs"
 SYMBOL = "EURUSD"
 START = (2020,1,1,0,0)
 END = (2020,12,30,0,0)
-TIMEFRAME_TEXT = "H1"
+TIMEFRAME_TEXT = "M5"
 LONG_MODE = True
-LIMIT_UNIT = 5  # 0 is cancel; > 0 is activate
+LIMIT_UNIT = 10  # 0 is cancel; > 0 is activate
 
 TIMEFRAME = TIMEFRAME_DICT[TIMEFRAME_TEXT]
 START_STRING = str(START[0]) + str(START[1]).zfill(2) + str(START[2]).zfill(2) + str(START[3]).zfill(2) + str(START[4]).zfill(2)
 END_STRING = str(END[0]) + str(END[1]).zfill(2) + str(END[2]).zfill(2) + str(END[3]).zfill(2) + str(END[4]).zfill(2)
 CSV_FILE_PATH = MAIN_PATH + "//" + str(VERSION) + "//"
-CSV_FILE_NAME = "T{}_{}_Frame-{}_Long-{}_LIMIT-{}_From-{}-to-{}_result.csv".format(
+CSV_FILE_NAME = "T{}_{}_Frame-{}_Long-{}_Limit-{}_From-{}-to-{}_result.csv".format(
     DT_STRING,
     SYMBOL,
     str(TIMEFRAME_TEXT),
     str(LONG_MODE),
-    LIMIT_UNIT,
+    str(LIMIT_UNIT),
     START_STRING,
     END_STRING)
