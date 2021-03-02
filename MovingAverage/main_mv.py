@@ -1,12 +1,17 @@
 from production.codes.MovingAverage.lib import technical, common
 from production.codes.MovingAverage.config import *
 from production.codes.Trader import Connector, Data, Executor
+from production.codes.MaxLimitClosed import MaxLimitClosed
 
 mt_data = Data.MetaTrader_Data(tz="Etc/UTC")
 with common.Tracker(mt_data) as tracker:
+
     df = mt_data.get_historical_data(start=START, end=END, symbol=SYMBOL, timeframe=TIMEFRAME)
+
     for limit_unit in range(LIMIT_UNIT):
-        movingAverage = technical.MovingAverage(df, long_mode=LONG_MODE, limit_unit=limit_unit)
+
+        movingAverage = technical.MovingAverage(df, backtest=True, long_mode=LONG_MODE)
+        max_limit = MaxLimitClosed.MaxLimitClosed(limit_unit=limit_unit)
 
         for slow_index in range(1, 201):
 
@@ -19,7 +24,9 @@ with common.Tracker(mt_data) as tracker:
                 # moving average object
                 fast = movingAverage.get_moving_average(fast_index)
                 signal = movingAverage.get_signal(slow=slow, fast=fast)
-                stat = movingAverage.get_ret_stat(signal, slow_index=slow_index, fast_index=fast_index)
+                signal = max_limit.modify(signal)
+                stat = movingAverage.get_stat(signal)
+                stat["slow"], stat["fast"], stat["limit"] = slow_index, fast_index, limit_unit
                 tracker.append_dict_into_text(stat)
 
                 # print results

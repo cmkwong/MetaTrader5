@@ -14,14 +14,18 @@ class Tracker:
         mt5.shutdown()
         print("MetaTrader Shutdown.")
 
-    def append_dict_into_text(self, dict):
+    def append_dict_into_text(self, stat):
+        """
+        :param stat: dictionary {}
+        :return: None
+        """
         if self.text_line == 0: # header only for first line
-            for key in dict.keys():
+            for key in stat.keys():
                 self.text += key + ','
             index = self.text.rindex(',')           # find the last index
             self.text = self.text[:index] + '\n'    # and replace
             self.text_line += 1
-        for value in dict.values():
+        for value in stat.values():
             self.text += str(value) + ','
         index = self.text.rindex(',')           # find the last index
         self.text = self.text[:index] + '\n'    # and replace

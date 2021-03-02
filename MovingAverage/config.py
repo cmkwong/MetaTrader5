@@ -19,7 +19,7 @@ START = (2020,1,1,0,0)
 END = (2020,12,30,0,0)
 TIMEFRAME_TEXT = "M5"
 LONG_MODE = True
-LIMIT_UNIT = 10  # 0 is cancel; > 0 is activate
+LIMIT_UNIT = 3  # 0 is cancel; > 0 is activate
 
 TIMEFRAME = TIMEFRAME_DICT[TIMEFRAME_TEXT]
 START_STRING = str(START[0]) + str(START[1]).zfill(2) + str(START[2]).zfill(2) + str(START[3]).zfill(2) + str(START[4]).zfill(2)
