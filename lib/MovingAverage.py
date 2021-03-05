@@ -1,4 +1,4 @@
-from production.codes.common.BaseTechical import BaseTechical
+from production.codes.lib.BaseTechical import BaseTechical
 
 class MovingAverage(BaseTechical):
 

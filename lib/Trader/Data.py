@@ -2,7 +2,7 @@ import pandas as pd
 import MetaTrader5 as mt5
 from datetime import datetime
 import pytz
-from production.codes.Trader.Connector import MetaTrader_Connector
+from production.codes.lib.Trader.Connector import MetaTrader_Connector
 
 class MetaTrader_Data(MetaTrader_Connector):
 

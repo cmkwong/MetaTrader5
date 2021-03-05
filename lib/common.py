@@ -1,4 +1,4 @@
-from production.codes.MovingAverage.config import *
+from production.codes.lib.config import *
 import MetaTrader5 as mt5
 
 class Tracker:

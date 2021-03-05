@@ -1,6 +1,4 @@
-import pandas as pd
-import numpy as np
-from production.codes.common.BaseTechical import BaseTechical
+from production.codes.lib.BaseTechical import BaseTechical
 
 class MaxLimitClosed(BaseTechical):
 
