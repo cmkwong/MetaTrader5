@@ -152,6 +152,40 @@ class BaseTechical:
             details[key] = r
         return details
 
+    def _simple_limit_end_index(self, starts, ends, limit_unit):
+        """
+        modify the ends_index, eg. close the trade until specific unit
+        :param starts: list [int] index
+        :param ends: list [int] index
+        :return: starts, ends
+        """
+        new_starts, new_ends = [], []
+        for s, e in zip(starts, ends):
+            new_starts.append(s)
+            new_end = min(s + limit_unit, e)
+            new_ends.append(new_end)
+        return new_starts, new_ends
+
+    def _maxLimitClosed(self, signal, limit_unit):
+        """
+        :param signal(backtesting): Series [Boolean]
+        :return: modified_signal: Series
+        """
+        assert signal[0] != True, "Signal not for backtesting"
+        assert signal[len(signal) - 1] != True, "Signal not for backtesting"
+        assert signal[len(signal) - 2] != True, "Signal not for backtesting"
+
+        int_signal = self._get_int_signal(signal)
+        signal_starts = [i - 1 for i in self._get_open_index(int_signal)]
+        signal_ends = [i - 1 for i in self._get_close_index(int_signal)]
+        starts, ends = self._simple_limit_end_index(signal_starts, signal_ends, limit_unit)
+
+        # assign new signal
+        signal[:] = False
+        for s, e in zip(starts, ends):
+            signal[s:e] = True
+        return signal
+
     def get_stat(self, signal):
         """
         :return: stat dictionary

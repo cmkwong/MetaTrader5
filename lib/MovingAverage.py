@@ -16,7 +16,7 @@ class MovingAverage(BaseTechical):
         series = self._df['close'].rolling(m).sum()/m
         return series
 
-    def get_signal(self, slow, fast):
+    def get_signal(self, slow, fast, limit_unit):
         """
         :param slow: Series
         :param fast: Series
@@ -29,6 +29,8 @@ class MovingAverage(BaseTechical):
         if self._backtest: # # discard if had ahead signal or tailed signal
             signal = self._discard_head_signal(signal)
             signal = self._discard_tail_signal(signal)
+        if limit_unit > 0:
+            signal = self._maxLimitClosed(signal, limit_unit)
         return signal
 
     # def get_ret_stat(self, signal, slow_index, fast_index):

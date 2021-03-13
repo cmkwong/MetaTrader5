@@ -10,7 +10,7 @@ with common.Tracker(mt_data) as tracker:
     for limit_unit in range(LIMIT_UNIT):
 
         movingAverage = MovingAverage.MovingAverage(df, backtest=True, long_mode=LONG_MODE)
-        max_limit = MaxLimitClosed.MaxLimitClosed(limit_unit=limit_unit)
+        # max_limit = MaxLimitClosed.MaxLimitClosed(limit_unit=limit_unit)
 
         for slow_index in range(1, 201):
 
@@ -22,8 +22,8 @@ with common.Tracker(mt_data) as tracker:
 
                 # moving average object
                 fast = movingAverage.get_moving_average(fast_index)
-                signal = movingAverage.get_signal(slow=slow, fast=fast)
-                signal = max_limit.modify(signal)
+                signal = movingAverage.get_signal(slow=slow, fast=fast, limit_unit=limit_unit)
+                # signal = max_limit.modify(signal)
 
                 stat = movingAverage.get_stat(signal)
                 stat["slow"], stat["fast"], stat["limit"] = slow_index, fast_index, limit_unit
