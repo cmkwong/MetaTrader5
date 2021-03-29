@@ -1,4 +1,4 @@
-from production.codes.lib import common, MovingAverage, MaxLimitClosed
+from production.codes.lib import common, MovingAverage
 from production.codes.lib.config import *
 from production.codes.lib.Trader import Data
 
