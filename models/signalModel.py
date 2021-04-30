@@ -80,7 +80,7 @@ def get_RSI_signal(df, period, th):
         signal = rsi <= abs(th)
     return signal
 
-def get_movingAverage_signal(df, slow_index, fast_index, limit_unit, long_mode=True, backtest=True):
+def get_movingAverage_signal(df, fast_index, slow_index, limit_unit, long_mode=True, backtest=True):
     """
     :param slow_index: int
     :param fast_index: int

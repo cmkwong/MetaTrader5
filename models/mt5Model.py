@@ -56,5 +56,4 @@ def get_historical_data(start, end, symbol, timeframe, timezone):
     rates_frame = pd.DataFrame(rates)
     # convert time in seconds into the datetime format
     rates_frame['time'] = pd.to_datetime(rates_frame['time'], unit='s')
-    rates_frame.set_index('time', inplace=True)
     return rates_frame

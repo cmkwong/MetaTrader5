@@ -23,23 +23,14 @@ def prices_matrix(start, end, symbols, timeframe, timezone):
     price_matrix = None
     with mt5Controller.Helper():
         for i, symbol in enumerate(symbols):
-            print(symbol)
-            price = mt5Model.get_historical_data(start, end, symbol, timeframe, timezone)['close']
+            price = mt5Model.get_historical_data(start, end, symbol, timeframe, timezone)
+            price = price.set_index('time')['close']
             if i == 0:
                 price_matrix = price
             else:
                 price_matrix = pd.concat([price_matrix, price], axis=1, join='inner')
     return price_matrix.values
 
-def z_col(col):
-    mean = np.mean(col)
-    std = np.std(col)
-    normalized_col = (col - mean) / std
-    return normalized_col
-
-from production.codes import config
-symbol_list = ["EURUSD", "GBPUSD", "USDCHF", "USDJPY", "EURCAD","USDCAD", "AUDUSD", "EURGBP", "NZDUSD"]
-price_matrix = prices_matrix(config.START, config.END, symbol_list, config.TIMEFRAME, config.TIMEZONE)
-cor_matrix = corela_matrix(price_matrix)
-cor_table = pd.DataFrame(cor_matrix, index=symbol_list, columns=symbol_list)
-print()
+def corela_table(cor_matrix, symbol_list):
+    cor_table = pd.DataFrame(cor_matrix, index=symbol_list, columns=symbol_list)
+    return cor_table
