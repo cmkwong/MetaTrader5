@@ -1,5 +1,4 @@
 import MetaTrader5 as mt5
-import collections
 from datetime import datetime
 now = datetime.now()
 DT_STRING = now.strftime("%y%m%d%H%M%S")
@@ -12,12 +11,13 @@ TIMEFRAME_DICT = {"M1": mt5.TIMEFRAME_M1, "M2": mt5.TIMEFRAME_M2, "M3": mt5.TIME
 
 # Moving Average
 VERSION = 1
-MAIN_PATH = "C://Users//user//projects//MetaTrader5//production//docs"
+MAIN_PATH = "/production/docs"
 
+TIMEZONE = "Etc/UTC"
 SYMBOL = "EURUSD"
-START = (2020,1,1,0,0)
+START = (2010,1,1,0,0)
 END = (2020,12,30,0,0)
-TIMEFRAME_TEXT = "M15"
+TIMEFRAME_TEXT = "H4"
 LONG_MODE = True
 LIMIT_UNIT = 10  # 0 is cancel; > 0 is activate
 

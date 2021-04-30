@@ -1,38 +1,29 @@
-from production.codes.lib import common, MovingAverage
-from production.codes.lib.config import *
-from production.codes.lib.Trader import Data
+from production.codes.controllers import mt5Controller
+from production.codes import config
+from production.codes.views import statView
+from production.codes.models import mt5Model, signalModel, statModel
 
-mt_data = Data.MetaTrader_Data(tz="Etc/UTC")
-with common.Tracker(mt_data) as tracker:
+with mt5Controller.Helper() as tracker:
+    df = mt5Model.get_historical_data(config.START, config.END, config.SYMBOL, config.TIMEFRAME, config.TIMEZONE)
 
-    df = mt_data.get_historical_data(start=START, end=END, symbol=SYMBOL, timeframe=TIMEFRAME)
-
-    for limit_unit in range(LIMIT_UNIT):
-
-        movingAverage = MovingAverage.MovingAverage(df, backtest=True, long_mode=LONG_MODE)
-        # max_limit = MaxLimitClosed.MaxLimitClosed(limit_unit=limit_unit)
+    for limit_unit in range(config.LIMIT_UNIT):
 
         for slow_index in range(1, 201):
 
-            slow = movingAverage.get_moving_average(slow_index)
             for fast_index in range(1, slow_index):
 
                 if slow_index == fast_index:
                     continue
 
                 # moving average object
-                fast = movingAverage.get_moving_average(fast_index)
-                signal = movingAverage.get_signal(slow=slow, fast=fast, limit_unit=limit_unit)
-                # signal = max_limit.modify(signal)
+                signal = signalModel.get_movingAverage_signal(df, slow_index, fast_index, limit_unit, long_mode=True, backtest=True)
 
-                stat = movingAverage.get_stat(signal)
+                stat = statModel.get_stat(df, signal)
                 stat["slow"], stat["fast"], stat["limit"] = slow_index, fast_index, limit_unit
                 tracker.append_dict_into_text(stat)
 
                 # print results
-                print("\n~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*")
-                for key, value in stat.items():
-                    print("{}:\t{:.5f}".format(key, value))
+                statView.print_dict(stat)
 
     tracker.write_csv()
 

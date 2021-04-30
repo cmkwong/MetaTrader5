@@ -1,18 +1,30 @@
-from production.codes.lib.config import *
 import MetaTrader5 as mt5
+from production.codes import config
 
-class Tracker:
-    def __init__(self, mt):
-        self.mt = mt
+def connect_server():
+    # connect to MetaTrader 5
+    if not mt5.initialize():
+        print("initialize() failed")
+        mt5.shutdown()
+    else:
+        print("MetaTrader Connected")
+
+def disconnect_server():
+    # disconnect to MetaTrader 5
+    mt5.shutdown()
+    print("MetaTrader Shutdown.")
+
+class Helper:
+    def __init__(self):
         self.text = ''
         self.text_line = 0
 
     def __enter__(self):
+        connect_server()
         return self
 
     def __exit__(self, *args):
-        mt5.shutdown()
-        print("MetaTrader Shutdown.")
+        disconnect_server()
 
     def append_dict_into_text(self, stat):
         """
@@ -32,8 +44,8 @@ class Tracker:
         self.text_line += 1
 
     def write_csv(self):
-        print("\nFrame: {}\nLong Mode: {}\nFrom: {}\nTo: {}\n".format(str(TIMEFRAME_TEXT), str(LONG_MODE), START_STRING, END_STRING))
+        print("\nFrame: {}\nLong Mode: {}\nFrom: {}\nTo: {}\n".format(str(config.TIMEFRAME_TEXT), str(config.LONG_MODE), config.START_STRING, config.END_STRING))
         print("Writing csv ... ", end='')
-        with open(CSV_FILE_PATH + CSV_FILE_NAME, 'w') as f:
+        with open(config.CSV_FILE_PATH + config.CSV_FILE_NAME, 'w') as f:
             f.write(self.text)
         print("OK")
