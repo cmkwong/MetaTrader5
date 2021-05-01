@@ -3,6 +3,9 @@ import MetaTrader5 as mt5
 import pytz
 from datetime import datetime
 
+from production.codes.controllers import mt5Controller
+
+
 def get_symbol_total():
     """
     :return: int: number of symbols
@@ -57,3 +60,23 @@ def get_historical_data(start, end, symbol, timeframe, timezone):
     # convert time in seconds into the datetime format
     rates_frame['time'] = pd.to_datetime(rates_frame['time'], unit='s')
     return rates_frame
+
+def get_prices_matrix(start, end, symbols, timeframe, timezone):
+    """
+    :param start: (2010,1,1,0,0)
+    :param end:  (2020,1,1,0,0)
+    :param symbols: [str]
+    :param timeframe: config.TIMEFRAME
+    :param timezone: str "Etc/UTC"
+    :return:
+    """
+    price_matrix = None
+    with mt5Controller.Helper():
+        for i, symbol in enumerate(symbols):
+            price = get_historical_data(start, end, symbol, timeframe, timezone)
+            price = price.set_index('time')['close']
+            if i == 0:
+                price_matrix = price
+            else:
+                price_matrix = pd.concat([price_matrix, price], axis=1, join='inner')
+    return price_matrix.values.reshape(len(price_matrix), -1)

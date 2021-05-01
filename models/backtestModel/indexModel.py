@@ -1,4 +1,5 @@
-from production.codes.models import signalModel
+from production.codes.models.backtestModel import signalModel
+
 
 def get_open_index(int_signal):
     start_index = []

@@ -1,7 +1,9 @@
 from production.codes.views import pltView, printStat
 from production.codes.controllers import mt5Controller
 from production.codes import config
-from production.codes.models import mt5Model, returnModel, signalModel, statModel
+from production.codes.models import mt5Model
+from production.codes.models.backtestModel import signalModel, returnModel, statModel
+
 
 def moving_average_backtest(options, fast_index, slow_index, limit_unit, bins=100):
     with mt5Controller.Helper():
@@ -28,7 +30,7 @@ def optimize_moving_average(options, max_index=201):
                     if slow_index == fast_index:
                         continue
                     # moving average object
-                    signal = signalModel.get_movingAverage_signal(df, fast_index, slow_index , limit_unit,
+                    signal = signalModel.get_movingAverage_signal(df, fast_index, slow_index, limit_unit,
                                                                   long_mode=options['long_mode'], backtest=options['backtest'])
                     stat = statModel.get_stat(df, signal)
                     stat["fast"], stat["slow"], stat["limit"] = fast_index, slow_index, limit_unit

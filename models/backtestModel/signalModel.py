@@ -1,4 +1,5 @@
-from production.codes.models import indexModel, techModel
+from production.codes.models.backtestModel import techModel, indexModel
+
 
 def discard_head_signal(signal):
     """

@@ -1,5 +1,6 @@
 import numpy as np
-from production.codes.models import returnModel, indexModel, dateModel
+from production.codes.models.backtestModel import returnModel, indexModel, dateModel
+
 
 def get_accuracy(df, signal):
     ret_list = returnModel.get_ret_list(df, signal)

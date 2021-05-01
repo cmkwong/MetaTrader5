@@ -1,4 +1,5 @@
-from production.codes.models import indexModel
+from production.codes.models.backtestModel import indexModel
+
 
 def get_ret_list(df, signal):
     """
