@@ -32,7 +32,7 @@ def get_input_batches(arr, seq_len, batch_size, batch_indexes):
         input_batches.append(batch)
     return input_batches
 
-def get_batches(prices_matrix, seq_len, batch_size):
+def get_batches(prices_matrix, seq_len, batch_size, shuffle):
     """
     :param prices_matrix: np.array (last column must be target column)
     :param seq_len: int
@@ -41,7 +41,7 @@ def get_batches(prices_matrix, seq_len, batch_size):
     """
     batches = collections.namedtuple("batches", ["input", "target"])
     input_matrix, target_matrix = prices_matrix[:, :-1], prices_matrix[:, -1] # split the data along column, last column is target
-    batch_indexes = create_indexes(batch_size, seq_len, len(input_matrix), shuffle=True)
+    batch_indexes = create_indexes(batch_size, seq_len, len(input_matrix), shuffle=shuffle)
 
     # input batch
     batches.input = get_input_batches(input_matrix, seq_len, batch_size, batch_indexes)
