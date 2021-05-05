@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+import numpy as np
 
 class LSTM(nn.Module):
     def __init__(self, input_size, hidden_size, num_layers, batch_first=True):
@@ -29,3 +30,20 @@ class LSTM(nn.Module):
         h0 = torch.zeros((self.num_layers, batch_size, self.hidden_size), dtype=torch.double).to(self.device)
         c0 = torch.zeros((self.num_layers, batch_size, self.hidden_size), dtype=torch.double).to(self.device)
         return (h0, c0)
+
+def get_predicted_arr(input_arr, model, seq_len):
+    """
+    :param input: array, size = (total_len, input_size)
+    :param model: torch model
+    :param seq_len: int, number of days input to LSTM
+    :return: array, size = (total_len, 1)
+    """
+    input = torch.from_numpy(input_arr).double()
+    model.eval()
+    predict_arr = np.zeros((len(input_arr), 1), dtype=np.double)
+    for i in range(seq_len, len(input_arr)):
+        x = input[i-seq_len:i,:].unsqueeze(0) # size = (batch_size, seq_len, 1)
+        hiddens = model.init_hiddens(1)
+        predict = model(x, hiddens)
+        predict_arr[i, 0] = predict
+    return predict_arr
