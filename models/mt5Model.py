@@ -1,7 +1,7 @@
 import pandas as pd
 import MetaTrader5 as mt5
 import pytz
-from datetime import datetime
+from datetime import datetime, timedelta
 from production.codes.controllers import mt5Controller
 
 def get_txt2timeframe(timeframe_txt):
@@ -69,39 +69,41 @@ def get_last_tick(symbol):
         print("  {}={}".format(key, value))
     return last_tick_dict
 
-def get_historical_data(start, end, symbol, timeframe, timezone):
+def get_historical_data(symbol, timeframe, timezone, start, end=None, utc_diff=3):
     """
-    :param start: tuple (year, month, day, hour, mins) eg: (2010, 10, 30, 0, 0)
-    :param end: tuple (year, month, day, hour, mins)
     :param symbol: str
     :param timeframe: mt5.timeframe
-    :return:
+    :param timezone: Check: set(pytz.all_timezones_set) - (Etc/UTC)
+    :param start (local time): tuple (year, month, day, hour, mins) eg: (2010, 10, 30, 0, 0)
+    :param end (local time): tuple (year, month, day, hour, mins), if None, then take data until present
+    :param utc_diff: difference between IC market (UTC+3) and UTC = 3
+    :return: dataframe
     """
     tz = pytz.timezone(timezone)
-    # create 'datetime' objects in UTC time zone to avoid the implementation of a local time zone offset
-    utc_from = datetime(start[0], start[1], start[2], hour=start[3], minute=start[4], tzinfo=tz)
-    utc_to = datetime(end[0], end[1], end[2], hour=end[3], minute=end[4], tzinfo=tz)
-    # get bars from USDJPY M5 within the interval of 2020.01.10 00:00 - 2020.01.11 13:00 in UTC time zone
+    utc_from = datetime(start[0], start[1], start[2], hour=start[3], minute=start[4], tzinfo=tz) + timedelta(hours=utc_diff, minutes=0)
+    if end == None:
+        now = datetime.today()
+        utc_to = datetime(now.year, now.month, now.day, hour=now.hour, minute=now.minute, tzinfo=tz) + timedelta(hours=utc_diff,                                                                                            minutes=0)
+    else:
+        utc_to = datetime(end[0], end[1], end[2], hour=end[3], minute=end[4], tzinfo=tz) + timedelta(hours=utc_diff, minutes=0)
     rates = mt5.copy_rates_range(symbol, timeframe, utc_from, utc_to)
-    # create DataFrame out of the obtained data
-    rates_frame = pd.DataFrame(rates)
-    # convert time in seconds into the datetime format
-    rates_frame['time'] = pd.to_datetime(rates_frame['time'], unit='s')
+    rates_frame = pd.DataFrame(rates) # create DataFrame out of the obtained data
+    rates_frame['time'] = pd.to_datetime(rates_frame['time'], unit='s') # convert time in seconds into the datetime format
     return rates_frame
 
-def get_prices_matrix(start, end, symbols, timeframe, timezone):
+def get_prices_matrix(symbols, timeframe, timezone, start, end=None):
     """
     :param start: (2010,1,1,0,0)
     :param end:  (2020,1,1,0,0)
     :param symbols: [str]
-    :param timeframe: config.TIMEFRAME
-    :param timezone: str "Etc/UTC"
-    :return:
+    :param timeframe: mt5.timeFrame
+    :param timezone: str "Hongkong"
+    :return: arr
     """
     price_matrix = None
     with mt5Controller.Helper():
         for i, symbol in enumerate(symbols):
-            price = get_historical_data(start, end, symbol, timeframe, timezone)
+            price = get_historical_data(symbol, timeframe, timezone, start, end)
             price = price.set_index('time')['close']
             if i == 0:
                 price_matrix = price

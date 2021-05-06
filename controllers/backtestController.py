@@ -1,3 +1,4 @@
+import production.codes.views.plotView
 from production.codes.views import pltView, printStat
 from production.codes.controllers import mt5Controller
 from production.codes import config
@@ -7,7 +8,8 @@ from production.codes.models.backtestModel import signalModel, returnModel, stat
 
 def moving_average_backtest(options, fast_index, slow_index, limit_unit, bins=100):
     with mt5Controller.Helper():
-        df = mt5Model.get_historical_data(options['start'], options['end'], options['symbol'], options['timeframe'], options['timezone'])
+        df = mt5Model.get_historical_data(options['symbol'], options['timeframe'], options['timezone'],
+                                          options['start'], options['end'])
         signal = signalModel.get_movingAverage_signal(df, fast_index, slow_index, limit_unit, long_mode=options['long_mode'],
                                                       backtest=options['backtest'])
         # information and statistic
@@ -19,11 +21,12 @@ def moving_average_backtest(options, fast_index, slow_index, limit_unit, bins=10
 
         # plot graph
         ret_list = returnModel.get_ret_list(df, signal)
-        pltView.density(ret_list, bins=bins)
+        production.codes.views.plotView.density(ret_list, bins=bins)
 
 def optimize_moving_average(options, max_index=201):
     with mt5Controller.Helper() as helper:
-        df = mt5Model.get_historical_data(options['start'], options['end'], options['symbol'], options['timeframe'], options['timezone'])
+        df = mt5Model.get_historical_data(options['symbol'], options['timeframe'], options['timezone'],
+                                          options['start'], options['end'])
         for limit_unit in range(config.LIMIT_UNIT):
             for slow_index in range(1, max_index):
                 for fast_index in range(1, slow_index):
@@ -40,11 +43,11 @@ def optimize_moving_average(options, max_index=201):
         helper.write_csv()
 
 options = {
-    'start': config.START,
-    'end': config.END,
-    'symbol': config.SYMBOL,
-    'timeframe': config.TIMEFRAME,
-    'timezone': config.TIMEZONE,
+    'start': (2010, 1, 1, 0, 0),
+    'end': (2020, 12, 30, 0, 0),
+    'symbol': "EURUSD",
+    'timeframe': mt5Model.get_txt2timeframe('H1'),
+    'timezone': "Hongkong",
     'long_mode': True,
     'backtest': True
 }

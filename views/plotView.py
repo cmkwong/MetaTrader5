@@ -1,18 +1,6 @@
-from production.codes.models import monitorModel, mt5Model
-import matplotlib.pyplot as plt
-
-def get_plot_title(start, end, timeframe_str):
-    start_str = mt5Model.get_time_string(start)
-    end_str = mt5Model.get_time_string(end)
-    title = "{} : {}, {}".format(start_str, end_str, timeframe_str)
-    return title
-
-def get_plot_image_name(dt_str, symbols, episode):
-    symbols_str = ''
-    for symbol in symbols:
-        symbols_str += '_' + symbol
-    name = "{}-{}-episode-{}.jpg".format(dt_str, episode, symbols_str)
-    return name
+import seaborn as sns
+from matplotlib import pyplot as plt
+from production.codes.models import plotModel
 
 def save_plot(df_plt, symbols, episode, saved_path, dt_str, splite_index, dpi, linewidth, title=None, show_inputs=True):
     """
@@ -25,7 +13,7 @@ def save_plot(df_plt, symbols, episode, saved_path, dt_str, splite_index, dpi, l
     :param linewidth: line width in plots
     """
     target_symbol = symbols[-1] # get the name
-    full_path = saved_path + get_plot_image_name(dt_str, symbols, episode)
+    full_path = saved_path + plotModel.get_plot_image_name(dt_str, symbols, episode)
     if show_inputs:
         for symbol in symbols[:-1]:
             df_plt[symbol].plot(kind='line', style="k--", linewidth=linewidth, legend=True)
@@ -40,19 +28,23 @@ def save_plot(df_plt, symbols, episode, saved_path, dt_str, splite_index, dpi, l
 
 def get_price_plot(train_prices_matrix, test_prices_matrix, model, episode, seq_len, symbols, saved_path, dt_str, dpi=500, linewidth=0.2):
     # data prepare
-    train_plt_data = monitorModel.get_plotting_data(train_prices_matrix, model, seq_len)
-    test_plt_data = monitorModel.get_plotting_data(test_prices_matrix, model, seq_len)
+    train_plt_data = plotModel.get_plotting_data(train_prices_matrix, model, seq_len)
+    test_plt_data = plotModel.get_plotting_data(test_prices_matrix, model, seq_len)
     # combine into df
-    df_plt = monitorModel.get_plotting_df(train_plt_data, test_plt_data, symbols)
+    df_plt = plotModel.get_plotting_df(train_plt_data, test_plt_data, symbols)
     # plot graph - prices
     save_plot(df_plt, symbols, episode, saved_path, dt_str, len(train_plt_data['inputs']), dpi=dpi, linewidth=linewidth)
 
-def loss_status(writer, loss, episode, mode='train'):
+def density(ret_list, bins=50, color="darkblue", linewidth=1):
     """
-    :param writer: SummaryWriter from pyTorch
-    :param loss: float
-    :param episode: int
-    :param mode: string "train" / "test"
+    :param ret_list: list
+    :param bins: int
+    :param color: str
+    :param linewidth: int
+    :return: None
     """
-    writer.add_scalar("{}-episode_loss".format(mode), loss, episode)
-    print("{}. {} loss: {:.6f}".format(episode, mode, loss))
+    sns.distplot(ret_list, hist=True, kde=True,
+                 bins=bins, color=color,
+                 hist_kws={'edgecolor': 'black'},
+                 kde_kws={'linewidth': linewidth})
+    plt.show()
