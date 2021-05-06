@@ -87,7 +87,7 @@ def get_historical_data(symbol, timeframe, timezone, start, end=None, utc_diff=3
     else:
         utc_to = datetime(end[0], end[1], end[2], hour=end[3], minute=end[4], tzinfo=tz) + timedelta(hours=utc_diff, minutes=0)
     rates = mt5.copy_rates_range(symbol, timeframe, utc_from, utc_to)
-    rates_frame = pd.DataFrame(rates) # create DataFrame out of the obtained data
+    rates_frame = pd.DataFrame(rates, dtype=float) # create DataFrame out of the obtained data
     rates_frame['time'] = pd.to_datetime(rates_frame['time'], unit='s') # convert time in seconds into the datetime format
     return rates_frame
 

@@ -49,7 +49,7 @@ data_options = {
     'trainTestSplit': 0.7,
 }
 
-coefficient_vector = np.array([2.3894, 0.01484, -1.338143, -0.015469])
-spread = get_current_spread(coefficient_vector, data_options['symbols'], data_options['timeframe'], data_options['timezone'], 50000)
-reslut = maths.perform_ADF_test(spread)
-print()
+# coefficient_vector = np.array([2.3894, 0.01484, -1.338143, -0.015469])
+# spread = get_current_spread(coefficient_vector, data_options['symbols'], data_options['timeframe'], data_options['timezone'], data_options['start'])
+# reslut = maths.perform_ADF_test(spread)
+# print()

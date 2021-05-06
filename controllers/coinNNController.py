@@ -44,7 +44,7 @@ prices_matrix = mt5Model.get_prices_matrix(data_options['symbols'], data_options
 # split into train set and test set
 train_prices_matrix, test_prices_matrix = tools.split_matrix(prices_matrix, percentage=data_options['trainTestSplit'], axis=0)
 
-lstm = coinNNModel.LSTM(model_options['input_size'], model_options['hidden_size'], model_options['layer'], model_options['batch_first']).double()
+lstm = coinNNModel.LSTM(model_options['input_size'], model_options['hidden_size'], model_options['layer'], model_options['batch_first'])
 optimizer = optim.Adam(lstm.parameters(), lr=model_options['lr'])
 writer = SummaryWriter(log_dir=train_options['tensorboard_save_path']+train_options['dt'], comment="coin")
 

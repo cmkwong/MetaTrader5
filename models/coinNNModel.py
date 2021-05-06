@@ -3,7 +3,6 @@ from torch import nn
 import numpy as np
 from production.codes.models import criterionModel
 
-
 class LSTM(nn.Module):
     def __init__(self, input_size, hidden_size, num_layers, batch_first=True):
         super(LSTM, self).__init__()
@@ -29,8 +28,8 @@ class LSTM(nn.Module):
         return output.squeeze(-1)
 
     def init_hiddens(self, batch_size):
-        h0 = torch.zeros((self.num_layers, batch_size, self.hidden_size), dtype=torch.double).to(self.device)
-        c0 = torch.zeros((self.num_layers, batch_size, self.hidden_size), dtype=torch.double).to(self.device)
+        h0 = torch.zeros((self.num_layers, batch_size, self.hidden_size), dtype=torch.float).to(self.device)
+        c0 = torch.zeros((self.num_layers, batch_size, self.hidden_size), dtype=torch.float).to(self.device)
         return (h0, c0)
 
     def get_predicted_arr(self, input_arr, seq_len):
@@ -40,9 +39,9 @@ class LSTM(nn.Module):
         :param seq_len: int, number of days input to LSTM
         :return: array, size = (total_len, 1)
         """
-        input = torch.from_numpy(input_arr).double()
+        input = torch.from_numpy(input_arr)
         self.eval()
-        predict_arr = np.zeros((len(input_arr), 1), dtype=np.double)
+        predict_arr = np.zeros((len(input_arr), 1), dtype=np.float)
         for i in range(seq_len, len(input_arr)):
             x = input[i-seq_len:i,:].unsqueeze(0) # size = (batch_size, seq_len, 1)
             hiddens = self.init_hiddens(1)
@@ -80,7 +79,7 @@ class Trainer:
         steps = 0
         for input, target in zip(inputs, targets):
             self._model_mode(train_mode)
-            input, target = torch.from_numpy(input).requires_grad_().double(), torch.from_numpy(target).requires_grad_().double()
+            input, target = torch.FloatTensor(input).requires_grad_(), torch.FloatTensor(target).requires_grad_()
             hiddens = self.model.init_hiddens(batch_size)
             output = self.model(input, hiddens)
             loss = criterionModel.get_mse_loss(output, target.to(torch.device("cuda:0")))
