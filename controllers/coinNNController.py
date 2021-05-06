@@ -17,7 +17,7 @@ data_options = {
     'start': (2010, 1, 1, 0, 0),
     'end': (2020, 12, 30, 0, 0),
     'symbols': ["AUDUSD", "EURGBP"], # last one is target
-    'timeframe': mt5Model.get_timeframe('H1'),
+    'timeframe': mt5Model.get_txt2timeframe('H1'),
     'timezone': "Etc/UTC",
     'shuffle': True,
     'trainTestSplit': 0.7,

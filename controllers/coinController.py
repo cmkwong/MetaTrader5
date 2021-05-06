@@ -13,9 +13,9 @@ options = {
 }
 data_options = {
     'start': (2010,1,1,0,0),
-    'end': (2020,12,30,0,0),
-    'symbols': ["AUDUSD", "EURGBP"],
-    'timeframe': mt5Model.get_timeframe('H1'),
+    'end': (2021,5,4,0,0),
+    'symbols': ["AUDJPY", "AUDUSD", "CADJPY", "USDCAD"],
+    'timeframe': mt5Model.get_txt2timeframe('H4'),
     'timezone': "Etc/UTC",
     'shuffle': True,
     'trainTestSplit': 0.7,
@@ -24,6 +24,7 @@ train_options = {
     'price_plt_save_path': options['main_path'] + "coin_simple_plt/",
     'dt': DT_STRING
 }
+title = monitorView.get_plot_title(data_options['start'], data_options['end'], mt5Model.get_timeframe2txt(data_options['timeframe']))
 
 prices_matrix = mt5Model.get_prices_matrix(data_options['start'], data_options['end'], data_options['symbols'],
                                            data_options['timeframe'], data_options['timezone'])
@@ -38,5 +39,5 @@ train_plt_data = monitorModel.get_plotting_data_simple(train_prices_matrix, x)
 test_plt_data = monitorModel.get_plotting_data_simple(test_prices_matrix, x)
 df_plt = monitorModel.get_plotting_df(train_plt_data, test_plt_data, data_options['symbols'])
 monitorView.save_plot(df_plt, data_options['symbols'], 0, train_options['price_plt_save_path'], train_options['dt'],
-                      len(train_plt_data['inputs']), dpi=500, linewidth=0.2)
+                      len(train_plt_data['inputs']), dpi=500, linewidth=0.2, title=title, show_inputs=False)
 print()

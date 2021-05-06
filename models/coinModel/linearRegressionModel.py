@@ -6,7 +6,7 @@ def get_x_vector(input, target):
     :param target: array, size = (total_len, )
     :return: x
     """
-    A = np.concatenate((np.ones((len(input), 1), dtype=float), input.reshape(-1, 1)), axis=1)
+    A = np.concatenate((np.ones((len(input), 1), dtype=float), input.reshape(len(input), -1)), axis=1)
     b = target.reshape(-1, 1)
     A_T_A = np.dot(np.transpose(A), A)
     A_T_b = np.dot(np.transpose(A), b)
@@ -15,10 +15,10 @@ def get_x_vector(input, target):
 
 def get_predicted_arr(input, x):
     """
-    :param input: array, size = (total_len, )
+    :param input: array, size = (total_len, feature_dim)
     :param x: array, size = (feature_size, )
     :return: predicted array
     """
-    A = np.concatenate((np.ones((len(input), 1)), input.reshape(-1,1)), axis=1)
+    A = np.concatenate((np.ones((len(input), 1)), input.reshape(len(input),-1)), axis=1)
     b = np.dot(A, x.reshape(-1,1))
     return b
