@@ -3,6 +3,9 @@ import MetaTrader5 as mt5
 import pytz
 from datetime import datetime, timedelta
 from production.codes.controllers import mt5Controller
+# solve the warning from pandas: pd.Timestamp can be used in matplotlib plots
+from pandas.plotting import register_matplotlib_converters
+register_matplotlib_converters()
 
 def get_txt2timeframe(timeframe_txt):
     timeframe_dicts = {"M1": mt5.TIMEFRAME_M1, "M2": mt5.TIMEFRAME_M2, "M3": mt5.TIMEFRAME_M3, "M4": mt5.TIMEFRAME_M4,
@@ -96,7 +99,7 @@ def get_historical_data(symbol, timeframe, timezone, start, end=None, utc_diff=3
     rates_frame['time'] = pd.to_datetime(rates_frame['time'], unit='s') # convert time in seconds into the datetime format
     return rates_frame
 
-def get_prices_matrix(symbols, timeframe, timezone, start, end=None):
+def get_prices_df(symbols, timeframe, timezone, start, end=None):
     """
     :param start: (2010,1,1,0,0)
     :param end:  (2020,1,1,0,0)
@@ -105,13 +108,19 @@ def get_prices_matrix(symbols, timeframe, timezone, start, end=None):
     :param timezone: str "Hongkong"
     :return: arr
     """
-    price_matrix = None
+    prices_df = None
     with mt5Controller.Helper():
         for i, symbol in enumerate(symbols):
             price = get_historical_data(symbol, timeframe, timezone, start, end)
-            price = price.set_index('time')['close']
+            price = price.set_index('time')['close'].rename(symbol)
             if i == 0:
-                price_matrix = price
+                prices_df = price
             else:
-                price_matrix = pd.concat([price_matrix, price], axis=1, join='inner')
-    return price_matrix.values.reshape(len(price_matrix), -1)
+                prices_df = pd.concat([prices_df, price], axis=1, join='inner')
+    return prices_df
+
+def split_df(df, percentage):
+    split_index = int(len(df) * percentage)
+    upper_df = df.iloc[:split_index,:]
+    lower_df = df.iloc[split_index:, :]
+    return upper_df, lower_df

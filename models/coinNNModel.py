@@ -39,7 +39,7 @@ class LSTM(nn.Module):
         :param seq_len: int, number of days input to LSTM
         :return: array, size = (total_len, 1)
         """
-        input = torch.from_numpy(input_arr)
+        input = torch.FloatTensor(input_arr)
         self.eval()
         predict_arr = np.zeros((len(input_arr), 1), dtype=np.float)
         for i in range(seq_len, len(input_arr)):

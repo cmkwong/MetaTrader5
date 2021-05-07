@@ -17,7 +17,7 @@ data_options = {
 def get_cor_matrix(start, end, symbol_list, timeframe, timezone):
     symbol_list = sorted(symbol_list, reverse=False)# sorting the symbol_list
     print(symbol_list)
-    price_matrix = mt5Model.get_prices_matrix(symbol_list, timeframe, timezone, start, end)
+    price_matrix = mt5Model.get_prices_df(symbol_list, timeframe, timezone, start, end).values
     cor_matrix = covModel.corela_matrix(price_matrix)
     cor_table = covModel.corela_table(cor_matrix, symbol_list)
     return cor_matrix, cor_table

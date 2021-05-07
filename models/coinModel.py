@@ -33,7 +33,7 @@ def get_current_spread(coefficient_vector, symbols, timeframe, timezone, start):
     :param count: int
     :return: spread
     """
-    price_matrix = mt5Model.get_prices_matrix(symbols, timeframe, timezone, start)
+    price_matrix = mt5Model.get_prices_df(symbols, timeframe, timezone, start).values
     b = get_predicted_arr(price_matrix[:,:-1], coefficient_vector)
     spread = price_matrix[:,-1].reshape(-1,) - b
     return spread

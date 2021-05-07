@@ -1,7 +1,6 @@
 from production.codes import config
 from production.codes.models import mt5Model, plotModel, coinModel
 from production.codes.views import plotView
-from production.codes.utils import tools
 
 from datetime import datetime
 now = datetime.now()
@@ -25,20 +24,20 @@ train_options = {
 }
 title = plotModel.get_plot_title(data_options['start'], data_options['end'], mt5Model.get_timeframe2txt(data_options['timeframe']))
 
-prices_matrix = mt5Model.get_prices_matrix(data_options['symbols'], data_options['timeframe'], data_options['timezone'],
-                                           data_options['start'], data_options['end'])
+prices_df = mt5Model.get_prices_df(data_options['symbols'], data_options['timeframe'], data_options['timezone'],
+                                       data_options['start'], data_options['end'])
+
 # split into train set and test set
-train_prices_matrix, test_prices_matrix = tools.split_matrix(prices_matrix, percentage=data_options['trainTestSplit'], axis=0)
+train_prices_df, test_prices_df = mt5Model.split_df(prices_df, percentage=data_options['trainTestSplit'])
 
 # get solution
-coefficient_vector = coinModel.get_coefficient_vector(train_prices_matrix[:, :-1], train_prices_matrix[:, -1])
+coefficient_vector = coinModel.get_coefficient_vector(train_prices_df.values[:, :-1], train_prices_df.values[:, -1])
 
 # get plotted graph
-train_plt_data = plotModel.get_plotting_data_simple(train_prices_matrix, coefficient_vector)
-test_plt_data = plotModel.get_plotting_data_simple(test_prices_matrix, coefficient_vector)
-df_plt = plotModel.concatenate_plotting_df(train_plt_data, test_plt_data, data_options['symbols'])
-plotView.save_plot(df_plt, data_options['symbols'], 0, train_options['price_plt_save_path'], train_options['dt'],
-                   len(train_plt_data['inputs']), dpi=500, linewidth=0.2, title=title, show_inputs=False)
+train_plt_df = plotModel.get_plotting_data_simple(train_prices_df, coefficient_vector)
+test_plt_df = plotModel.get_plotting_data_simple(test_prices_df, coefficient_vector)
+plotView.save_plot(train_plt_df, test_plt_df, data_options['symbols'], 0, train_options['price_plt_save_path'],
+                   train_options['dt'], dpi=500, linewidth=0.2, title=title, figure_size=(28,12))
 
 # get the
 
