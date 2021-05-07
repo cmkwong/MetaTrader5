@@ -1,10 +1,14 @@
 import numpy as np
 import pandas as pd
 from production.codes.models import mt5Model, coinModel
+from production.codes.utils import maths
 
 def get_plot_title(start, end, timeframe_str):
     start_str = mt5Model.get_time_string(start)
-    end_str = mt5Model.get_time_string(end)
+    if end != None:
+        end_str = mt5Model.get_time_string(end)
+    else:
+        end_str = mt5Model.get_current_time_string()
     title = "{} : {}, {}".format(start_str, end_str, timeframe_str)
     return title
 
@@ -26,7 +30,9 @@ def get_plotting_data(prices_matrix, model, seq_len):
     plt_data['inputs'] = prices_matrix[:, :-1]
     plt_data['predict'] = model.get_predicted_arr(plt_data['inputs'], seq_len)
     plt_data['target'] = prices_matrix[:, -1]
-    plt_data['spread'] = plt_data['target'] - plt_data['predict']
+    spread = plt_data['target'] - plt_data['predict']
+    plt_data['spread'] = spread
+    plt_data['z_score'] = maths.z_score_with_rolling_mean(spread, 10)
     return plt_data
 
 def get_plotting_data_simple(prices_matrix, coefficient_vector):
@@ -39,7 +45,9 @@ def get_plotting_data_simple(prices_matrix, coefficient_vector):
     plt_data['inputs'] = prices_matrix[:, :-1]
     plt_data['predict'] = coinModel.get_predicted_arr(plt_data['inputs'], coefficient_vector)
     plt_data['target'] = prices_matrix[:, -1]
-    plt_data['spread'] = plt_data['target'] - plt_data['predict']
+    spread = plt_data['target'] - plt_data['predict']
+    plt_data['spread'] = spread
+    plt_data['z_score'] = maths.z_score_with_rolling_mean(spread, 10)
     return plt_data
 
 def concatenate_plotting_df(train_plt_data, test_plt_data, symbols):
@@ -57,4 +65,5 @@ def concatenate_plotting_df(train_plt_data, test_plt_data, symbols):
     df_plt['predict'] = np.concatenate((train_plt_data['predict'], test_plt_data['predict']), axis=0).reshape(-1, )
     # calculate the spread = real - predict
     df_plt['spread'] = np.concatenate((train_plt_data['spread'], test_plt_data['spread']), axis=0).reshape(-1, )
+    df_plt['z_score'] = np.concatenate((train_plt_data['z_score'], test_plt_data['z_score']), axis=0).reshape(-1, )
     return df_plt

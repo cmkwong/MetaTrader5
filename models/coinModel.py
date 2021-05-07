@@ -1,6 +1,5 @@
 import numpy as np
 from production.codes.models import mt5Model
-from production.codes.utils import maths
 
 def get_coefficient_vector(input, target):
     """
@@ -22,7 +21,7 @@ def get_predicted_arr(input, coefficient_vector):
     :return: predicted array
     """
     A = np.concatenate((np.ones((len(input), 1)), input.reshape(len(input),-1)), axis=1)
-    b = np.dot(A, coefficient_vector.reshape(-1,1))
+    b = np.dot(A, coefficient_vector.reshape(-1,1)).reshape(-1,)
     return b
 
 def get_current_spread(coefficient_vector, symbols, timeframe, timezone, start):
@@ -36,20 +35,21 @@ def get_current_spread(coefficient_vector, symbols, timeframe, timezone, start):
     """
     price_matrix = mt5Model.get_prices_matrix(symbols, timeframe, timezone, start)
     b = get_predicted_arr(price_matrix[:,:-1], coefficient_vector)
-    spread = price_matrix[:,-1].reshape(-1,1) - b
+    spread = price_matrix[:,-1].reshape(-1,) - b
     return spread
 
-data_options = {
-    'start': (2010,1,1,0,0),
-    'end': (2021,5,4,0,0),
-    'symbols': ["AUDJPY", "AUDUSD", "CADJPY", "USDCAD"],
-    'timeframe': mt5Model.get_txt2timeframe('H4'),
-    'timezone': "Hongkong",
-    'shuffle': True,
-    'trainTestSplit': 0.7,
-}
+# data_options = {
+#     'start': (2010,1,1,0,0),
+#     'end': (2021,5,4,0,0),
+#     'symbols': ["AUDJPY", "AUDUSD", "CADJPY", "USDCAD"],
+#     'timeframe': mt5Model.get_txt2timeframe('H4'),
+#     'timezone': "Hongkong",
+#     'shuffle': True,
+#     'trainTestSplit': 0.7,
+# }
 
 # coefficient_vector = np.array([2.3894, 0.01484, -1.338143, -0.015469])
 # spread = get_current_spread(coefficient_vector, data_options['symbols'], data_options['timeframe'], data_options['timezone'], data_options['start'])
 # reslut = maths.perform_ADF_test(spread)
+# z_scores = maths.z_score_with_rolling_mean(spread, 10)
 # print()

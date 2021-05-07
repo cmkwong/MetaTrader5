@@ -34,6 +34,11 @@ def get_time_string(tt):
     time_string = str(tt[0]) + '-' + str(tt[1]).zfill(2) + '-' + str(tt[2]).zfill(2) + '-' + str(tt[3]).zfill(2) + '-' + str(tt[4]).zfill(2)
     return time_string
 
+def get_current_time_string():
+    now = datetime.today()
+    end_str = get_time_string((now.year, now.month, now.day, now.hour, now.minute))
+    return end_str
+
 def get_symbol_total():
     """
     :return: int: number of symbols

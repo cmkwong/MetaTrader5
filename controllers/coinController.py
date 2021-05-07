@@ -12,9 +12,9 @@ options = {
 }
 data_options = {
     'start': (2010,1,1,0,0),
-    'end': (2021,5,4,0,0),
+    'end': None,    # None = get the most current price
     'symbols': ["AUDJPY", "AUDUSD", "CADJPY", "USDCAD"],
-    'timeframe': mt5Model.get_txt2timeframe('H4'),
+    'timeframe': mt5Model.get_txt2timeframe('H1'),
     'timezone': "Hongkong",
     'shuffle': True,
     'trainTestSplit': 0.7,
