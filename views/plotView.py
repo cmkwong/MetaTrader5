@@ -17,9 +17,10 @@ def save_plot(train_plt_df, test_plt_df, symbols, episode, saved_path, dt_str, d
     :param figure_size: tuple to indicate the size of figure
     """
     # concat the plotting dataframe
-    plt_df = pd.concat((train_plt_df,test_plt_df))
+    plt_df = pd.concat((train_plt_df, test_plt_df))
     time_index = plt_df.index
-    split_index = test_plt_df.index[0]
+    train_start_index = train_plt_df.index[0]
+    test_start_index = test_plt_df.index[0]
 
     # prepare figure
     fig = plt.figure(figsize=figure_size, dpi=dpi)
@@ -37,13 +38,19 @@ def save_plot(train_plt_df, test_plt_df, symbols, episode, saved_path, dt_str, d
     plt.plot(time_index, plt_df['predict'].values, color='red', linewidth=linewidth)
     plt.plot(time_index, plt_df['spread'].values, color='darkorange', linewidth=linewidth)    # plot spread
     plt.axhline(y=0, linewidth=0.1, linestyle="--", color="dimgray")  # y=0 reference line
-    plt.axvline(x=split_index, linewidth=0.1, linestyle="--", color="darkgrey")  # testing start index
+    plt.axvline(x=test_start_index, linewidth=0.1, linestyle="--", color="darkgrey")  # testing start index
+
+    # add ADF test result
+    adf_result_text = plotModel.get_ADF_text_result(train_plt_df['spread'].values)
+    plt.text(train_start_index, 0.5, "Train \n" + adf_result_text, fontsize=12)
+    adf_result_text = plotModel.get_ADF_text_result(test_plt_df['spread'].values)
+    plt.text(test_start_index,0.5, "Test \n" + adf_result_text, fontsize=12)
 
     # switch to index of plot 2 in 2x1 plot
     plt.subplot(gs[8:10,:])
     plt.plot(time_index, plt_df['z_score'].values, color='darkorange', linewidth=linewidth/2)
     plt.axhline(y=0, linewidth=0.1, linestyle="--", color="dimgray")                            # y=0 reference line
-    plt.axvline(x=split_index, linewidth=0.1, linestyle="--", color="darkgrey")                # testing start index
+    plt.axvline(x=test_start_index, linewidth=0.1, linestyle="--", color="darkgrey")                # testing start index
 
     plt.savefig(full_path)                                                                      # save in higher resolution image
     plt.clf()

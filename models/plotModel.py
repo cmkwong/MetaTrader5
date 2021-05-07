@@ -59,21 +59,19 @@ def concatenate_plotting_df(train_plt_df, test_plt_df):
     df_plt = pd.concat(train_plt_df,test_plt_df)
     return df_plt
 
-def concatenate_plotting_df_b(train_plt_data, test_plt_data, time_index, symbols):
+def get_ADF_text_result(spread):
     """
-    :param train_plt_data: data for plotting in dict format: ['inputs','target','predict']
-    :param test_plt_data: data for plotting in dict format: ['inputs','target','predict']
-    :param time_index: timeframe
-    :param symbols: [str]
-    :return: dataframe
+    :param spread: np.array
+    :return:
     """
-    target = symbols[-1]
-    df_plt = pd.DataFrame(index=time_index, columns=symbols)
-    for c, symbol in enumerate(symbols[:-1]):
-        df_plt[symbol] = np.concatenate((train_plt_data['inputs'][:,c], test_plt_data['inputs'][:,c]), axis=0).reshape(-1, )
-    df_plt[target] = np.concatenate((train_plt_data['target'], test_plt_data['target']), axis=0)
-    df_plt['predict'] = np.concatenate((train_plt_data['predict'], test_plt_data['predict']), axis=0).reshape(-1, )
-    # calculate the spread = real - predict
-    df_plt['spread'] = np.concatenate((train_plt_data['spread'], test_plt_data['spread']), axis=0).reshape(-1, )
-    df_plt['z_score'] = np.concatenate((train_plt_data['z_score'], test_plt_data['z_score']), axis=0).reshape(-1, )
-    return df_plt
+    text = ''
+    result = maths.perform_ADF_test(spread)
+    text += "The test statistic: {:.6f}\n".format(result.test_statistic)
+    text += "The p-value: {:.6f}\n".format(result.pvalue)
+    text += "The critical values: \n"
+    for key, value in result.critical_values.items():
+        text += "     {} = {:.6f}\n".format(key, value)
+    return text
+
+
+
