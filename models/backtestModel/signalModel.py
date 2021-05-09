@@ -1,6 +1,5 @@
 from production.codes.models.backtestModel import techModel, indexModel
 
-
 def discard_head_signal(signal):
     """
     :param signal: Series
@@ -99,9 +98,3 @@ def get_movingAverage_signal(df, fast_index, slow_index, limit_unit, long_mode=T
     if limit_unit > 0:
         signal = maxLimitClosed(signal, limit_unit)
     return signal
-
-# from production.codes.lib.Trader import Data
-# from production.codes.config import *
-# mt_data = Data.MetaTrader_Data(tz="Etc/UTC")
-# df = mt_data.get_historical_data(start=START, end=END, symbol=SYMBOL, timeframe=TIMEFRAME)
-# get_movingAverage_signal(df, 7,13,2)

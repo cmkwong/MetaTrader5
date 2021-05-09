@@ -1,5 +1,5 @@
-import production.codes.views.plotView
-from production.codes.views import pltView, printStat
+from production.codes.views import plotView
+from production.codes.views import printStat
 from production.codes.controllers import mt5Controller
 from production.codes import config
 from production.codes.models import mt5Model
@@ -21,7 +21,7 @@ def moving_average_backtest(options, fast_index, slow_index, limit_unit, bins=10
 
         # plot graph
         ret_list = returnModel.get_ret_list(df, signal)
-        production.codes.views.plotView.density(ret_list, bins=bins)
+        plotView.density(ret_list, bins=bins)
 
 def optimize_moving_average(options, max_index=201):
     with mt5Controller.Helper() as helper:

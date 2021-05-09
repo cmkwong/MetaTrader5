@@ -33,3 +33,10 @@ CSV_FILE_NAME = "T{}_{}_Frame-{}_Long-{}_Limit-{}_From-{}-to-{}_result.csv".form
     str(LIMIT_UNIT),
     START_STRING,
     END_STRING)
+
+CURRENCIES = {
+    'AUDJPY': {
+        'ppt_pos': 100,
+
+    }
+}

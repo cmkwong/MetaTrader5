@@ -1,6 +1,5 @@
 from production.codes.models.backtestModel import indexModel
 
-
 def get_ret_list(df, signal):
     """
     :param signal: Series(Boolean)
@@ -40,3 +39,6 @@ def get_accum_ret(df, signal):
     for ret in ret_list:
         ret_by_signal *= ret
     return ret_by_signal
+
+def get_profit(currency_pair, buy_sell, open_price, close_price, trade_lot, deposit_currency):
+    pass

@@ -29,16 +29,15 @@ def save_plot(train_plt_df, test_plt_df, symbols, episode, saved_path, dt_str, d
     # switch to index of plot 1 in 2x1 plot
     plt.subplot(gs[0:7,:])
     plt.title(title)
-    target_symbol = symbols[-1] # get the name
-    full_path = saved_path + plotModel.get_plot_image_name(dt_str, symbols, episode)
     if show_inputs:
         for symbol in symbols[:-1]:
-            plt.plot(time_index, plt_df[symbol].values, linestyle="k--", linewidth=linewidth)
-    plt.plot(time_index, plt_df[target_symbol].values, color='blue', linewidth=linewidth)
-    plt.plot(time_index, plt_df['predict'].values, color='red', linewidth=linewidth)
-    plt.plot(time_index, plt_df['spread'].values, color='darkorange', linewidth=linewidth)    # plot spread
+            plt.plot(time_index, plt_df[symbol].values, linestyle="k--", linewidth=linewidth, label=symbol)
+    plt.plot(time_index, plt_df[symbols[-1]].values, color='blue', linewidth=linewidth, label=symbols[-1])
+    plt.plot(time_index, plt_df['predict'].values, color='red', linewidth=linewidth, label='predict')
+    plt.plot(time_index, plt_df['spread'].values, color='darkorange', linewidth=linewidth, label='spread')    # plot spread
     plt.axhline(y=0, linewidth=0.1, linestyle="--", color="dimgray")  # y=0 reference line
     plt.axvline(x=test_start_index, linewidth=0.1, linestyle="--", color="darkgrey")  # testing start index
+    plt.legend()
 
     # add ADF test result
     adf_result_text = plotModel.get_ADF_text_result(train_plt_df['spread'].values)
@@ -48,10 +47,13 @@ def save_plot(train_plt_df, test_plt_df, symbols, episode, saved_path, dt_str, d
 
     # switch to index of plot 2 in 2x1 plot
     plt.subplot(gs[8:10,:])
-    plt.plot(time_index, plt_df['z_score'].values, color='darkorange', linewidth=linewidth/2)
-    plt.axhline(y=0, linewidth=0.1, linestyle="--", color="dimgray")                            # y=0 reference line
+    plt.plot(time_index, plt_df['z_score'].values, color='darkorange', linewidth=linewidth/2, label='z_score')
+    plt.axhline(y=0, linewidth=0.1, linestyle="--", color="dimgray")                                # y=0 reference line
     plt.axvline(x=test_start_index, linewidth=0.1, linestyle="--", color="darkgrey")                # testing start index
+    plt.legend()
 
+    # save plot
+    full_path = saved_path + plotModel.get_plot_image_name(dt_str, symbols, episode)
     plt.savefig(full_path)                                                                      # save in higher resolution image
     plt.clf()
 

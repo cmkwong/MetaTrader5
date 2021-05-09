@@ -1,5 +1,6 @@
 from production.codes.models import mt5Model, batchModel, coinNNModel, plotModel
 from production.codes.views import printStat, plotView
+from production.codes.utils import tools
 from production.codes import config
 from torch import optim
 from torch.utils.tensorboard import SummaryWriter
@@ -42,7 +43,7 @@ prices_df = mt5Model.get_prices_df(data_options['symbols'], data_options['timefr
                                        data_options['start'], data_options['end'])
 
 # split into train set and test set
-train_prices_df, test_prices_df = mt5Model.split_df(prices_df, percentage=data_options['trainTestSplit'])
+train_prices_df, test_prices_df = tools.split_df(prices_df, percentage=data_options['trainTestSplit'])
 
 lstm = coinNNModel.LSTM(model_options['input_size'], model_options['hidden_size'], model_options['layer'], model_options['batch_first'])
 optimizer = optim.Adam(lstm.parameters(), lr=model_options['lr'])
