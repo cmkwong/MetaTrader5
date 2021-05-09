@@ -28,7 +28,7 @@ with mt5Controller.Helper():
     title = plotModel.get_plot_title(data_options['start'], data_options['end'], mt5Model.get_timeframe2txt(data_options['timeframe']))
 
     prices_df = mt5Model.get_prices_df(data_options['symbols'], data_options['timeframe'], data_options['timezone'],
-                                           data_options['start'], data_options['end'])
+                                           data_options['start'], data_options['end'], '1001')
 
     # split into train set and test set
     train_prices_df, test_prices_df = tools.split_df(prices_df, percentage=data_options['trainTestSplit'])
@@ -43,13 +43,15 @@ with mt5Controller.Helper():
     all_symbols_info = mt5Model.get_all_symbols_info()
     exchange_symbols = mt5Model.get_exchange_symbols(data_options['symbols'], all_symbols_info, deposit_currency='USD')
 
-    train_plt_df = mt5Model.append_exchange_rate_df(train_plt_df, exchange_symbols, data_options['timeframe'],
+    exchange_rate_df = mt5Model.get_exchange_rate_df(train_plt_df, exchange_symbols, data_options['timeframe'],
                                               data_options['timezone'], start=data_options['start'],
                                               deposit_currency='USD')
 
-    train_plt_df = mt5Model.append_points_dff_df(train_plt_df, data_options['symbols'], all_symbols_info)
+    points_dff_df = mt5Model.get_points_dff_df(train_plt_df, data_options['symbols'], all_symbols_info)
 
     train_plt_df = mt5Model.append_coin_signal(train_plt_df, upper_th=0.2, lower_th=-0.2)
+
+    train_plt_df = mt5Model.append_int_signal(train_plt_df)
 
     # save the plot
     plotView.save_plot(train_plt_df, test_plt_df, data_options['symbols'], 0, train_options['price_plt_save_path'],

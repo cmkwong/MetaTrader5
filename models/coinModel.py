@@ -16,6 +16,7 @@ def get_coefficient_vector(input, target):
 
 def get_predicted_arr(input, coefficient_vector):
     """
+    Ax=b
     :param input: array, size = (total_len, feature_size)
     :param coefficient_vector: coefficient vector, size = (feature_size, )
     :return: predicted array
@@ -24,19 +25,19 @@ def get_predicted_arr(input, coefficient_vector):
     b = np.dot(A, coefficient_vector.reshape(-1,1)).reshape(-1,)
     return b
 
-def get_current_spread(coefficient_vector, symbols, timeframe, timezone, start):
-    """
-    :param coefficient_vector: coefficient vector, size = (feature_size, )
-    :param symbols: [str]
-    :param timeframe: mt5.timeframe
-    :param timezone: str: "Hongkong"
-    :param count: int
-    :return: spread
-    """
-    price_matrix = mt5Model.get_prices_df(symbols, timeframe, timezone, start).values
-    b = get_predicted_arr(price_matrix[:,:-1], coefficient_vector)
-    spread = price_matrix[:,-1].reshape(-1,) - b
-    return spread
+# def get_current_spread(coefficient_vector, symbols, timeframe, timezone, start):
+#     """
+#     :param coefficient_vector: coefficient vector, size = (feature_size, )
+#     :param symbols: [str]
+#     :param timeframe: mt5.timeframe
+#     :param timezone: str: "Hongkong"
+#     :param count: int
+#     :return: spread
+#     """
+#     price_matrix = mt5Model.get_prices_df(symbols, timeframe, timezone, start).values
+#     b = get_predicted_arr(price_matrix[:,:-1], coefficient_vector)
+#     spread = price_matrix[:,-1].reshape(-1,) - b
+#     return spread
 
 # data_options = {
 #     'start': (2010,1,1,0,0),
