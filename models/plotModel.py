@@ -47,7 +47,7 @@ def get_plotting_data_simple(prices_df, coefficient_vector):
     plt_df['predict'] = coinModel.get_predicted_arr(prices_df.iloc[:,:-1].values, coefficient_vector)
     spread = prices_df.iloc[:,-1] - plt_df['predict']
     plt_df['spread'] = spread
-    plt_df['z_score'] = maths.z_score_with_rolling_mean(spread.values, 10)
+    plt_df['z_score'] = maths.z_score_with_rolling_mean(spread.values, 3)
     return plt_df
 
 def concatenate_plotting_df(train_plt_df, test_plt_df):

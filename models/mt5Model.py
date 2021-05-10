@@ -1,3 +1,4 @@
+from production.codes.models.backtestModel import signalModel
 import pandas as pd
 import numpy as np
 import MetaTrader5 as mt5
@@ -100,111 +101,169 @@ def get_historical_data(symbol, timeframe, timezone, start, end=None, utc_diff=3
     rates_frame['time'] = pd.to_datetime(rates_frame['time'], unit='s') # convert time in seconds into the datetime format
     return rates_frame
 
-def _price_type_from_code(code, symbol):
+def _price_type_from_code(ohlc):
     """
-    :param code: str in 0/1
-    :param symbol: str
-    :return: required_types = [], new_name = {}
+    :param ohlc: str of code, eg: '1001'
+    :return: list, eg: ['open', 'close']
     """
-    type_name = ['open', 'high', 'low', 'close']
-    type_short_name = "ohlc"
-    required_types, new_name = [], {}
-    for i, c in enumerate(code):
+    type_names = ['open', 'high', 'low', 'close']
+    required_types = []
+    for i, c in enumerate(ohlc):
         if c == '1':
-            required_types.append(type_name[i])
-            if i != 3:
-                new_name[type_name[i]] = '{}_{}'.format(symbol, type_short_name[i])
-            else:
-                new_name[type_name[i]] = '{}'.format(symbol)
-    return required_types, new_name
+            required_types.append(type_names[i])
+    return required_types
 
-
-def get_prices_df(symbols, timeframe, timezone, start, end=None, ohlc='0001'):
-    """
-    :param symbols: [str]
-    :param timeframe: mt5.timeFrame
-    :param timezone: str "Hongkong"
-    :param start: (2010,1,1,0,0)
-    :param end:  (2020,1,1,0,0)
-    :param ohlc: which price needed, open, high, low, close
-    :return: pd.Dataframe
-    """
+def _get_prices_df(symbols, timeframe, timezone, start, end, ohlc):
+    required_types = _price_type_from_code(ohlc)
     prices_df = None
     for i, symbol in enumerate(symbols):
-        # new_name = {'open': symbol + '_o', 'close': symbol}
-        required_types, new_name = _price_type_from_code(ohlc, symbol)
         price = get_historical_data(symbol, timeframe, timezone, start, end)
-        price = price.set_index('time').loc[:,required_types].rename(columns=new_name)
+        price = price.set_index('time').loc[:,required_types]
         if i == 0:
             prices_df = price
         else:
             prices_df = pd.concat([prices_df, price], axis=1, join='inner')
     return prices_df
 
-
-
-def append_change(exchange_rate_df, points_dff_df, coefficient_vector):
+def get_Prices(symbols, all_symbols_info, timeframe, timezone, start, end=None, ohlc='1111', deposit_currency='USD'):
     """
-    :param prices_matrix: np.array, size = (total_len, feature_size)
-    :param coefficient_vector: np.array, size = (feature_size, 1)
-    :return: np.array, size = (total_len, )
+    :param symbols: [str]
+    :param timeframe: mt5.timeFrame
+    :param timezone: str "Hongkong"
+    :param start: (2010,1,1,0,0)
+    :param end:  (2020,1,1,0,0)
+    :return: collection.nametuple - ohlc. They are pd.Dataframe
+    """
+    Prices_collection = collections.namedtuple("Prices_collection", ['o','h','l','c','ref'])
+    prices_df = _get_prices_df(symbols, timeframe, timezone, start, end, ohlc)
+
+    temp_name = "temp_name"
+    exchange_symbols = get_exchange_symbols(symbols, all_symbols_info, deposit_currency)
+    exchange_rate_df = _get_prices_df(exchange_symbols, timeframe, timezone, start, end, ohlc='1000') # just need the open price
+    exchange_rate_df, exchange_symbol_names = modify_exchange_rate(exchange_rate_df, exchange_symbols, deposit_currency)
+    exchange_rate_df.columns = [temp_name] * len(exchange_symbols)
+
+    # joining two dataframe to get the consistent index
+    prices_df = pd.concat([prices_df, exchange_rate_df], axis=1, join='inner')
+
+    # assign the column into each collection tuple
+    Prices = Prices_collection(o=prices_df.loc[:,'open'],
+                               h=prices_df.loc[:,'high'],
+                               l=prices_df.loc[:,'low'],
+                               c=prices_df.loc[:,'close'],
+                               ref=prices_df.loc[:,temp_name])
+
+    # re-assign the columns name
+    for i, po in enumerate(Prices):
+        if i != len(Prices) - 1:
+            po.columns = symbols
+        else:
+            po.columns = exchange_symbol_names
+
+    return Prices
+
+
+
+def append_all_debug(df_list):
+    # [Prices.c, Prices.o, points_dff_values_df, coin_signal, int_signal, changes, changes_by_signal]
+    prefix_names = ['open', 'pt_diff_values', 'plt_df', 'signal', 'int_signal', 'changes', 'changes_by_signal']
+    all_df = None
+    for i, df in enumerate(df_list):
+        df.columns = [col_name + '_' + prefix_names[i] for col_name in df.columns]
+        if i == 0:
+            all_df = df
+        else:
+            all_df = pd.concat([all_df, df], axis=1, join='inner')
+    return all_df
+
+def get_changes_by_signal(changes, signal):
+    """
+    :param changes:
+    :param signal:
+    :return:
+    """
+    changes_by_signal = pd.DataFrame(index=signal.index)
+    for name in signal.columns:
+        signal.loc[:, name] = signalModel.discard_head_signal(signal[name])
+        signal.loc[:, name] = signalModel.discard_tail_signal(signal[name])
+        changes_by_signal[name] = signal[name].shift(2) * changes[name] # shift 2 unit see (30e)
+    return changes_by_signal
+
+def get_changes(exchange_rate_df, points_dff_values_df, coefficient_vector):
+    """
+    :param exchange_rate_df: pd.Dataframe, that exchange the dollar into same deposit assert
+    :param points_dff_values_df: points the change with respect to quote currency
+    :param coefficient_vector: the coefficient from training of linear regression
+    :return:
     """
     # calculate the dollar change in exchange rate
+    long_spread_weight_factor = np.append(-1 * coefficient_vector[1:], 1) # buy real, sell predict
+    short_spread_weight_factor = np.append(coefficient_vector[1:], -1) # buy predict, sell real
+    long_spread_weighted_pt_diff = points_dff_values_df.values * long_spread_weight_factor
+    short_spread_weighted_pt_diff = points_dff_values_df.values * short_spread_weight_factor
+    # calculate the price in required deposit dollar
+    changes = pd.DataFrame(index=exchange_rate_df.index)
+    changes['long'] = np.sum(exchange_rate_df.values * long_spread_weighted_pt_diff, axis=1)
+    changes['short'] = np.sum(exchange_rate_df.values * short_spread_weighted_pt_diff, axis=1)
+    return changes
 
+def get_int_signal(signal):
+    int_signal = pd.DataFrame(index=signal.index)
+    int_signal['long'] = signal['long'].astype(int).diff(1)
+    int_signal['short'] = signal['short'].astype(int).diff(1)
+    return int_signal
 
-    prices_matrix = prices_matrix.reshape(len(prices_matrix), -1)
-    coefficient_vector = coefficient_vector.reshape(len(coefficient_vector),1)
-    ret = np.dot(prices_matrix, coefficient_vector).reshape(-1,)
-    return ret
+def get_coin_signal(plt_df, upper_th, lower_th):
+    signal = pd.DataFrame(index=plt_df.index)
+    signal['long'] = plt_df['z_score'].values < lower_th
+    signal['short'] = plt_df['z_score'].values > upper_th
+    return signal
 
-def append_int_signal(plt_df):
-    plt_df['short_int_signal'] = plt_df['short_spread'].astype(int).diff(1)
-    plt_df['long_int_signal'] = plt_df['long_spread'].astype(int).diff(1)
-    return plt_df
-
-def append_coin_signal(plt_df, upper_th, lower_th):
-    plt_df['short_spread'] = plt_df['z_score'].values > upper_th
-    plt_df['long_spread'] = plt_df['z_score'].values < lower_th
-    return plt_df
-
-def get_points_dff_df(plt_df, symbols, all_symbols_info):
+def get_points_dff_values_df(open_prices, all_symbols_info):
     """
     :param plt_df: pd.Dataframe
     :param symbols: [str]
     :param all_symbols_info: tuple, mt5.symbols_get(). The info including the digits.
     :return: plt_df, new pd.Dataframe
-    take the difference from open price, otherwise take the close price
+    take the difference from open price
     """
-    points_dff_df = pd.DataFrame(index=plt_df.index)
-    for symbol in symbols:
-        symbol_o = '{}_o'.format(symbol) # take the point difference from open price
+    points_dff_values_df = pd.DataFrame(index=open_prices.index)
+    for symbol in open_prices.columns:
         digits = all_symbols_info[symbol].digits - 1
-        col_name = 'pt_{}_o'.format(symbol)
-        points_dff_df[col_name] = (plt_df[symbol_o] - plt_df[symbol_o].shift(periods=1)) * 10 ** (digits)
-    return points_dff_df
+        points_dff_values_df[symbol] = (open_prices[symbol] - open_prices[symbol].shift(periods=1)) * 10 ** (digits) * all_symbols_info[symbol].pt_value
+    return points_dff_values_df
 
-def get_exchange_rate_df(plt_df, exchange_symbols, timeframe, timezone, start, end=None, deposit_currency='USD'):
-    """
-    :param plt_df: pd.Dataframe
-    :param exchange_symbols:
-    :param timeframe: mt5.timeFrame
-    :param timezone: str "Hongkong"
-    :param start: tuple, eg: (2019)
-    :param end: tuple, None = data till now
-    :param deposit_currency: str, default USD
-    :return: plt_df, new pd.Dataframe, exchange rate; [col_name]
-    """
-    exchange_rate_df = get_prices_df(exchange_symbols, timeframe, timezone, start, end, ohlc='1000') # calculate from the open price
+def modify_exchange_rate(exchange_rate_df, exchange_symbols, deposit_currency):
     symbol_new_names = []
     for i, symbol in enumerate(exchange_symbols):
         if symbol[3:] != deposit_currency:
-            symbol_new_names.append("exchg_{}_o".format(symbol[3:] + symbol[:3]))
+            symbol_new_names.append("{}".format(symbol[3:] + symbol[:3]))
             exchange_rate_df.iloc[:, i] = 1 / exchange_rate_df.iloc[:,i].values # inverse if it is eg: USDJPY
         else:
-            symbol_new_names.append("exchg_{}_o".format(symbol))
-    exchange_rate_df.columns = symbol_new_names
-    # plt_df = pd.concat([plt_df, exchange_rate_df], axis=1, join='inner')    # inner join the dataframe
-    return exchange_rate_df
+            symbol_new_names.append("{}".format(symbol))
+    return exchange_rate_df, symbol_new_names
+
+# def get_exchange_rate_df(exchange_symbols, timeframe, timezone, refer_index, start, end=None, deposit_currency='USD'):
+#     """
+#     :param exchange_symbols:
+#     :param timeframe: mt5.timeFrame
+#     :param timezone: str "Hongkong"
+#     :param start: tuple, eg: (2019)
+#     :param end: tuple, None = data till now
+#     :param deposit_currency: str, default USD
+#     :return: plt_df, new pd.Dataframe, exchange rate; [col_name]
+#     """
+#     exchange_rate_df = get_prices_df(exchange_symbols, timeframe, timezone, start, end).o # calculate from the open price
+#     exchange_rate_df.index = refer_index
+#     symbol_new_names = []
+#     for i, symbol in enumerate(exchange_symbols):
+#         if symbol[3:] != deposit_currency:
+#             symbol_new_names.append("exchg_{}".format(symbol[3:] + symbol[:3]))
+#             exchange_rate_df.iloc[:, i] = 1 / exchange_rate_df.iloc[:,i].values # inverse if it is eg: USDJPY
+#         else:
+#             symbol_new_names.append("exchg_{}".format(symbol))
+#     exchange_rate_df.columns = symbol_new_names
+#     return exchange_rate_df
 
 def get_exchange_symbols(symbols, all_symbols_info, deposit_currency='USD'):
     """
