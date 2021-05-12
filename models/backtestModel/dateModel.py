@@ -3,7 +3,7 @@ from production.codes.models.backtestModel import indexModel
 
 def get_action_date(df, signal):
     """
-    :param signal: Series(Boolean)
+    :param signal: Series(Boolean) without time index
     :return: start_date_list, end_date_list
     """
     start_date_list, end_date_list = [], []

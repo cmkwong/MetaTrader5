@@ -35,20 +35,19 @@ def get_plotting_data(prices_df, model, seq_len):
     plt_df['z_score'] = maths.z_score_with_rolling_mean(spread.values, 10)
     return plt_df
 
-def get_plotting_data_simple(prices_df, coefficient_vector):
+def get_coin_data_lr(close_prices, coefficient_vector, windows=3):
     """
-    :param prices_df: accept the train and test prices in pd.dataframe format
+    :param close_prices: accept the train and test prices in pd.dataframe format
     :param coefficient_vector:
     :return:
     """
-    plt_df = pd.DataFrame(index=prices_df.index)
-    for symbol in prices_df.columns:
-        plt_df[symbol] = prices_df[symbol]
-    plt_df['predict'] = coinModel.get_predicted_arr(prices_df.iloc[:,:-1].values, coefficient_vector)
-    spread = prices_df.iloc[:,-1] - plt_df['predict']
-    plt_df['spread'] = spread
-    plt_df['z_score'] = maths.z_score_with_rolling_mean(spread.values, 3)
-    return plt_df
+    coin_data = pd.DataFrame(index=close_prices.index)
+    coin_data['real'] = close_prices.iloc[:,-1]
+    coin_data['predict'] = coinModel.get_predicted_arr(close_prices.iloc[:,:-1].values, coefficient_vector)
+    spread = coin_data['real'] - coin_data['predict']
+    coin_data['spread'] = spread
+    coin_data['z_score'] = maths.z_score_with_rolling_mean(spread.values, windows)
+    return coin_data
 
 def concatenate_plotting_df(train_plt_df, test_plt_df):
     """

@@ -1,44 +1,53 @@
 from production.codes.models.backtestModel import indexModel
 
-def get_ret_list(df, signal):
+def get_ret_list(open_price, signal):
     """
-    :param signal: Series(Boolean)
+    :param open_price: pd.Series
+    :param signal: pd.Series(Boolean)
     :return: float
     """
-    start_index, end_index = indexModel.get_action_start_end_index(signal)
-    ret = get_ret(df)
+    start_index, end_index = indexModel.get_action_start_end_index(signal.reset_index(drop=True))   # discard the DateTimeIndex
+    ret = get_ret(open_price).reset_index(drop=True) # discard the DateTimeIndex
     rets = []
     for s, e in zip(start_index, end_index):
         rets.append(ret[s + 1: e + 1].prod())  # see notes point 6
     return rets
 
-def get_change(df):
+def get_ret(open_price):
     """
-    :return: change: Series
+    :return: open_price: pd.Series
     """
-    diffs = df['open'].diff(periods=1)
-    shifts = df['open'].shift(1)
-    change = diffs / shifts
-    return change
-
-def get_ret(df):
-    """
-    :return: ret: Series
-    """
-    change = get_change(df)
-    ret = 1 + change
+    diffs = open_price.diff(periods=1)
+    shifts = open_price.shift(1)
+    ret = 1 + diffs / shifts
     return ret
 
-def get_accum_ret(df, signal):
-    """
-    :param signal: Series(Boolean)
-    :return: ret_by_signal: float64
-    """
-    ret_by_signal = 1
-    ret_list = get_ret_list(df, signal)
-    for ret in ret_list:
-        ret_by_signal *= ret
-    return ret_by_signal
+# def get_ret(df):
+#     """
+#     :return: ret: Series
+#     """
+#     ret = get_ret(df)
+#     ret = 1 + ret
+#     return ret
 
-def get_profit(currency_pair, buy_sell, open_price, close_price, trade_lot, deposit_currency):
-    pass
+def get_accum_ret(open_price, signal):
+    """
+    :param open_price: pd.Series
+    :param signal: pd.Series(Boolean)
+    :return: accum_ret: float64
+    """
+    accum_ret = 1
+    rets = get_ret_list(open_price, signal)
+    for ret in rets:
+        accum_ret *= ret
+    return accum_ret
+
+def get_accum_earning(earning, signal):
+    """
+    :param earning: pd.Series, earning changed from open price
+    :param signal: Series(Boolean)
+    :earningurn: earning_by_signal: float64
+    """
+    earning_by_signal = signal.shift(2) * earning
+    accum_earning = earning_by_signal.sum(axis=0)
+    return accum_earning

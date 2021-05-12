@@ -1,34 +1,41 @@
 from production.codes.models.backtestModel import signalModel
 
-
 def get_open_index(int_signal):
+    """
+    :param int_signal: pd.Series
+    :return: list
+    """
     start_index = []
-    start_index.extend([index + 1 for index in int_signal[int_signal == 1].index])  # see note point 6 why added by 1
+    start_index.extend([index for index in int_signal[int_signal.shift(1) == 1].index])  # see note point 6 why added by 1
     return start_index
 
 def get_close_index(int_signal):
+    """
+    :param int_signal: pd.Series
+    :return: list
+    """
     end_index = []
-    end_index.extend([index + 1 for index in int_signal[int_signal == -1].index]) # see note point 6 why added by 1
+    end_index.extend([index for index in int_signal[int_signal.shift(1) == -1].index]) # see note point 6 why added by 1
     return end_index
 
 def get_action_start_end_index(signal):
     """
-    :param signal: Series
+    :param signal: pd.Series
     :return: list: start_index, end_index
     """
     int_signal = signalModel.get_int_signal(signal)
-
     # buy index
     start_index = get_open_index(int_signal)
-
     # sell index
     end_index = get_close_index(int_signal)
-
-    # # modify the start_index, end_index, if needed
-    # if self.limit_unit > 0:
-    #     start_index, end_index = self._simple_limit_end_index(start_index, end_index)
-
     return start_index, end_index
+
+# def get_index_for_compute_return(signal):
+#     """
+#     :param signal: pd.Series
+#     :return: list: start_index, end_index
+#     """
+#     signal.shift(2)[signal == True].index
 
 def simple_limit_end_index(starts, ends, limit_unit):
     """

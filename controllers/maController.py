@@ -20,7 +20,7 @@ def moving_average_backtest(options, fast_index, slow_index, limit_unit, bins=10
         printStat.print_dict(stat)
 
         # plot graph
-        ret_list = returnModel.get_ret_list(df, signal)
+        ret_list = returnModel.get_change_list(df, signal)
         plotView.density(ret_list, bins=bins)
 
 def optimize_moving_average(options, max_index=201):

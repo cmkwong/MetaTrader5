@@ -1,4 +1,5 @@
 from production.codes.models.backtestModel import signalModel
+from production.codes.utils import tools
 import pandas as pd
 import numpy as np
 import MetaTrader5 as mt5
@@ -125,7 +126,7 @@ def _get_prices_df(symbols, timeframe, timezone, start, end, ohlc):
             prices_df = pd.concat([prices_df, price], axis=1, join='inner')
     return prices_df
 
-def get_Prices(symbols, all_symbols_info, timeframe, timezone, start, end=None, ohlc='1111', deposit_currency='USD'):
+def get_Prices(symbols, all_symbols_info, timeframe, timezone, start, end=None, split=0.7, ohlc='1111', deposit_currency='USD'):
     """
     :param symbols: [str]
     :param timeframe: mt5.timeFrame
@@ -134,39 +135,57 @@ def get_Prices(symbols, all_symbols_info, timeframe, timezone, start, end=None, 
     :param end:  (2020,1,1,0,0)
     :return: collection.nametuple - ohlc. They are pd.Dataframe
     """
-    Prices_collection = collections.namedtuple("Prices_collection", ['o','h','l','c','ref'])
+    Prices_collection = collections.namedtuple("Prices_collection", ['o','h','l','c','ptDv','exchg'])
     prices_df = _get_prices_df(symbols, timeframe, timezone, start, end, ohlc)
 
-    temp_name = "temp_name"
+    # get point diff values
+    diff_name = "diff"
+    points_dff_values_df = get_points_dff_values_df(symbols, prices_df['open'], all_symbols_info, temp_col_name=diff_name)
+
+    # get the exchange rate
+    exchg_name = "exchg"
     exchange_symbols = get_exchange_symbols(symbols, all_symbols_info, deposit_currency)
     exchange_rate_df = _get_prices_df(exchange_symbols, timeframe, timezone, start, end, ohlc='1000') # just need the open price
     exchange_rate_df, exchange_symbol_names = modify_exchange_rate(exchange_rate_df, exchange_symbols, deposit_currency)
-    exchange_rate_df.columns = [temp_name] * len(exchange_symbols)
+    exchange_rate_df.columns = [exchg_name] * len(exchange_symbols) # assign temp name
 
     # joining two dataframe to get the consistent index
-    prices_df = pd.concat([prices_df, exchange_rate_df], axis=1, join='inner')
+    prices_df = pd.concat([prices_df, points_dff_values_df, exchange_rate_df], axis=1, join='inner')
 
     # assign the column into each collection tuple
     Prices = Prices_collection(o=prices_df.loc[:,'open'],
                                h=prices_df.loc[:,'high'],
                                l=prices_df.loc[:,'low'],
                                c=prices_df.loc[:,'close'],
-                               ref=prices_df.loc[:,temp_name])
+                               ptDv=prices_df.loc[:,diff_name],
+                               exchg=prices_df.loc[:,exchg_name])
 
     # re-assign the columns name
-    for i, po in enumerate(Prices):
+    for i, df in enumerate(Prices):
         if i != len(Prices) - 1:
-            po.columns = symbols
+            df.columns = symbols
         else:
-            po.columns = exchange_symbol_names
+            df.columns = exchange_symbol_names
 
     return Prices
+
+def split_Prices(Prices, percentage):
+    keys = list(Prices._asdict().keys())
+    prices = collections.namedtuple("prices", keys)
+    train_list, test_list = [], []
+    for df in Prices:
+        train, test = tools.split_df(df, percentage)
+        train_list.append(train)
+        test_list.append(test)
+    Train_Prices = prices._make(train_list)
+    Test_Prices = prices._make(test_list)
+    return Train_Prices, Test_Prices
 
 
 
 def append_all_debug(df_list):
-    # [Prices.c, Prices.o, points_dff_values_df, coin_signal, int_signal, changes, changes_by_signal]
-    prefix_names = ['open', 'pt_diff_values', 'plt_df', 'signal', 'int_signal', 'changes', 'changes_by_signal']
+    # [Prices.c, Prices.o, points_dff_values_df, coin_signal, int_signal, changes, ret_by_signal]
+    prefix_names = ['open', 'pt_diff_values', 'plt_df', 'signal', 'int_signal', 'changes', 'earning_by_signal']
     all_df = None
     for i, df in enumerate(df_list):
         df.columns = [col_name + '_' + prefix_names[i] for col_name in df.columns]
@@ -176,20 +195,20 @@ def append_all_debug(df_list):
             all_df = pd.concat([all_df, df], axis=1, join='inner')
     return all_df
 
-def get_changes_by_signal(changes, signal):
+def get_coin_earning_by_signal(earning, signal):
     """
-    :param changes:
-    :param signal:
-    :return:
+    :param earning: earning
+    :param signal: pd.Series (Boolean)
+    :earningurn:
     """
-    changes_by_signal = pd.DataFrame(index=signal.index)
+    earning_by_signal = pd.DataFrame(index=signal.index)
     for name in signal.columns:
         signal.loc[:, name] = signalModel.discard_head_signal(signal[name])
         signal.loc[:, name] = signalModel.discard_tail_signal(signal[name])
-        changes_by_signal[name] = signal[name].shift(2) * changes[name] # shift 2 unit see (30e)
-    return changes_by_signal
+        earning_by_signal[name] = signal[name].shift(2) * earning[name] # shift 2 unit see (30e)
+    return earning_by_signal
 
-def get_changes(exchange_rate_df, points_dff_values_df, coefficient_vector):
+def get_coin_earning(exchange_rate_df, points_dff_values_df, coefficient_vector):
     """
     :param exchange_rate_df: pd.Dataframe, that exchange the dollar into same deposit assert
     :param points_dff_values_df: points the change with respect to quote currency
@@ -202,10 +221,10 @@ def get_changes(exchange_rate_df, points_dff_values_df, coefficient_vector):
     long_spread_weighted_pt_diff = points_dff_values_df.values * long_spread_weight_factor
     short_spread_weighted_pt_diff = points_dff_values_df.values * short_spread_weight_factor
     # calculate the price in required deposit dollar
-    changes = pd.DataFrame(index=exchange_rate_df.index)
-    changes['long'] = np.sum(exchange_rate_df.values * long_spread_weighted_pt_diff, axis=1)
-    changes['short'] = np.sum(exchange_rate_df.values * short_spread_weighted_pt_diff, axis=1)
-    return changes
+    earning = pd.DataFrame(index=exchange_rate_df.index)
+    earning['long'] = np.sum(exchange_rate_df.values * long_spread_weighted_pt_diff, axis=1)
+    earning['short'] = np.sum(exchange_rate_df.values * short_spread_weighted_pt_diff, axis=1)
+    return earning
 
 def get_int_signal(signal):
     int_signal = pd.DataFrame(index=signal.index)
@@ -213,24 +232,27 @@ def get_int_signal(signal):
     int_signal['short'] = signal['short'].astype(int).diff(1)
     return int_signal
 
-def get_coin_signal(plt_df, upper_th, lower_th):
-    signal = pd.DataFrame(index=plt_df.index)
-    signal['long'] = plt_df['z_score'].values < lower_th
-    signal['short'] = plt_df['z_score'].values > upper_th
+def get_coin_signal(coin_data, upper_th, lower_th):
+    signal = pd.DataFrame(index=coin_data.index)
+    signal['long'] = coin_data['z_score'].values < lower_th
+    signal['short'] = coin_data['z_score'].values > upper_th
     return signal
 
-def get_points_dff_values_df(open_prices, all_symbols_info):
+def get_points_dff_values_df(symbols, open_prices, all_symbols_info, temp_col_name=None):
     """
-    :param plt_df: pd.Dataframe
     :param symbols: [str]
+    :param open_prices: pd.Dataframe with open price
     :param all_symbols_info: tuple, mt5.symbols_get(). The info including the digits.
-    :return: plt_df, new pd.Dataframe
+    :param temp_col_name: set None to use the symbols as column names. Otherwise, rename as fake column name
+    :return: points_dff_values_df, new pd.Dataframe
     take the difference from open price
     """
     points_dff_values_df = pd.DataFrame(index=open_prices.index)
-    for symbol in open_prices.columns:
+    for c, symbol in enumerate(symbols):
         digits = all_symbols_info[symbol].digits - 1
-        points_dff_values_df[symbol] = (open_prices[symbol] - open_prices[symbol].shift(periods=1)) * 10 ** (digits) * all_symbols_info[symbol].pt_value
+        points_dff_values_df[symbol] = (open_prices.iloc[:,c] - open_prices.iloc[:,c].shift(periods=1)) * 10 ** (digits) * all_symbols_info[symbol].pt_value
+    if temp_col_name != None:
+        points_dff_values_df.columns = [temp_col_name] * len(symbols)
     return points_dff_values_df
 
 def modify_exchange_rate(exchange_rate_df, exchange_symbols, deposit_currency):
