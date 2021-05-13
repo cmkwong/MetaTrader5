@@ -52,7 +52,7 @@ def get_stat(open_prices, earning, signal, coefficient_vector=1):
         for c, symbol in enumerate(open_prices):
             ret_list = returnModel.get_ret_list(open_prices[symbol], signal)
             ret_arr[:,c] = ret_list
-        weight_factor = np.append(-1 * coefficient_vector[1:], 1)
+        weight_factor = np.append(-1 * coefficient_vector[1:], 1) # long spread mode
         ret_overall = np.sum(ret_arr * weight_factor, axis=1)
         stat["accum_ret"] = np.sum(ret_overall, axis=0)
         stat["mean"] = np.mean(ret_overall)
