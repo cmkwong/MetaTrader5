@@ -1,4 +1,5 @@
 from production.codes.models.backtestModel import indexModel
+import pandas as pd
 
 def get_ret_list(open_price, signal):
     """
@@ -21,6 +22,12 @@ def get_ret(open_price):
     shifts = open_price.shift(1)
     ret = 1 + diffs / shifts
     return ret
+
+def get_rets_df_debug(open_prices):
+    rets = pd.DataFrame(index=open_prices.index)
+    for name in open_prices.columns:
+        rets[name] = get_ret(open_prices[name])
+    return rets
 
 # def get_ret(df):
 #     """

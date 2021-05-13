@@ -1,7 +1,7 @@
 from production.codes import config
 from production.codes.controllers import mt5Controller
 from production.codes.models import mt5Model, plotModel, coinModel
-from production.codes.models.backtestModel import statModel, indexModel
+from production.codes.models.backtestModel import statModel, indexModel, returnModel
 from production.codes.views import plotView
 
 from datetime import datetime
@@ -49,9 +49,11 @@ with mt5Controller.Helper():
 
     testSignal = indexModel.get_open_index(train_int_signal['long'])
 
-    all_df = mt5Model.append_all_debug([Prices.o, Prices.ptDv, train_coin_data, train_coin_signal, train_int_signal, earning, earning_by_signal])
+    rets_df = returnModel.get_rets_df_debug(Train_Prices.o)
 
-    stat = statModel.get_stat(Train_Prices.o, earning['long_changes'], train_coin_signal['long_signal'], coefficient_vector)
+    all_df = mt5Model.append_all_debug([Train_Prices.o, Train_Prices.ptDv, Train_Prices.exchg, rets_df, train_coin_data, train_coin_signal, train_int_signal, earning, earning_by_signal])
+
+    stat = statModel.get_stat(Train_Prices.o, earning['long_earning'], train_coin_signal['long_signal'], coefficient_vector)
     # save the plot
     plotView.save_plot(train_plt_df, test_plt_df, data_options['symbols'], 0, train_options['price_plt_save_path'],
                        train_options['dt'], dpi=500, linewidth=0.2, title=title, figure_size=(28,12))
