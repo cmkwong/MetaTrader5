@@ -34,7 +34,22 @@ def get_action_detail(open_price, signal):
         action_details[key] = r
     return action_details
 
-def get_stat(open_prices, earning, signal, coefficient_vector=1):
+def get_stat(df, signal):
+    """
+    :return: stat dictionary
+    """
+    stat = {}
+    if signal.sum() != 0:
+        stat["count"] = get_action_total(signal)
+        stat["accum"] = returnModel.get_accum_ret(df, signal)
+        stat["mean"] = np.mean(returnModel.get_ret_list(df, signal))
+        stat["max"] = np.max(returnModel.get_ret_list(df, signal))
+        stat["min"] = np.min(returnModel.get_ret_list(df, signal))
+        stat["std"] = np.std(returnModel.get_ret_list(df, signal))
+        stat["acc"] = get_accuracy(df, signal)
+    return stat
+
+def get_stat2(open_prices, earning, signal, coefficient_vector):
     """
     :param open_prices: pd.Series (There may be many different symbols of open prices)
     :param earning:
@@ -61,5 +76,26 @@ def get_stat(open_prices, earning, signal, coefficient_vector=1):
         stat["std"] = np.std(ret_overall)
         stat["acc"] = np.sum([c > 1 for c in ret_overall]) / len(ret_overall)
     return stat
+
+def get_coin_stat(open_prices, earning, signal, coefficient_vector):
+    """
+    :param open_prices: pd.Dataframe
+    :param earning:
+    :param signal:
+    :param coefficient_vector:
+    :return:
+    """
+    stat = {}
+    signal = signalModel.discard_head_signal(signal)
+    signal = signalModel.discard_tail_signal(signal)
+    if signal.sum() != 0:
+        stat["count"] = get_action_total(signal)
+        stat["accum_earning"] = returnModel.get_accum_earning(earning, signal)
+
+        stat["mean"] = np.mean(returnModel.get_ret_list(df, signal))
+        stat["max"] = np.max(returnModel.get_ret_list(df, signal))
+        stat["min"] = np.min(returnModel.get_ret_list(df, signal))
+        stat["std"] = np.std(returnModel.get_ret_list(df, signal))
+        stat["acc"] = get_accuracy(df, signal)
 
 

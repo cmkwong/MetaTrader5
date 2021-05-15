@@ -295,8 +295,8 @@ def modify_exchange_rate(symbols, exchange_symbols, exchange_rate_df, deposit_cu
             else:
                 symbol_new_names.append("{}".format(deposit_currency))
                 exchange_rate_df.iloc[:, i] = 1.0
-
-    return exchange_rate_df, symbol_new_names
+    # finally shift the exchange rate forward, see Note 34b
+    return exchange_rate_df.shift(1), symbol_new_names
 
 def get_exchange_symbols(symbols, all_symbols_info, deposit_currency='USD', type='q2d'):
     """
