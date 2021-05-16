@@ -51,7 +51,7 @@ with mt5Controller.Helper():
 
     rets_df = returnModel.get_rets_df_debug(Train_Prices.o)
 
-    weighted_ret_df = returnModel.get_weighted_ret_df(Train_Prices.o, Train_Prices.quote_exchg, coefficient_vector)
+    ret_df = returnModel.get_weighted_ret_df(Train_Prices.o, Train_Prices.quote_exchg, coefficient_vector)
 
     all_df = mt5Model.append_all_debug([Train_Prices.o, Train_Prices.ptDv, Train_Prices.quote_exchg, Train_Prices.base_exchg, rets_df, train_coin_data, train_coin_signal, train_int_signal, earning, earning_by_signal])
 

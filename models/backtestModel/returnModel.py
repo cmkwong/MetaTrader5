@@ -55,12 +55,12 @@ def get_weighted_ret_df(open_prices, exchg_q2d, coefficient_vector):
     long_spread_weight_factor = np.append(-1 * coefficient_vector[1:], 1)   # buy real, sell predict
     short_spread_weight_factor = np.append(coefficient_vector[1:], -1)      # buy predict, sell real
     old_value_df, new_value_df, ret_df = pd.DataFrame(index=open_prices.index), pd.DataFrame(index=open_prices.index), pd.DataFrame(index=open_prices.index)
-    old_value_df['long'] = np.sum(open_prices.values * long_spread_weight_factor * exchg_q2d.values, axis=1)
-    old_value_df['short'] = np.sum(open_prices.values * short_spread_weight_factor * exchg_q2d.values, axis=1)
-    new_value_df['long'] = np.sum(open_prices.values * long_spread_weight_factor * exchg_q2d.shift(1).values, axis=1)
-    new_value_df['short'] = np.sum(open_prices.values * short_spread_weight_factor * exchg_q2d.shift(1).values, axis=1)
-    ret_df['long'] = new_value_df['long'] / old_value_df['long'].shift(1)
-    ret_df['short'] = old_value_df['short'].shift(1) / new_value_df['short']
+    old_value_df['long'] = (open_prices * long_spread_weight_factor * exchg_q2d.values).sum(axis=1).shift(1)
+    old_value_df['short'] = (open_prices * short_spread_weight_factor * exchg_q2d.values).sum(axis=1).shift(1)
+    new_value_df['long'] = (open_prices * long_spread_weight_factor * exchg_q2d.shift(1).values).sum(axis=1)
+    new_value_df['short'] = (open_prices * short_spread_weight_factor * exchg_q2d.shift(1).values).sum(axis=1)
+    ret_df['long'] = new_value_df['long'] / old_value_df['long']
+    ret_df['short'] = old_value_df['short'] / new_value_df['short']
     return ret_df
 
 def get_accum_ret(open_price, signal):

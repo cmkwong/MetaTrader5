@@ -234,8 +234,8 @@ def get_coin_earning(exchange_rate_df, points_dff_values_df, coefficient_vector)
     short_spread_weighted_pt_diff = points_dff_values_df.values * short_spread_weight_factor
     # calculate the price in required deposit dollar
     earning = pd.DataFrame(index=exchange_rate_df.index)
-    earning['long'] = np.sum(exchange_rate_df.values * long_spread_weighted_pt_diff, axis=1)
-    earning['short'] = np.sum(exchange_rate_df.values * short_spread_weighted_pt_diff, axis=1)
+    earning['long'] = np.sum(exchange_rate_df.shift(1).values * long_spread_weighted_pt_diff, axis=1)
+    earning['short'] = np.sum(exchange_rate_df.shift(1).values * short_spread_weighted_pt_diff, axis=1)
     return earning
 
 def get_int_signal(signal):
@@ -295,8 +295,7 @@ def modify_exchange_rate(symbols, exchange_symbols, exchange_rate_df, deposit_cu
             else:
                 symbol_new_names.append("{}".format(deposit_currency))
                 exchange_rate_df.iloc[:, i] = 1.0
-    # finally shift the exchange rate forward, see Note 34b
-    return exchange_rate_df.shift(1), symbol_new_names
+    return exchange_rate_df, symbol_new_names
 
 def get_exchange_symbols(symbols, all_symbols_info, deposit_currency='USD', type='q2d'):
     """
