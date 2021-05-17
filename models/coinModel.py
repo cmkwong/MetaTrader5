@@ -1,5 +1,6 @@
 import numpy as np
-from production.codes.models import mt5Model
+import pandas as pd
+from production.codes.utils import maths
 
 def get_coefficient_vector(input, target):
     """
@@ -24,6 +25,21 @@ def get_predicted_arr(input, coefficient_vector):
     A = np.concatenate((np.ones((len(input), 1)), input.reshape(len(input),-1)), axis=1)
     b = np.dot(A, coefficient_vector.reshape(-1,1)).reshape(-1,)
     return b
+
+def get_coin_data(close_prices, coefficient_vector, windows=3):
+    """
+    :param close_prices: accept the train and test prices in pd.dataframe format
+    :param coefficient_vector:
+    :return:
+    """
+    coin_data = pd.DataFrame(index=close_prices.index)
+    coin_data['real'] = close_prices.iloc[:,-1]
+    coin_data['predict'] = get_predicted_arr(close_prices.iloc[:,:-1].values, coefficient_vector)
+    spread = coin_data['real'] - coin_data['predict']
+    coin_data['spread'] = spread
+    coin_data['z_score'] = maths.z_score_with_rolling_mean(spread.values, windows)
+    return coin_data
+
 
 # def get_current_spread(coefficient_vector, symbols, timeframe, timezone, start):
 #     """

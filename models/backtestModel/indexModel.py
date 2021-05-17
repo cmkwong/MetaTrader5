@@ -6,7 +6,7 @@ def get_open_index(int_signal):
     :return: list
     """
     start_index = []
-    start_index.extend([index for index in int_signal[int_signal.shift(1) == 1].index])  # see note point 6 why added by 1
+    start_index.extend([index + 1 for index in int_signal[int_signal == 1].index])  # see note point 6 why added by 1
     return start_index
 
 def get_close_index(int_signal):
@@ -15,7 +15,7 @@ def get_close_index(int_signal):
     :return: list
     """
     end_index = []
-    end_index.extend([index for index in int_signal[int_signal.shift(1) == -1].index]) # see note point 6 why added by 1
+    end_index.extend([index + 1 for index in int_signal[int_signal == -1].index]) # see note point 6 why added by 1
     return end_index
 
 def get_action_start_end_index(signal):

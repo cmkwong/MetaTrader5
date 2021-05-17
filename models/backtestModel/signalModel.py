@@ -1,4 +1,6 @@
 from production.codes.models.backtestModel import techModel, indexModel
+import numpy as np
+import pandas as pd
 
 def discard_head_signal(signal):
     """
@@ -29,8 +31,18 @@ def discard_tail_signal(signal):
     return signal
 
 def get_int_signal(signal):
+    """
+    :param signal: pd.Series()
+    :return: pd.Series(), int_signal
+    """
     int_signal = signal.astype(int).diff(1)
     return int_signal
+
+# def get_int_signal(signal):
+#     int_signal = pd.DataFrame(index=signal.index)
+#     int_signal['long'] = signal['long'].astype(int).diff(1)
+#     int_signal['short'] = signal['short'].astype(int).diff(1)
+#     return int_signal
 
 def maxLimitClosed(signal, limit_unit):
     """
@@ -98,3 +110,21 @@ def get_movingAverage_signal(df, fast_index, slow_index, limit_unit, long_mode=T
     if limit_unit > 0:
         signal = maxLimitClosed(signal, limit_unit)
     return signal
+
+def get_coin_signal(coin_data, upper_th, lower_th):
+    """
+    :param coin_data: pd.Dataframe(), columns='real','predict','spread','z_score'
+    :param upper_th: float
+    :param lower_th: float
+    :return: pd.Series() for long and short
+    """
+    long_signal = pd.Series(coin_data['z_score'].values < lower_th, index=coin_data.index, name='long_signal')
+    short_signal = pd.Series(coin_data['z_score'].values > upper_th, index=coin_data.index, name='short_signal')
+    return long_signal, short_signal
+
+def get_modify_coefficient_vector(long_mode, coefficient_vector):
+    if long_mode:
+        modified_coefficient_vector = np.append(-1 * coefficient_vector[1:], 1)  # buy real, sell predict
+    else:
+        modified_coefficient_vector = np.append(coefficient_vector[1:], -1)  # buy predict, sell real
+    return modified_coefficient_vector.reshape(-1,1)

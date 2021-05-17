@@ -1,4 +1,4 @@
-from production.codes.models.backtestModel import signalModel
+from production.codes.models.backtestModel import returnModel, pointsModel
 from production.codes.utils import tools
 import pandas as pd
 import numpy as np
@@ -140,7 +140,7 @@ def get_Prices(symbols, all_symbols_info, timeframe, timezone, start, end=None, 
 
     # get point diff values
     diff_name = "ptDv"
-    points_dff_values_df = get_points_dff_values_df(symbols, prices_df['open'], all_symbols_info, temp_col_name=diff_name)
+    points_dff_values_df = pointsModel.get_points_dff_values_df(symbols, prices_df['open'], all_symbols_info, temp_col_name=diff_name)
 
     # get the quote to deposit exchange rate
     q2d_name = "q2d"
@@ -172,7 +172,7 @@ def get_Prices(symbols, all_symbols_info, timeframe, timezone, start, end=None, 
 
     # re-assign the columns name
     for i, df in enumerate(Prices):
-        if i < len(Prices) - 3:
+        if i < len(Prices) - 2:
             df.columns = symbols
         elif i == len(Prices) - 2:
             df.columns = q2d_modified_names
@@ -206,66 +206,6 @@ def append_all_debug(df_list):
         else:
             all_df = pd.concat([all_df, df], axis=1, join='inner')
     return all_df
-
-def get_coin_earning_by_signal(earning, signal):
-    """
-    :param earning: earning
-    :param signal: pd.Series (Boolean)
-    :earningurn:
-    """
-    earning_by_signal = pd.DataFrame(index=signal.index)
-    for name in signal.columns:
-        signal.loc[:, name] = signalModel.discard_head_signal(signal[name])
-        signal.loc[:, name] = signalModel.discard_tail_signal(signal[name])
-        earning_by_signal[name] = signal[name].shift(2) * earning[name] # shift 2 unit see (30e)
-    return earning_by_signal
-
-def get_coin_earning(exchange_rate_df, points_dff_values_df, coefficient_vector):
-    """
-    :param exchange_rate_df: pd.Dataframe, that exchange the dollar into same deposit assert
-    :param points_dff_values_df: points the change with respect to quote currency
-    :param coefficient_vector: the coefficient from training of linear regression
-    :return:
-    """
-    # calculate the dollar change in exchange rate
-    long_spread_weight_factor = np.append(-1 * coefficient_vector[1:], 1) # buy real, sell predict
-    short_spread_weight_factor = np.append(coefficient_vector[1:], -1) # buy predict, sell real
-    long_spread_weighted_pt_diff = points_dff_values_df.values * long_spread_weight_factor
-    short_spread_weighted_pt_diff = points_dff_values_df.values * short_spread_weight_factor
-    # calculate the price in required deposit dollar
-    earning = pd.DataFrame(index=exchange_rate_df.index)
-    earning['long'] = np.sum(exchange_rate_df.shift(1).values * long_spread_weighted_pt_diff, axis=1)
-    earning['short'] = np.sum(exchange_rate_df.shift(1).values * short_spread_weighted_pt_diff, axis=1)
-    return earning
-
-def get_int_signal(signal):
-    int_signal = pd.DataFrame(index=signal.index)
-    int_signal['long'] = signal['long'].astype(int).diff(1)
-    int_signal['short'] = signal['short'].astype(int).diff(1)
-    return int_signal
-
-def get_coin_signal(coin_data, upper_th, lower_th):
-    signal = pd.DataFrame(index=coin_data.index)
-    signal['long'] = coin_data['z_score'].values < lower_th
-    signal['short'] = coin_data['z_score'].values > upper_th
-    return signal
-
-def get_points_dff_values_df(symbols, open_prices, all_symbols_info, temp_col_name=None):
-    """
-    :param symbols: [str]
-    :param open_prices: pd.Dataframe with open price
-    :param all_symbols_info: tuple, mt5.symbols_get(). The info including the digits.
-    :param temp_col_name: set None to use the symbols as column names. Otherwise, rename as fake column name
-    :return: points_dff_values_df, new pd.Dataframe
-    take the difference from open price
-    """
-    points_dff_values_df = pd.DataFrame(index=open_prices.index)
-    for c, symbol in enumerate(symbols):
-        digits = all_symbols_info[symbol].digits - 1
-        points_dff_values_df[symbol] = (open_prices.iloc[:,c] - open_prices.iloc[:,c].shift(periods=1)) * 10 ** (digits) * all_symbols_info[symbol].pt_value
-    if temp_col_name != None:
-        points_dff_values_df.columns = [temp_col_name] * len(symbols)
-    return points_dff_values_df
 
 def modify_exchange_rate(symbols, exchange_symbols, exchange_rate_df, deposit_currency, type='q2d'):
     """
