@@ -88,3 +88,19 @@ class Trainer:
             steps += 1
         mean_loss = total_loss / steps
         return mean_loss
+
+def get_coinNN_data(prices_df, model, seq_len):
+    """
+    :param prices_matrix: accept the train and test prices in array format
+    :param model: torch model to get the predicted value
+    :param data_options: dict
+    :return: array for plotting
+    """
+    plt_df = pd.DataFrame(index=prices_df.index)
+    for symbol in prices_df.columns:
+        plt_df[symbol] = prices_df[symbol]
+    plt_df['predict'] = model.get_predicted_arr(prices_df.iloc[:,:-1].values, seq_len)
+    spread = prices_df.iloc[:, -1] - plt_df['predict']
+    plt_df['spread'] = spread
+    plt_df['z_score'] = maths.z_score_with_rolling_mean(spread.values, 10)
+    return plt_df

@@ -121,10 +121,3 @@ def get_coin_signal(coin_data, upper_th, lower_th):
     long_signal = pd.Series(coin_data['z_score'].values < lower_th, index=coin_data.index, name='long_signal')
     short_signal = pd.Series(coin_data['z_score'].values > upper_th, index=coin_data.index, name='short_signal')
     return long_signal, short_signal
-
-def get_modify_coefficient_vector(long_mode, coefficient_vector):
-    if long_mode:
-        modified_coefficient_vector = np.append(-1 * coefficient_vector[1:], 1)  # buy real, sell predict
-    else:
-        modified_coefficient_vector = np.append(coefficient_vector[1:], -1)  # buy predict, sell real
-    return modified_coefficient_vector.reshape(-1,1)

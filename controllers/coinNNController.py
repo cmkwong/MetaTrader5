@@ -62,10 +62,10 @@ while True:
         printStat.loss_status(writer, test_loss, episode, mode='test')
 
     if episode % train_options['check_price_plot'] == 0:
-        title = plotModel.get_plot_title(data_options['start'], data_options['end'], mt5Model.get_timeframe2txt(data_options['timeframe']))
-        train_plt_df = plotModel.get_plotting_data(train_prices_df, lstm, data_options['seq_len'])
-        test_plt_df = plotModel.get_plotting_data(test_prices_df, lstm, data_options['seq_len'])
-        plotView.save_plot(train_plt_df, test_plt_df, data_options['symbols'], episode, train_options['price_plt_saved_path'],
+        title = plotModel.get_coin_plot_title(data_options['start'], data_options['end'], mt5Model.get_timeframe2txt(data_options['timeframe']))
+        train_coinNN_data = coinNNModel.get_coinNN_data(train_prices_df, lstm, data_options['seq_len'])
+        test_coinNN_data = coinNNModel.get_coinNN_data(test_prices_df, lstm, data_options['seq_len'])
+        plotView.save_plot(train_coinNN_data, test_coinNN_data, data_options['symbols'], episode, train_options['price_plt_saved_path'],
                   train_options['dt'], dpi=500, linewidth=0.2, title=title, figure_size=(14,6))
     episode += 1
 

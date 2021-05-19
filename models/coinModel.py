@@ -40,21 +40,6 @@ def get_coin_data(close_prices, coefficient_vector, windows=3):
     coin_data['z_score'] = maths.z_score_with_rolling_mean(spread.values, windows)
     return coin_data
 
-
-# def get_current_spread(coefficient_vector, symbols, timeframe, timezone, start):
-#     """
-#     :param coefficient_vector: coefficient vector, size = (feature_size, )
-#     :param symbols: [str]
-#     :param timeframe: mt5.timeframe
-#     :param timezone: str: "Hongkong"
-#     :param count: int
-#     :return: spread
-#     """
-#     price_matrix = mt5Model.get_prices_df(symbols, timeframe, timezone, start).values
-#     b = get_predicted_arr(price_matrix[:,:-1], coefficient_vector)
-#     spread = price_matrix[:,-1].reshape(-1,) - b
-#     return spread
-
 # data_options = {
 #     'start': (2010,1,1,0,0),
 #     'end': (2021,5,4,0,0),

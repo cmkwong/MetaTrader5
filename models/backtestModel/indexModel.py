@@ -30,13 +30,6 @@ def get_action_start_end_index(signal):
     end_index = get_close_index(int_signal)
     return start_index, end_index
 
-# def get_index_for_compute_return(signal):
-#     """
-#     :param signal: pd.Series
-#     :return: list: start_index, end_index
-#     """
-#     signal.shift(2)[signal == True].index
-
 def simple_limit_end_index(starts, ends, limit_unit):
     """
     modify the ends_index, eg. close the trade until specific unit

@@ -1,6 +1,5 @@
 import numpy as np
 import collections
-import pandas as pd
 from production.codes.utils import tools
 
 def create_indexes(batch_size, seq_len, data_total, shuffle=True):

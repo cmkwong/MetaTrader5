@@ -16,8 +16,8 @@ def moving_average_backtest(options, fast_index, slow_index, limit_unit, bins=10
         details = statModel.get_action_detail(df, signal)
         stat = statModel.get_stat(df, signal)
         stat["fast"], stat["slow"], stat["limit"] = fast_index, slow_index, limit_unit
-        printStat.print_dict(details)
-        printStat.print_dict(stat)
+        printStat.print_stat(details)
+        printStat.print_stat(stat)
 
         # plot graph
         ret_list = returnModel.get_change_list(df, signal)
@@ -39,7 +39,7 @@ def optimize_moving_average(options, max_index=201):
                     stat["fast"], stat["slow"], stat["limit"] = fast_index, slow_index, limit_unit
                     helper.append_dict_into_text(stat)
                     # print results
-                    printStat.print_dict(stat)
+                    printStat.print_stat(stat)
         helper.write_csv()
 
 options = {

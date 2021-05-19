@@ -193,20 +193,6 @@ def split_Prices(Prices, percentage):
     Test_Prices = prices._make(test_list)
     return Train_Prices, Test_Prices
 
-
-
-def append_all_debug(df_list):
-    # [Prices.c, Prices.o, points_dff_values_df, coin_signal, int_signal, changes, ret_by_signal]
-    prefix_names = ['open', 'pt_diff_values', 'q2d', 'b2d', 'ret', 'plt_data', 'signal', 'int_signal', 'earning', 'earning_by_signal']
-    all_df = None
-    for i, df in enumerate(df_list):
-        df.columns = [(col_name + '_' + prefix_names[i]) for col_name in df.columns]
-        if i == 0:
-            all_df = pd.DataFrame(df.values, index=df.index, columns=df.columns)
-        else:
-            all_df = pd.concat([all_df, df], axis=1, join='inner')
-    return all_df
-
 def modify_exchange_rate(symbols, exchange_symbols, exchange_rate_df, deposit_currency, type='q2d'):
     """
     :param symbols:             ['AUDJPY', 'AUDUSD', 'CADJPY', 'EURUSD', 'NZDUSD', 'USDCAD']
@@ -286,13 +272,3 @@ def get_all_symbols_info():
         else:
             symbols_info[symbol_name].pt_value = 10     # 10 dollar for quote per each point
     return symbols_info
-
-# # establish connection to the MetaTrader 5 terminal
-# if not mt5.initialize():
-#     print("initialize() failed, error code =",mt5.last_error())
-#     quit()
-#
-# symbols = ["AUDJPY", "AUDUSD", "CADJPY", "EURUSD", "NZDUSD", "USDCAD"]
-#
-# mt5.shutdown()
-# print()
