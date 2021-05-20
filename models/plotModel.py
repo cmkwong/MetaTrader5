@@ -1,7 +1,7 @@
 import pandas as pd
 from production.codes.models import mt5Model, coinModel
 from production.codes.utils import maths
-from production.codes.models.backtestModel import returnModel
+from production.codes.models.backtestModel import returnModel, signalModel, statModel
 
 def get_coin_plot_title(start, end, timeframe_str):
     start_str = mt5Model.get_time_string(start)
@@ -19,7 +19,7 @@ def get_coin_plot_image_name(dt_str, symbols, episode):
     name = "{}-{}-episode-{}.jpg".format(dt_str, episode, symbols_str)
     return name
 
-def get_coin_plt_data(Prices, long_signal, short_signal, coefficient_vector, stats):
+def get_coin_plt_data(Prices, coefficient_vector, upper_th, lower_th):
     """
     :param Prices:
     :param long_signal:
@@ -28,7 +28,10 @@ def get_coin_plt_data(Prices, long_signal, short_signal, coefficient_vector, sta
     :param stats: nametuple object included for long and short signal
     :return:
     """
+    # prepare
     coin_data = coinModel.get_coin_data(Prices.c, coefficient_vector)
+    long_signal, short_signal = signalModel.get_coin_signal(coin_data, upper_th, lower_th)
+    stats = statModel.get_stats(Prices, long_signal, short_signal, coefficient_vector)
     plt_data = {}
 
     # first graph: real and predict

@@ -33,7 +33,7 @@ def save_plot(train_plt_data, test_plt_data, symbols, episode, saved_path, dt_st
         train_start_index, test_start_index = train_plt_data[i]['df'].index[0], test_plt_data[0]['df'].index[0]
         if train_plt_data[i]['text'] != None and test_plt_data[i]['text'] != None:
             plt.text(train_start_index, df.iloc[:,0].quantile(0.1), "Train \n" + train_plt_data[i]['text'], fontsize=9)   # calculate the quantile 0.1 to get the y-position
-            plt.text(test_start_index, df.iloc[:,0].quantile(0.1), "Train \n" + test_plt_data[i]['text'], fontsize=9)     # calculate the quantile 0.1 to get the y-position
+            plt.text(test_start_index, df.iloc[:,0].quantile(0.1), "Test \n" + test_plt_data[i]['text'], fontsize=9)     # calculate the quantile 0.1 to get the y-position
 
         # equation
         if train_plt_data[i]['equation'] != None and test_plt_data[i]['equation'] != None:
