@@ -1,7 +1,7 @@
 
-def print_stat(stat):
+def print_dict(data_dict):
     print("\n~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*")
-    for key, value in stat.items():
+    for key, value in data_dict.items():
         print("{}:\t{:.5f}".format(key, value))
 
 def loss_status(writer, loss, episode, mode='train'):

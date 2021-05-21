@@ -1,7 +1,5 @@
 import numpy as np
-import collections
 from production.codes.models.backtestModel import returnModel, indexModel, signalModel
-
 
 def get_accuracy(rets):
     accuracy = np.sum([c > 1 for c in rets]) / len(rets)
@@ -38,8 +36,6 @@ def get_stat(Prices, signal, coefficient_vector, long_mode=True):
     :return:
     """
     stat = {}
-    signal = signalModel.discard_head_signal(signal)
-    signal = signalModel.discard_tail_signal(signal)
     if signal.sum() != 0:
         # earning
         stat['earning'] = {}

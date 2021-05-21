@@ -34,7 +34,7 @@ model_options = {
 train_options = {
     'test_epiosdes': 5,
     'check_price_plot': 5,
-    'price_plt_save_path': options['main_path'] + "coin_plt/",
+    'price_plt_save_path': options['main_path'] + "coin_NN_plt/",
     'tensorboard_save_path': options['main_path'] + "runs/",
     'dt': DT_STRING,
     'z_score_rolling_mean_window': 10,
@@ -80,10 +80,10 @@ with mt5Controller.Helper():
             # test_long_signal, test_short_signal = signalModel.get_coin_NN_signal(test_coinNN_data, upper_th=0.3, lower_th=-0.1)
 
             coefficient_vector = lstm.get_coefficient_vector()
-            train_plt_datas = plotModel.get_coin_plt_datas(Train_Prices, coefficient_vector, upper_th=0.1, lower_th=-0.1, z_score_rolling_mean_window=3)
-            test_plt_datas = plotModel.get_coin_plt_datas(Test_Prices, coefficient_vector, upper_th=0.1, lower_th=-0.1, z_score_rolling_mean_window=3)
+            train_plt_datas = plotModel.get_coin_NN_plt_datas(Train_Prices, coefficient_vector, upper_th=0.1, lower_th=-0.1, z_score_rolling_mean_window=3)
+            test_plt_datas = plotModel.get_coin_NN_plt_datas(Test_Prices, coefficient_vector, upper_th=0.1, lower_th=-0.1, z_score_rolling_mean_window=3)
 
-            title = plotModel.get_coin_plot_title(data_options['start'], data_options['end'], mt5Model.get_timeframe2txt(data_options['timeframe']))
+            title = plotModel.get_coin_NN_plot_title(data_options['start'], data_options['end'], mt5Model.get_timeframe2txt(data_options['timeframe']))
             plotView.save_plot(train_plt_datas, test_plt_datas, data_options['symbols'], episode,
                                train_options['price_plt_save_path'],
                                train_options['dt'], dpi=500, linewidth=0.2, title=title, figure_size=(56, 24))

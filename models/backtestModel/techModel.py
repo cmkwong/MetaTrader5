@@ -8,10 +8,11 @@ def get_rsi(df, period):
     rsi = talib.RSI(df['close'], timeperiod=period)
     return rsi
 
-def get_moving_average(df, m_value):
+def get_moving_average(close_price, m_value):
     """
+    :param close_price: pd.DataFrame
     :param m_value: int
-    :return: Series
+    :return: pd.Series
     """
-    moving_average = df['close'].rolling(m_value).sum() / m_value
+    moving_average = close_price.rolling(m_value).sum() / m_value
     return moving_average

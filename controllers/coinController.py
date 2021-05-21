@@ -1,7 +1,6 @@
 from production.codes import config
 from production.codes.controllers import mt5Controller
 from production.codes.models import mt5Model, plotModel, coinModel
-from production.codes.models.backtestModel import statModel, signalModel
 from production.codes.views import plotView
 
 from datetime import datetime
@@ -49,11 +48,11 @@ with mt5Controller.Helper():
     # train_stats = statModel.get_stats(Train_Prices, train_long_signal, train_short_signal, coefficient_vector)
     # test_stats = statModel.get_stats(Test_Prices, test_long_signal, test_short_signal, coefficient_vector)
 
-    train_plt_datas = plotModel.get_coin_plt_datas(Train_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'], train_options['z_score_rolling_mean_window'])
-    test_plt_datas = plotModel.get_coin_plt_datas(Test_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'], train_options['z_score_rolling_mean_window'])
+    train_plt_datas = plotModel.get_coin_NN_plt_datas(Train_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'], train_options['z_score_rolling_mean_window'])
+    test_plt_datas = plotModel.get_coin_NN_plt_datas(Test_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'], train_options['z_score_rolling_mean_window'])
 
     # save the plot
-    title = plotModel.get_coin_plot_title(data_options['start'], data_options['end'], mt5Model.get_timeframe2txt(data_options['timeframe']))
+    title = plotModel.get_coin_NN_plot_title(data_options['start'], data_options['end'], mt5Model.get_timeframe2txt(data_options['timeframe']))
     plotView.save_plot(train_plt_datas, test_plt_datas, data_options['symbols'], 0, train_options['price_plt_save_path'],
                        train_options['dt'], dpi=500, linewidth=0.2, title=title, figure_size=(56,24))
 

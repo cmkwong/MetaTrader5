@@ -164,13 +164,13 @@ def get_Prices(symbols, timeframe, timezone, start, end=None, ohlc='1111', depos
     prices_df = pd.concat([prices_df, points_dff_values_df, q2d_exchange_rate_df, b2d_exchange_rate_df], axis=1, join='inner')
 
     # assign the column into each collection tuple
-    Prices = Prices_collection(o=prices_df.loc[:,'open'],
-                               h=prices_df.loc[:,'high'],
-                               l=prices_df.loc[:,'low'],
-                               c=prices_df.loc[:,'close'],
-                               ptDv=prices_df.loc[:,diff_name],
-                               quote_exchg=prices_df.loc[:,q2d_name],
-                               base_exchg=prices_df.loc[:,b2d_name])
+    Prices = Prices_collection(o=pd.DataFrame(prices_df.loc[:,'open'], index=prices_df.index),
+                               h=pd.DataFrame(prices_df.loc[:,'high'], index=prices_df.index),
+                               l=pd.DataFrame(prices_df.loc[:,'low'], index=prices_df.index),
+                               c=pd.DataFrame(prices_df.loc[:,'close'], index=prices_df.index),
+                               ptDv=pd.DataFrame(prices_df.loc[:,diff_name], index=prices_df.index),
+                               quote_exchg=pd.DataFrame(prices_df.loc[:,q2d_name], index=prices_df.index),
+                               base_exchg=pd.DataFrame(prices_df.loc[:,b2d_name], index=prices_df.index))
 
     # re-assign the columns name
     for i, df in enumerate(Prices):

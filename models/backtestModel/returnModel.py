@@ -41,7 +41,7 @@ def get_ret(open_prices, exchg_q2d, coefficient_vector, long_mode):
     if long_mode:
         ret = pd.Series(new_value_df / old_value_df, index=open_prices.index, name='long')
     else:
-        ret = pd.Series(old_value_df / new_value_df, index=open_prices.index, name='short')
+        ret = pd.Series(old_value_df / new_value_df, index=open_prices.index, name='short') # if old/mew is correct to calculate the return for short? see Note 40d
     return ret
 
 def get_earning(exchg_q2d, points_dff_values_df, coefficient_vector, long_mode):
@@ -53,9 +53,9 @@ def get_earning(exchg_q2d, points_dff_values_df, coefficient_vector, long_mode):
     :return: pd.Series
     """
     modified_coefficient_vector = tools.get_modify_coefficient_vector(coefficient_vector, long_mode)
-    spread_weighted_pt_diff = points_dff_values_df.values * modified_coefficient_vector.reshape(-1,)
+    weighted_pt_diff = points_dff_values_df.values * modified_coefficient_vector.reshape(-1,)
     # calculate the price in required deposit dollar
-    earning = pd.Series(np.sum(exchg_q2d.shift(1).values * spread_weighted_pt_diff, axis=1), index=exchg_q2d.index, name="earning")  # see note 34b and 35 why shift(1)
+    earning = pd.Series(np.sum(exchg_q2d.shift(1).values * weighted_pt_diff, axis=1), index=exchg_q2d.index, name="earning")  # see note 34b and 35 why shift(1)
     return earning
 
 def get_earning_by_signal(earning, signal):

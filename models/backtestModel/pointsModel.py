@@ -9,6 +9,7 @@ def get_points_dff_values_df(symbols, open_prices, all_symbols_info, temp_col_na
     :return: points_dff_values_df, new pd.Dataframe
     take the difference from open price
     """
+    if type(open_prices) == pd.Series: open_prices = pd.DataFrame(open_prices, index=open_prices.index) # avoid the error of "too many index" if len(symbols) = 1
     points_dff_values_df = pd.DataFrame(index=open_prices.index)
     for c, symbol in enumerate(symbols):
         digits = all_symbols_info[symbol].digits - 1

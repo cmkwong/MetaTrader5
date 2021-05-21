@@ -1,55 +1,67 @@
-from production.codes.views import plotView
-from production.codes.views import printStat
-from production.codes.controllers import mt5Controller
 from production.codes import config
-from production.codes.models import mt5Model
-from production.codes.models.backtestModel import signalModel, returnModel, statModel
-
-
-def moving_average_backtest(options, fast_index, slow_index, limit_unit, bins=100):
-    with mt5Controller.Helper():
-        df = mt5Model.get_historical_data(options['symbol'], options['timeframe'], options['timezone'],
-                                          options['start'], options['end'])
-        signal = signalModel.get_movingAverage_signal(df, fast_index, slow_index, limit_unit, long_mode=options['long_mode'],
-                                                      backtest=options['backtest'])
-        # information and statistic
-        details = statModel.get_action_detail(df, signal)
-        stat = statModel.get_stat(df, signal)
-        stat["fast"], stat["slow"], stat["limit"] = fast_index, slow_index, limit_unit
-        printStat.print_stat(details)
-        printStat.print_stat(stat)
-
-        # plot graph
-        ret_list = returnModel.get_change_list(df, signal)
-        plotView.density(ret_list, bins=bins)
-
-def optimize_moving_average(options, max_index=201):
-    with mt5Controller.Helper() as helper:
-        df = mt5Model.get_historical_data(options['symbol'], options['timeframe'], options['timezone'],
-                                          options['start'], options['end'])
-        for limit_unit in range(config.LIMIT_UNIT):
-            for slow_index in range(1, max_index):
-                for fast_index in range(1, slow_index):
-                    if slow_index == fast_index:
-                        continue
-                    # moving average object
-                    signal = signalModel.get_movingAverage_signal(df, fast_index, slow_index, limit_unit,
-                                                                  long_mode=options['long_mode'], backtest=options['backtest'])
-                    stat = statModel.get_stat(df, signal)
-                    stat["fast"], stat["slow"], stat["limit"] = fast_index, slow_index, limit_unit
-                    helper.append_dict_into_text(stat)
-                    # print results
-                    printStat.print_stat(stat)
-        helper.write_csv()
+from production.codes.models import mt5Model, plotModel
+from production.codes.views import plotView
+from production.codes.controllers import mt5Controller
+from datetime import datetime
+now = datetime.now()
+DT_STRING = now.strftime("%y%m%d%H%M%S")
 
 options = {
+    'main_path': "C:/Users/Chris/projects/210215_mt5/production/docs/{}/".format(config.VERSION)
+}
+
+data_options = {
     'start': (2010, 1, 1, 0, 0),
     'end': (2020, 12, 30, 0, 0),
-    'symbol': "EURUSD",
-    'timeframe': mt5Model.get_txt2timeframe('H1'),
+    'symbols': ["EURUSD"],
+    'timeframe': mt5Model.get_txt2timeframe('D1'),
     'timezone': "Hongkong",
-    'long_mode': True,
-    'backtest': True
+    'deposit_currency': 'USD',
+    'trainTestSplit': 0.7,
 }
-moving_average_backtest(options, fast_index=3, slow_index=17, limit_unit=0, bins=100)
-# optimize_moving_average(options)
+train_options = {
+    'price_plt_save_path': options['main_path'] + "ma_backtest/",
+    'dt': DT_STRING,
+    'long_mode': True,
+    'limit_unit': 5,
+    'bins': 100
+}
+long_param = {
+    'fast': 2,
+    'slow': 7
+}
+short_param = {
+    'fast': 56,
+    'slow': 10
+}
+
+with mt5Controller.Helper():
+    Prices = mt5Model.get_Prices(data_options['symbols'], data_options['timeframe'], data_options['timezone'], data_options['start'], data_options['end'], ohlc='1111', deposit_currency='USD')
+
+    # split into train set and test set
+    Train_Prices, Test_Prices = mt5Model.split_Prices(Prices, percentage=data_options['trainTestSplit'])
+
+    train_plt_datas = plotModel.get_ma_plt_datas(Train_Prices, long_param, short_param, train_options['limit_unit'])
+    test_plt_datas = plotModel.get_ma_plt_datas(Test_Prices, long_param, short_param, train_options['limit_unit'])
+
+    title = plotModel.get_coin_NN_plot_title(data_options['start'], data_options['end'], mt5Model.get_timeframe2txt(data_options['timeframe']))
+    plotView.save_plot(train_plt_datas, test_plt_datas, data_options['symbols'], 0,
+                       train_options['price_plt_save_path'],
+                       train_options['dt'], dpi=500, linewidth=0.2, title=title, figure_size=(28, 12), fontsize=5)
+
+    print("Saved successfully. \n{}".format(train_options['price_plt_save_path']))
+
+    # df = mt5Model.get_historical_data(data_options['symbol'], data_options['timeframe'], data_options['timezone'],
+    #                                   data_options['start'], data_options['end'])
+    # signal = signalModel.get_movingAverage_signal(df, fast_index, slow_index, limit_unit, data_options['long_mode'])
+    #
+    # # information and statistic
+    # details = statModel.get_action_detail(df, signal)
+    # stat = statModel.get_stat(df, signal)
+    # stat["fast"], stat["slow"], stat["limit"] = fast_index, slow_index, limit_unit
+    # printStat.print_dict(details)
+    # printStat.print_dict(stat)
+
+    # plot graph
+    # ret_list = returnModel.get_ret_list(Train_Prices.o, signal)
+    # plotView.density(ret_list, bins=data_options['bins'])
