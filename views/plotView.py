@@ -134,13 +134,6 @@ def save_plot_simple_subplot__discard(plt_df, symbols, episode, saved_path, dt_s
     plt.savefig(full_path)                                                                      # save in higher resolution image
     plt.clf()                                                                                   # clear the plot data
 
-def get_price_plot(train_prices_df, test_prices_df, model, episode, seq_len, symbols, saved_path, dt_str, dpi=500, linewidth=0.2):
-    # data prepare
-    train_coinNN_data = coinNNModel.get_coinNN_data(train_prices_df, model, seq_len)
-    test_coinNN_data = coinNNModel.get_coinNN_data(test_prices_df, model, seq_len)
-    # plot graph - prices
-    save_plot(train_coinNN_data, test_coinNN_data, symbols, episode, saved_path, dt_str, dpi=dpi, linewidth=linewidth)
-
 def density(ret_list, bins=50, color="darkblue", linewidth=1):
     """
     :param ret_list: list

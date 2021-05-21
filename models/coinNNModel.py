@@ -1,18 +1,22 @@
 import torch
 from torch import nn
 import numpy as np
+import pandas as pd
 from production.codes.models import criterionModel
+from production.codes.utils import maths
 
 class LSTM(nn.Module):
-    def __init__(self, input_size, hidden_size, num_layers, batch_first=True):
+    def __init__(self, input_size, hidden_size, num_layers, seq_len, batch_first=True):
         super(LSTM, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.num_layers = num_layers
+        self.seq_len = seq_len  # int, number of days input to LSTM
         self.device = torch.device("cuda:0")
 
         self.rnn = nn.LSTM(input_size, hidden_size, num_layers, batch_first=batch_first).to(self.device)
-        self.linear = nn.Linear(hidden_size, 1).to(self.device)
+        self.linear = nn.Linear(hidden_size, input_size).to(self.device)
+        self.weights_layer = nn.Linear(input_size, 1).to(self.device)
 
     def forward(self, input, hiddens):
         """
@@ -25,6 +29,7 @@ class LSTM(nn.Module):
         lstm_output, _ = self.rnn(input, (hiddens[0], hiddens[1]))
         output = nn.ReLU()(lstm_output[:,-1,:])
         output = self.linear(output)
+        output = self.weights_layer(output)
         return output.squeeze(-1)
 
     def init_hiddens(self, batch_size):
@@ -32,22 +37,27 @@ class LSTM(nn.Module):
         c0 = torch.zeros((self.num_layers, batch_size, self.hidden_size), dtype=torch.float).to(self.device)
         return (h0, c0)
 
-    def get_predicted_arr(self, input_arr, seq_len):
+    def get_predicted_arr(self, input_arr):
         """
         :param input: array, size = (total_len, input_size)
         :param model: torch model
-        :param seq_len: int, number of days input to LSTM
         :return: array, size = (total_len, 1)
         """
         input = torch.FloatTensor(input_arr)
         self.eval()
-        predict_arr = np.zeros((len(input_arr), 1), dtype=np.float)
-        for i in range(seq_len, len(input_arr)):
-            x = input[i-seq_len:i,:].unsqueeze(0) # size = (batch_size, seq_len, 1)
+        predict_arr = np.zeros((len(input_arr), ), dtype=np.float)
+        for i in range(self.seq_len, len(input_arr)):
+            x = input[i-self.seq_len:i,:].unsqueeze(0) # size = (batch_size, seq_len, 1)
             hiddens = self.init_hiddens(1)
             predict = self(x, hiddens)
-            predict_arr[i, 0] = predict
+            predict_arr[i,] = predict
         return predict_arr
+
+    def get_coefficient_vector(self):
+        weights = self.weights_layer.bias.detach().cpu().numpy().reshape(-1,)
+        bias = self.weights_layer.weight.detach().cpu().numpy().reshape(-1,)
+        coefficient_vector = np.append(bias, weights)
+        return coefficient_vector
 
 class Trainer:
     def __init__(self, model, optimizer):
@@ -89,18 +99,17 @@ class Trainer:
         mean_loss = total_loss / steps
         return mean_loss
 
-def get_coinNN_data(prices_df, model, seq_len):
+def get_coinNN_data(close_prices, model, window):
     """
     :param prices_matrix: accept the train and test prices in array format
     :param model: torch model to get the predicted value
     :param data_options: dict
     :return: array for plotting
     """
-    plt_df = pd.DataFrame(index=prices_df.index)
-    for symbol in prices_df.columns:
-        plt_df[symbol] = prices_df[symbol]
-    plt_df['predict'] = model.get_predicted_arr(prices_df.iloc[:,:-1].values, seq_len)
-    spread = prices_df.iloc[:, -1] - plt_df['predict']
-    plt_df['spread'] = spread
-    plt_df['z_score'] = maths.z_score_with_rolling_mean(spread.values, 10)
-    return plt_df
+    coinNN_data = pd.DataFrame(index=close_prices.index)
+    coinNN_data['real'] = close_prices.iloc[:, -1]
+    coinNN_data['predict'] = model.get_predicted_arr(close_prices.iloc[:,:-1].values)
+    spread = coinNN_data['real'] - coinNN_data['predict']
+    coinNN_data['spread'] = spread
+    coinNN_data['z_score'] = maths.z_score_with_rolling_mean(spread.values, window)
+    return coinNN_data

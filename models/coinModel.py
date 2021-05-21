@@ -26,7 +26,7 @@ def get_predicted_arr(input, coefficient_vector):
     b = np.dot(A, coefficient_vector.reshape(-1,1)).reshape(-1,)
     return b
 
-def get_coin_data(close_prices, coefficient_vector, windows=3):
+def get_coin_data(close_prices, coefficient_vector, windows):
     """
     :param close_prices: accept the train and test prices in pd.dataframe format
     :param coefficient_vector:
@@ -39,19 +39,3 @@ def get_coin_data(close_prices, coefficient_vector, windows=3):
     coin_data['spread'] = spread
     coin_data['z_score'] = maths.z_score_with_rolling_mean(spread.values, windows)
     return coin_data
-
-# data_options = {
-#     'start': (2010,1,1,0,0),
-#     'end': (2021,5,4,0,0),
-#     'symbols': ["AUDJPY", "AUDUSD", "CADJPY", "USDCAD"],
-#     'timeframe': mt5Model.get_txt2timeframe('H4'),
-#     'timezone': "Hongkong",
-#     'shuffle': True,
-#     'trainTestSplit': 0.7,
-# }
-
-# coefficient_vector = np.array([2.3894, 0.01484, -1.338143, -0.015469])
-# spread = get_current_spread(coefficient_vector, data_options['symbols'], data_options['timeframe'], data_options['timezone'], data_options['start'])
-# reslut = maths.perform_ADF_test(spread)
-# z_scores = maths.z_score_with_rolling_mean(spread, 10)
-# print()

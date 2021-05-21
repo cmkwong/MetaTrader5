@@ -1,5 +1,4 @@
 from production.codes.models.backtestModel import techModel, indexModel
-import numpy as np
 import pandas as pd
 
 def discard_head_signal(signal):
@@ -111,13 +110,14 @@ def get_movingAverage_signal(df, fast_index, slow_index, limit_unit, long_mode=T
         signal = maxLimitClosed(signal, limit_unit)
     return signal
 
-def get_coin_signal(coin_data, upper_th, lower_th):
+def get_coin_NN_signal(coin_NN_data, upper_th, lower_th):
     """
-    :param coin_data: pd.Dataframe(), columns='real','predict','spread','z_score'
+    this function can available for coinNN and coin model
+    :param coin_NN_data: pd.Dataframe(), columns='real','predict','spread','z_score'
     :param upper_th: float
     :param lower_th: float
     :return: pd.Series() for long and short
     """
-    long_signal = pd.Series(coin_data['z_score'].values < lower_th, index=coin_data.index, name='long_signal')
-    short_signal = pd.Series(coin_data['z_score'].values > upper_th, index=coin_data.index, name='short_signal')
+    long_signal = pd.Series(coin_NN_data['z_score'].values < lower_th, index=coin_NN_data.index, name='long_signal')
+    short_signal = pd.Series(coin_NN_data['z_score'].values > upper_th, index=coin_NN_data.index, name='short_signal')
     return long_signal, short_signal
