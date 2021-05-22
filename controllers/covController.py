@@ -10,10 +10,6 @@ data_options = {
     'timeframe': mt5Model.get_txt2timeframe('H1'),
     'timezone': "Hongkong",
     'deposit_currency': 'USD',
-    'shuffle': True,
-    'trainTestSplit': 0.7,
-    'seq_len': 20,
-    'batch_size': 32,
 }
 # config.START, config.END, symbols, config.TIMEFRAME, config.TIMEZONE
 def get_cor_matrix(symbols, start, end, timeframe, timezone, deposit_currency):

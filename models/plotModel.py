@@ -4,9 +4,18 @@ from production.codes.models import mt5Model, coinModel, maModel
 from production.codes.utils import maths
 from production.codes.models.backtestModel import returnModel, signalModel, statModel
 
-def _get_format_plot_data(df, text=None, equation=None, height=2):
+def _get_format_plot_data(df=None, hist=None, text=None, equation=None, height=2):
+    """
+    :param df: pd.DataFrame
+    :param hist: pd.Series
+    :param text: str
+    :param equation: str
+    :param height: int
+    :return: dictionary
+    """
     plt_data = {}
     plt_data['df'] = df
+    plt_data['hist'] = hist
     plt_data['text'] = text
     plt_data['equation'] = equation
     plt_data['height'] = height
@@ -50,37 +59,47 @@ def get_coin_NN_plt_datas(Prices, coefficient_vector, upper_th, lower_th, z_scor
     stats = statModel.get_stats(Prices, long_signal, short_signal, coefficient_vector)
     plt_datas = {}
 
-    # first graph: real and predict
+    # 1 graph: real and predict
     df = pd.concat([coin_data['real'], coin_data['predict']], axis=1)
     adf_result_text = get_ADF_text_result(coin_data['spread'].values)
     equation = get_coin_NN_equation_text(Prices.c.columns, coefficient_vector)
-    plt_datas[0] = _get_format_plot_data(df, adf_result_text, equation)
+    plt_datas[0] = _get_format_plot_data(df=df, text=adf_result_text, equation=equation)
 
-    # second graph: spread
+    # 2 graph: spread
     df = pd.DataFrame(coin_data['spread'], index=Prices.c.index)
-    plt_datas[1] = _get_format_plot_data(df)
+    plt_datas[1] = _get_format_plot_data(df=df)
 
-    # third graph: return for long and short
+    # 3 graph: return for long and short
     df = pd.DataFrame(index=Prices.c.index)
     ret = returnModel.get_ret(Prices.o, Prices.quote_exchg, coefficient_vector, long_mode=True)
     df["long_accum_ret"] = returnModel.get_accum_ret(ret, long_signal)
     ret = returnModel.get_ret(Prices.o, Prices.quote_exchg, coefficient_vector, long_mode=False)
     df["short_accum_ret"] = returnModel.get_accum_ret(ret, short_signal)
     text = get_stat_text_condition(stats, 'ret')
-    plt_datas[2] = _get_format_plot_data(df, text)
+    plt_datas[2] = _get_format_plot_data(df=df, text=text)
 
-    # fourth graph: earning
+    # 4 graph: earning
     df = pd.DataFrame(index=Prices.c.index)
     earning = returnModel.get_earning(Prices.quote_exchg, Prices.ptDv, coefficient_vector, long_mode=True)
     df["long_accum_earning"] = returnModel.get_accum_earning(earning, long_signal)
     earning = returnModel.get_earning(Prices.quote_exchg, Prices.ptDv, coefficient_vector, long_mode=False)
     df["short_accum_earning"] = returnModel.get_accum_earning(earning, short_signal)
     text = get_stat_text_condition(stats, 'earning')
-    plt_datas[3] = _get_format_plot_data(df, text)
+    plt_datas[3] = _get_format_plot_data(df=df, text=text)
 
-    # fifth graph: z-score
+    # 5 graph: z-score
     df = pd.DataFrame(coin_data['z_score'], index=Prices.c.index)
-    plt_datas[4] = _get_format_plot_data(df)
+    plt_datas[4] = _get_format_plot_data(df=df)
+
+    # 6 graph: ret histogram for long
+    long_ret_list = returnModel.get_ret_list(Prices.o, Prices.quote_exchg, coefficient_vector=coefficient_vector,
+                                             signal=long_signal, long_mode=True)
+    plt_datas[5] = _get_format_plot_data(hist=pd.Series(long_ret_list, name='long ret'))
+
+    # 7 graph: ret histogram for short
+    short_ret_list = returnModel.get_ret_list(Prices.o, Prices.quote_exchg, coefficient_vector=coefficient_vector,
+                                              signal=short_signal, long_mode=False)
+    plt_datas[6] = _get_format_plot_data(hist=pd.Series(short_ret_list, name='short ret'))
 
     return plt_datas
 
@@ -100,12 +119,12 @@ def get_ma_plt_datas(Prices, long_param, short_param, limit_unit):
     # 1 graph: close price, fast ma,  slow ma (long)
     df = pd.concat([Prices.c, long_ma_data['fast'], long_ma_data['slow']], axis=1)
     text = 'Long: \n  fast: {}\n  slow: {}'.format(long_param['fast'], long_param['slow'])
-    plt_datas[0] = _get_format_plot_data(df, text)
+    plt_datas[0] = _get_format_plot_data(df=df, text=text)
 
     # 2 graph: close price, fast ma,  slow ma (short)
     df = pd.concat([Prices.c, short_ma_data['fast'], short_ma_data['slow']], axis=1)
     text = 'Short: \n  fast: {}\n  slow: {}'.format(short_param['fast'], short_param['slow'])
-    plt_datas[1] = _get_format_plot_data(df, text)
+    plt_datas[1] = _get_format_plot_data(df=df, text=text)
 
     # 3 graph: ret (long and short)
     df = pd.DataFrame(index=Prices.c.index)
@@ -114,7 +133,7 @@ def get_ma_plt_datas(Prices, long_param, short_param, limit_unit):
     ret = returnModel.get_ret(Prices.o, Prices.quote_exchg, coefficient_vector=np.array([]), long_mode=False)
     df["short_accum_ret"] = returnModel.get_accum_ret(ret, short_signal)
     text = get_stat_text_condition(stats, 'ret')
-    plt_datas[2] = _get_format_plot_data(df, text)
+    plt_datas[2] = _get_format_plot_data(df=df, text=text)
 
     # 4 graph: earning (long and short)
     df = pd.DataFrame(index=Prices.c.index)
@@ -123,7 +142,17 @@ def get_ma_plt_datas(Prices, long_param, short_param, limit_unit):
     earning = returnModel.get_earning(Prices.quote_exchg, Prices.ptDv, coefficient_vector=np.array([]), long_mode=False)
     df["short_accum_earning"] = returnModel.get_accum_earning(earning, short_signal)
     text = get_stat_text_condition(stats, 'earning')
-    plt_datas[3] = _get_format_plot_data(df, text)
+    plt_datas[3] = _get_format_plot_data(df=df, text=text)
+
+    # 5 graph: ret histogram for long
+    long_ret_list = returnModel.get_ret_list(Prices.o, Prices.quote_exchg, coefficient_vector=np.array([]),
+                                             signal=long_signal, long_mode=True)
+    plt_datas[4] = _get_format_plot_data(hist=pd.Series(long_ret_list, name='long ret'))
+
+    # 6 graph: ret histogram for short
+    short_ret_list = returnModel.get_ret_list(Prices.o, Prices.quote_exchg, coefficient_vector=np.array([]),
+                                              signal=short_signal, long_mode=False)
+    plt_datas[5] = _get_format_plot_data(hist=pd.Series(short_ret_list, name='short ret'))
 
     return plt_datas
 

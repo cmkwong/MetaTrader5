@@ -21,7 +21,7 @@ data_options = {
     'trainTestSplit': 0.7,
 }
 train_options = {
-    'price_plt_save_path': options['main_path'] + "coin_simple_plt/",
+    'price_plt_save_path': options['main_path'] + "coin_plt/",
     'dt': DT_STRING,
     'upper_th': 0.3,
     'lower_th': -0.1,
@@ -53,8 +53,9 @@ with mt5Controller.Helper():
 
     # save the plot
     title = plotModel.get_coin_NN_plot_title(data_options['start'], data_options['end'], mt5Model.get_timeframe2txt(data_options['timeframe']))
-    plotView.save_plot(train_plt_datas, test_plt_datas, data_options['symbols'], 0, train_options['price_plt_save_path'],
-                       train_options['dt'], dpi=500, linewidth=0.2, title=title, figure_size=(56,24))
+    plotView.save_plot(train_plt_datas, test_plt_datas, data_options['symbols'], 0,
+                       train_options['price_plt_save_path'], train_options['dt'], dpi=500, linewidth=0.2, title=title,
+                       figure_size=(56, 24), bins=500)
 
     # debug checking
     # returnModel.get_ret(Train_Prices.o, Train_Prices.quote_exchg, coefficient_vector, long_mode=True)

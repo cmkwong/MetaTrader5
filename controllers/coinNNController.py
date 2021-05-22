@@ -85,8 +85,8 @@ with mt5Controller.Helper():
 
             title = plotModel.get_coin_NN_plot_title(data_options['start'], data_options['end'], mt5Model.get_timeframe2txt(data_options['timeframe']))
             plotView.save_plot(train_plt_datas, test_plt_datas, data_options['symbols'], episode,
-                               train_options['price_plt_save_path'],
-                               train_options['dt'], dpi=500, linewidth=0.2, title=title, figure_size=(56, 24))
+                               train_options['price_plt_save_path'], train_options['dt'], dpi=500, linewidth=0.2,
+                               title=title, figure_size=(56, 24))
 
         episode += 1
 
