@@ -37,7 +37,10 @@ train_options = {
     'price_plt_save_path': options['main_path'] + "coin_NN_plt/",
     'tensorboard_save_path': options['main_path'] + "runs/",
     'dt': DT_STRING,
-    'z_score_rolling_mean_window': 10,
+    'upper_th': 0.3,
+    'lower_th': -0.3,
+    'z_score_mean_window': 3,
+    'z_score_std_window': 6
 }
 # tensorboard --logdir C:\Users\Chris\projects\210215_mt5\production\docs\1\runs --host localhost
 
@@ -48,12 +51,6 @@ with mt5Controller.Helper():
 
     # split into train set and test set
     Train_Prices, Test_Prices = mt5Model.split_Prices(Prices, percentage=data_options['trainTestSplit'])
-
-    # prices_df = mt5Model.get_prices_df(data_options['symbols'], data_options['timeframe'], data_options['timezone'],
-    #                                        data_options['start'], data_options['end'])
-    #
-    # # split into train set and test set
-    # train_prices_df, test_prices_df = tools.split_df(prices_df, percentage=data_options['trainTestSplit'])
 
     lstm = coinNNModel.LSTM(model_options['input_size'], model_options['hidden_size'], model_options['layer'], data_options['seq_len'], model_options['batch_first'])
     optimizer = optim.Adam(lstm.parameters(), lr=model_options['lr'])
@@ -73,15 +70,9 @@ with mt5Controller.Helper():
 
         if episode % train_options['check_price_plot'] == 0:
 
-            # train_coinNN_data = coinNNModel.get_coinNN_data(Train_Prices.c, lstm, model_options['z_score_rolling_mean_window'])
-            # test_coinNN_data = coinNNModel.get_coinNN_data(Test_Prices.c, lstm, train_options['z_score_rolling_mean_window'])
-            #
-            # train_long_signal, train_short_signal = signalModel.get_coin_NN_signal(train_coinNN_data, upper_th=0.3, lower_th=-0.1)
-            # test_long_signal, test_short_signal = signalModel.get_coin_NN_signal(test_coinNN_data, upper_th=0.3, lower_th=-0.1)
-
-            coefficient_vector = lstm.get_coefficient_vector()
-            train_plt_datas = plotModel.get_coin_NN_plt_datas(Train_Prices, coefficient_vector, upper_th=0.1, lower_th=-0.1, z_score_rolling_mean_window=3)
-            test_plt_datas = plotModel.get_coin_NN_plt_datas(Test_Prices, coefficient_vector, upper_th=0.1, lower_th=-0.1, z_score_rolling_mean_window=3)
+            coefficient_vector = lstm.get_coefficient_vector() # coefficient_vector got from neural network
+            train_plt_datas = plotModel.get_coin_NN_plt_datas(Train_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'], train_options['z_score_mean_window'], train_options['z_score_std_window'])
+            test_plt_datas = plotModel.get_coin_NN_plt_datas(Test_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'], train_options['z_score_mean_window'], train_options['z_score_std_window'])
 
             title = plotModel.get_coin_NN_plot_title(data_options['start'], data_options['end'], mt5Model.get_timeframe2txt(data_options['timeframe']))
             plotView.save_plot(train_plt_datas, test_plt_datas, data_options['symbols'], episode,

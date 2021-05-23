@@ -37,7 +37,7 @@ def get_ret(open_prices, exchg_q2d, coefficient_vector, long_mode):
     """
     modified_coefficient_vector = tools.get_modify_coefficient_vector(coefficient_vector, long_mode)
     old_value_df = (open_prices * modified_coefficient_vector.reshape(-1,) * exchg_q2d.values).sum(axis=1).shift(1)
-    new_value_df = (open_prices * modified_coefficient_vector.reshape(-1,) * exchg_q2d.shift(1).values).sum(axis=1)
+    new_value_df = (open_prices * modified_coefficient_vector.reshape(-1,) * exchg_q2d.shift(1).values).sum(axis=1) # use past exchange rate as reference rate (Note 34a&b)
     if long_mode:
         ret = pd.Series(new_value_df / old_value_df, index=open_prices.index, name='long')
     else:

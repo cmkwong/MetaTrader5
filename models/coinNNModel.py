@@ -99,7 +99,7 @@ class Trainer:
         mean_loss = total_loss / steps
         return mean_loss
 
-def get_coinNN_data(close_prices, model, window):
+def get_coinNN_data(close_prices, model, mean_window, std_window):
     """
     :param prices_matrix: accept the train and test prices in array format
     :param model: torch model to get the predicted value
@@ -111,5 +111,5 @@ def get_coinNN_data(close_prices, model, window):
     coinNN_data['predict'] = model.get_predicted_arr(close_prices.iloc[:,:-1].values)
     spread = coinNN_data['real'] - coinNN_data['predict']
     coinNN_data['spread'] = spread
-    coinNN_data['z_score'] = maths.z_score_with_rolling_mean(spread.values, window)
+    coinNN_data['z_score'] = maths.z_score_with_rolling_mean(spread.values, mean_window, std_window)
     return coinNN_data
