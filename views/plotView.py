@@ -4,8 +4,9 @@ from matplotlib import pyplot as plt
 from production.codes.models import plotModel
 
 def save_plot(train_plt_data, test_plt_data, symbols, episode, saved_path, dt_str, dpi=500, linewidth=0.2, title=None,
-              figure_size=(28, 12), fontsize=9, bins=100):
+              figure_size=(28, 12), fontsize=9, bins=100, setting=''):
     """
+    :param setting:
     :param bins:
     :param train_plt_data: {pd.Dataframe}
     :param test_plt_data: {pd.Dataframe}
@@ -21,6 +22,7 @@ def save_plot(train_plt_data, test_plt_data, symbols, episode, saved_path, dt_st
     # prepare figure
     fig = plt.figure(figsize=figure_size, dpi=dpi)
     fig.suptitle(title, fontsize=fontsize*4)
+    plt.figtext(0.1,0.9, setting, fontsize=fontsize*2)
     gs = fig.add_gridspec(plotModel.get_total_height(train_plt_data), 1)  # slice into grid with different size
 
     # graph list
@@ -49,7 +51,7 @@ def save_plot(train_plt_data, test_plt_data, symbols, episode, saved_path, dt_st
 
         # equation
         if type(train_plt_data[i]['equation']) == str and type(test_plt_data[i]['equation']) == str:
-            plt.text(train_plt_data[i]['df'].index.mean(), df.iloc[:,0].quantile(0.1), train_plt_data[i]['equation'], fontsize=fontsize)
+            plt.text(train_plt_data[i]['df'].index.mean(), df.iloc[:,0].quantile(0.1), train_plt_data[i]['equation'], fontsize=fontsize*2)
 
         plt.legend()
 

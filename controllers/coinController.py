@@ -8,7 +8,8 @@ now = datetime.now()
 DT_STRING = now.strftime("%y%m%d%H%M%S")
 
 options = {
-    'main_path': "C:/Users/Chris/projects/210215_mt5/production/docs/{}/".format(config.VERSION)
+    'main_path': "C:/Users/Chris/projects/210215_mt5/production/docs/{}/".format(config.VERSION),
+    'dt': DT_STRING,
 }
 data_options = {
     'start': (2015,1,1,0,0),
@@ -19,14 +20,13 @@ data_options = {
     'deposit_currency': 'USD',
     'shuffle': True,
     'trainTestSplit': 0.7,
+    'price_plt_save_path': options['main_path'] + "coin_plt/",
 }
 train_options = {
-    'price_plt_save_path': options['main_path'] + "coin_plt/",
-    'dt': DT_STRING,
     'upper_th': 0.5,
-    'lower_th': -0.5,
-    'z_score_mean_window': 10,
-    'z_score_std_window': 10
+    'lower_th': -1,
+    'z_score_mean_window': 3,
+    'z_score_std_window': 20
 }
 with mt5Controller.Helper():
 
@@ -44,8 +44,9 @@ with mt5Controller.Helper():
 
     # save the plot
     title = plotModel.get_coin_NN_plot_title(data_options['start'], data_options['end'], mt5Model.get_timeframe2txt(data_options['timeframe']))
-    plotView.save_plot(train_plt_datas, test_plt_datas, data_options['symbols'], 0,
-                       train_options['price_plt_save_path'], train_options['dt'], dpi=500, linewidth=0.2, title=title,
-                       figure_size=(56, 24), fontsize=6, bins=500)
+    setting = plotModel.get_setting_txt(train_options)
+    plotView.save_plot(train_plt_datas, test_plt_datas, data_options['symbols'], 0, data_options['price_plt_save_path'],
+                       options['dt'], dpi=500, linewidth=0.2, title=title, figure_size=(56, 24), fontsize=6, bins=500,
+                       setting=setting)
 
-print("Saved successfully. \n{}".format(train_options['price_plt_save_path']))
+print("Saved successfully. \n{}".format(data_options['price_plt_save_path']))

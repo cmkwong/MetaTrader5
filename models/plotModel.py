@@ -53,56 +53,43 @@ def get_coin_NN_plt_datas(Prices, coefficient_vector, upper_th, lower_th, z_scor
     :param z_score_rolling_mean_window: int
     :return: nested dictionary
     """
-    # debug
-    df_debug = pd.DataFrame(index=Prices.c.index)
-
     # prepare
     coin_data = coinModel.get_coin_data(Prices.c, coefficient_vector, z_score_mean_window, z_score_std_window) # get_coin_data() can work for coinNN and coin
     long_signal, short_signal = signalModel.get_coin_NN_signal(coin_data, upper_th, lower_th)
     stats = statModel.get_stats(Prices, long_signal, short_signal, coefficient_vector)
     plt_datas = {}
-    df_debug = pd.concat([df_debug, coin_data, long_signal, short_signal], axis=1)  #------------ DEBUG -------------
 
     # 1 graph: real and predict
-    df = pd.concat([coin_data['real'], coin_data['predict']], axis=1)
+    real_predict_df = pd.concat([coin_data['real'], coin_data['predict']], axis=1)
     adf_result_text = get_ADF_text_result(coin_data['spread'].values)
     equation = get_coin_NN_equation_text(Prices.c.columns, coefficient_vector)
-    plt_datas[0] = _get_format_plot_data(df=df, text=adf_result_text, equation=equation)
-    df_debug = pd.concat([df_debug, df], axis=1)    #------------ DEBUG -------------
+    plt_datas[0] = _get_format_plot_data(df=real_predict_df, text=adf_result_text, equation=equation)
 
     # 2 graph: spread
-    df = pd.DataFrame(coin_data['spread'], index=Prices.c.index)
-    plt_datas[1] = _get_format_plot_data(df=df)
-    df_debug = pd.concat([df_debug, df], axis=1)    #------------ DEBUG -------------
+    spread_df = pd.DataFrame(coin_data['spread'], index=Prices.c.index)
+    plt_datas[1] = _get_format_plot_data(df=spread_df)
 
     # 3 graph: return for long and short
-    df = pd.DataFrame(index=Prices.c.index)
-    ret = returnModel.get_ret(Prices.o, Prices.quote_exchg, coefficient_vector, long_mode=True)
-    df_debug = pd.concat([df_debug, ret], axis=1)   #------------ DEBUG -------------
-    df["long_accum_ret"] = returnModel.get_accum_ret(ret, long_signal)
-    ret = returnModel.get_ret(Prices.o, Prices.quote_exchg, coefficient_vector, long_mode=False)
-    df_debug = pd.concat([df_debug, ret], axis=1)   #------------ DEBUG -------------
-    df["short_accum_ret"] = returnModel.get_accum_ret(ret, short_signal)
+    accum_ret_df = pd.DataFrame(index=Prices.c.index)
+    long_ret = returnModel.get_ret(Prices.o, Prices.quote_exchg, coefficient_vector, long_mode=True)
+    accum_ret_df["long_accum_ret"] = returnModel.get_accum_ret(long_ret, long_signal)
+    short_ret = returnModel.get_ret(Prices.o, Prices.quote_exchg, coefficient_vector, long_mode=False)
+    accum_ret_df["short_accum_ret"] = returnModel.get_accum_ret(short_ret, short_signal)
     text = get_stat_text_condition(stats, 'ret')
-    plt_datas[2] = _get_format_plot_data(df=df, text=text)
-    df_debug = pd.concat([df_debug, df], axis=1)    #------------ DEBUG -------------
+    plt_datas[2] = _get_format_plot_data(df=accum_ret_df, text=text)
 
     # 4 graph: earning
-    df = pd.DataFrame(index=Prices.c.index)
-    earning = returnModel.get_earning(Prices.quote_exchg, Prices.ptDv, coefficient_vector, long_mode=True)
-    df_debug = pd.concat([df_debug, earning], axis=1)   #------------ DEBUG -------------
-    df["long_accum_earning"] = returnModel.get_accum_earning(earning, long_signal)
-    earning = returnModel.get_earning(Prices.quote_exchg, Prices.ptDv, coefficient_vector, long_mode=False)
-    df_debug = pd.concat([df_debug, earning], axis=1)   #------------ DEBUG -------------
-    df["short_accum_earning"] = returnModel.get_accum_earning(earning, short_signal)
+    accum_earning_df = pd.DataFrame(index=Prices.c.index)
+    long_earning = returnModel.get_earning(Prices.quote_exchg, Prices.ptDv, coefficient_vector, long_mode=True)
+    accum_earning_df["long_accum_earning"] = returnModel.get_accum_earning(long_earning, long_signal)
+    short_earning = returnModel.get_earning(Prices.quote_exchg, Prices.ptDv, coefficient_vector, long_mode=False)
+    accum_earning_df["short_accum_earning"] = returnModel.get_accum_earning(short_earning, short_signal)
     text = get_stat_text_condition(stats, 'earning')
-    plt_datas[3] = _get_format_plot_data(df=df, text=text)
-    df_debug = pd.concat([df_debug, df], axis=1)        #------------ DEBUG -------------
+    plt_datas[3] = _get_format_plot_data(df=accum_earning_df, text=text)
 
     # 5 graph: z-score
-    df = pd.DataFrame(coin_data['z_score'], index=Prices.c.index)
-    plt_datas[4] = _get_format_plot_data(df=df)
-    df_debug = pd.concat([df_debug, df], axis=1)        #------------ DEBUG -------------
+    z_df = pd.DataFrame(coin_data['z_score'], index=Prices.c.index)
+    plt_datas[4] = _get_format_plot_data(df=z_df)
 
     # 6 graph: ret histogram for long
     long_earning_list = returnModel.get_earning_list(Prices.quote_exchg, Prices.ptDv, coefficient_vector=coefficient_vector,
@@ -113,6 +100,12 @@ def get_coin_NN_plt_datas(Prices, coefficient_vector, upper_th, lower_th, z_scor
     short_earning_list = returnModel.get_earning_list(Prices.quote_exchg, Prices.ptDv, coefficient_vector=coefficient_vector,
                                               signal=short_signal, long_mode=False)
     plt_datas[6] = _get_format_plot_data(hist=pd.Series(short_earning_list, name='short earning'))
+
+    # For debug
+    df_debug = pd.DataFrame(index=Prices.c.index)
+    df_debug = pd.concat([df_debug, Prices.c, Prices.o, coin_data, long_signal, short_signal, real_predict_df,
+                          long_ret, short_ret, accum_ret_df,
+                          long_earning, short_earning, accum_earning_df], axis=1)       #------------ DEBUG -------------
 
     return plt_datas
 
@@ -228,4 +221,9 @@ def get_coin_NN_equation_text(symbols, coefficient_vector):
     equation += " = [{}]".format(symbols[-1])
     return equation
 
+def get_setting_txt(setting_dict):
+    setting = 'Setting: \n'
+    for key, value in setting_dict.items():
+        setting += "{}: {}\n".format(key, value)
+    return setting
 

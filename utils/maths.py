@@ -13,16 +13,16 @@ def z_score(x):
     z = (x - np.mean(x)) / np.std(x)
     return z
 
-def z_score_with_rolling_mean(x, mean_window, std_window):
+def z_score_with_rolling_mean(spread, mean_window, std_window):
     """
-    :param x: array, shape = (total_len, )
+    :param spread: array, shape = (total_len, )
     :param window: int
     :return: np.array
     """
-    x = x.reshape(-1, )
-    rolling_mean = pd.Series(x.reshape(-1, )).rolling(mean_window).mean()
-    rolling_std = rolling_mean.rolling(std_window).std()
-    z = (x - np.array(rolling_mean)) / np.array(rolling_std)
+    spread = spread.reshape(-1, )
+    rolling_mean = pd.Series(spread.reshape(-1, )).rolling(mean_window).mean()
+    rolling_std = pd.Series(spread.reshape(-1, )).rolling(std_window).std()
+    z = (spread - np.array(rolling_mean)) / np.array(rolling_std)
     return z
 
 def perform_ADF_test(x):
