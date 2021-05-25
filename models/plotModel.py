@@ -91,21 +91,22 @@ def get_coin_NN_plt_datas(Prices, coefficient_vector, upper_th, lower_th, z_scor
     z_df = pd.DataFrame(coin_data['z_score'], index=Prices.c.index)
     plt_datas[4] = _get_format_plot_data(df=z_df)
 
-    # 6 graph: ret histogram for long
+    # 6 graph: earning histogram for long
     long_earning_list = returnModel.get_earning_list(Prices.quote_exchg, Prices.ptDv, coefficient_vector=coefficient_vector,
                                              signal=long_signal, long_mode=True)
     plt_datas[5] = _get_format_plot_data(hist=pd.Series(long_earning_list, name='long earning'))
 
-    # 7 graph: ret histogram for short
+    # 7 graph: earning histogram for short
     short_earning_list = returnModel.get_earning_list(Prices.quote_exchg, Prices.ptDv, coefficient_vector=coefficient_vector,
                                               signal=short_signal, long_mode=False)
     plt_datas[6] = _get_format_plot_data(hist=pd.Series(short_earning_list, name='short earning'))
 
-    # For debug
+    # ------------ DEBUG -------------
     df_debug = pd.DataFrame(index=Prices.c.index)
-    df_debug = pd.concat([df_debug, Prices.c, Prices.o, coin_data, long_signal, short_signal, real_predict_df,
+    df_debug = pd.concat([df_debug, Prices.o, Prices.quote_exchg, Prices.base_exchg, coin_data, long_signal, short_signal, real_predict_df,
                           long_ret, short_ret, accum_ret_df,
-                          long_earning, short_earning, accum_earning_df], axis=1)       #------------ DEBUG -------------
+                          long_earning, short_earning, accum_earning_df], axis=1)
+    df_debug.to_csv('C://Users//Chris//projects//210215_mt5//production//docs//1//debug.csv')
 
     return plt_datas
 

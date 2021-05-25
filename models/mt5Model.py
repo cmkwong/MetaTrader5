@@ -207,7 +207,7 @@ def modify_exchange_rate(symbols, exchange_symbols, exchange_rate_df, deposit_cu
     symbol_new_names = []
     for i, exch_symbol in enumerate(exchange_symbols):
         base, quote = exch_symbol[:3], exch_symbol[3:]
-        if exchg_type == 'q2d':
+        if exchg_type == 'q2d': # see note 38a
             if quote == deposit_currency:
                 if symbols[i] != exch_symbol:
                     symbol_new_names.append("{}to{}".format(exch_symbol[:3], exch_symbol[3:]))
@@ -275,7 +275,7 @@ def get_all_symbols_info():
         symbols_info[symbol_name].swap_long = symbol.swap_long
         symbols_info[symbol_name].swap_short = symbol.swap_short
         if symbol_name[3:] == 'JPY':
-            symbols_info[symbol_name].pt_value = 1000   # 1000 dollar for quote per each point
+            symbols_info[symbol_name].pt_value = 100   # 100 dollar for quote per each point
         else:
-            symbols_info[symbol_name].pt_value = 10     # 10 dollar for quote per each point
+            symbols_info[symbol_name].pt_value = 1     # 1 dollar for quote per each point
     return symbols_info

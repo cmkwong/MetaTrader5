@@ -12,7 +12,7 @@ def get_points_dff_values_df(symbols, open_prices, all_symbols_info, temp_col_na
     if type(open_prices) == pd.Series: open_prices = pd.DataFrame(open_prices, index=open_prices.index) # avoid the error of "too many index" if len(symbols) = 1
     points_dff_values_df = pd.DataFrame(index=open_prices.index)
     for c, symbol in enumerate(symbols):
-        digits = all_symbols_info[symbol].digits - 1
+        digits = all_symbols_info[symbol].digits # (note 44b)
         points_dff_values_df[symbol] = (open_prices.iloc[:,c] - open_prices.iloc[:,c].shift(periods=1)) * 10 ** (digits) * all_symbols_info[symbol].pt_value
     if temp_col_name != None:
         points_dff_values_df.columns = [temp_col_name] * len(symbols)
