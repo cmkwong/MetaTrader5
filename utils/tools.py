@@ -39,3 +39,12 @@ def get_modify_coefficient_vector(coefficient_vector, long_mode):
     else:
         modified_coefficient_vector = np.append(coefficient_vector[1:], -1)  # buy predict, sell real
     return modified_coefficient_vector.reshape(-1,)
+
+def get_accuracy(values, th=0.0):
+    """
+    :param values: list
+    :param th: float
+    :return: float
+    """
+    accuracy = np.sum([c > th for c in values]) / len(values)
+    return accuracy

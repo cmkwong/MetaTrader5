@@ -198,7 +198,6 @@ def get_stat_text_condition(stats, required_type):
     txt = ''
     for mode, types in stats.items():  # long or short
         txt += "{}:\n".format(mode)
-        txt += "count: {}\naccuracy: {:.5f}\n".format(types['count'], types['accuracy'])
         for type, stat in types.items():  # count, accuracy, (return / earning)
             if type == required_type:
                 txt += "  {}:\n".format(type)

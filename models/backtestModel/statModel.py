@@ -1,9 +1,6 @@
 import numpy as np
-from production.codes.models.backtestModel import returnModel, indexModel, signalModel
-
-def get_accuracy(rets):
-    accuracy = np.sum([c > 1 for c in rets]) / len(rets)
-    return accuracy
+from production.codes.models.backtestModel import returnModel, indexModel
+from production.codes.utils import tools
 
 def get_action_total(signal):
     """
@@ -40,6 +37,8 @@ def get_stat(Prices, signal, coefficient_vector, long_mode=True):
         # earning
         stat['earning'] = {}
         earning_list = returnModel.get_earning_list(Prices.quote_exchg, Prices.ptDv, coefficient_vector, signal, long_mode)
+        stat['earning']['count'] = get_action_total(signal)
+        stat['earning']["accuracy"] = tools.get_accuracy(earning_list, 0.0)
         stat['earning']["total"] = returnModel.get_total_earning(earning_list)
         stat['earning']["mean"] = np.mean(earning_list)
         stat['earning']["max"] = np.max(earning_list)
@@ -49,16 +48,14 @@ def get_stat(Prices, signal, coefficient_vector, long_mode=True):
         # return
         stat['ret'] = {}
         ret_list = returnModel.get_ret_list(Prices.o, Prices.quote_exchg, coefficient_vector, signal, long_mode)
+        stat['ret']['count'] = get_action_total(signal)
+        stat['ret']["accuracy"] = tools.get_accuracy(ret_list, 1.0)
         stat['ret']["total"] = returnModel.get_total_ret(ret_list)
         stat['ret']["mean"] = np.mean(ret_list)
         stat['ret']["max"] = np.max(ret_list)
         stat['ret']["min"] = np.min(ret_list)
         stat['ret']["std"] = np.std(ret_list)
 
-        # total number of trade
-        stat["count"] = get_action_total(signal)
-        # accuracy (count on ret > 1)
-        stat["accuracy"] = get_accuracy(ret_list)
     return stat
 
 def get_stats(Prices, long_signal, short_signal, coefficient_vector):
