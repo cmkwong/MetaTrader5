@@ -27,7 +27,16 @@ def get_ret_list(open_prices, exchg_q2d, coefficient_vector, signal, long_mode):
         rets.append(ret[s + 1: e + 1].prod())  # see notes point 6
     return rets
 
-def get_ret(open_prices, exchg_q2d, coefficient_vector, long_mode):
+def get_ret(open_prices, _, coefficient_vector, long_mode): # see note 45a
+
+    modified_coefficient_vector = tools.get_modify_coefficient_vector(coefficient_vector, long_mode)
+    change = (open_prices - open_prices.shift(1)) / open_prices.shift(1)
+    olds = np.sum(np.abs(modified_coefficient_vector))
+    news = (np.abs(modified_coefficient_vector) + (change * modified_coefficient_vector)).sum(axis=1)
+    ret = news / olds
+    return ret
+
+def get_ret2(open_prices, exchg_q2d, coefficient_vector, long_mode):
     """
     :param open_prices: pd.DataFrame
     :param exchg_q2d: pd.DataFrame
@@ -38,7 +47,7 @@ def get_ret(open_prices, exchg_q2d, coefficient_vector, long_mode):
     modified_coefficient_vector = tools.get_modify_coefficient_vector(coefficient_vector, long_mode)
     old_value_df = (open_prices * modified_coefficient_vector.reshape(-1,) * exchg_q2d.values).sum(axis=1).shift(1)
     new_value_df = (open_prices * modified_coefficient_vector.reshape(-1,) * exchg_q2d.shift(1).values).sum(axis=1) # use past exchange rate as reference rate (Note 34a&b)
-    ret = pd.Series(1 + ((new_value_df - old_value_df) / old_value_df.abs()), index=open_prices.index, name='long') # absolute the value (note 44a and side note)
+    ret = pd.Series(1 + ((new_value_df - old_value_df) / old_value_df.abs()), index=open_prices.index, name='return') # absolute the value (note 44a and side note)
     return ret
 
 def get_earning(exchg_q2d, points_dff_values_df, coefficient_vector, long_mode):

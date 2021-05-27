@@ -14,7 +14,7 @@ options = {
 data_options = {
     'start': (2015,1,1,0,0),
     'end': (2021,5,5,0,0),    # None = get the most current price
-    'symbols': ["AUDJPY", 	"AUDUSD", 	"EURNOK", 	"EURSEK", 	"USDCAD", 	"NZDUSD"],
+    'symbols': ["AUDJPY", 	"AUDUSD", 	"CADJPY", 	"EURUSD", 	"NZDUSD", 	"USDCAD"],
     'timeframe': mt5Model.get_txt2timeframe('H1'),
     'timezone': "Hongkong",
     'deposit_currency': 'USD',

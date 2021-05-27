@@ -103,10 +103,10 @@ def get_coin_NN_plt_datas(Prices, coefficient_vector, upper_th, lower_th, z_scor
 
     # ------------ DEBUG -------------
     df_debug = pd.DataFrame(index=Prices.c.index)
-    df_debug = pd.concat([df_debug, Prices.o, Prices.quote_exchg, Prices.base_exchg, coin_data, long_signal, short_signal, real_predict_df,
+    df_debug = pd.concat([df_debug, Prices.o, Prices.quote_exchg, Prices.base_exchg, Prices.ptDv, coin_data, long_signal, short_signal,
                           long_ret, short_ret, accum_ret_df,
                           long_earning, short_earning, accum_earning_df], axis=1)
-    df_debug.to_csv('C://Users//Chris//projects//210215_mt5//production//docs//1//debug.csv')
+    df_debug.to_csv('C://Users//Chris//projects//210215_mt5//production//docs//1//debug2.csv')
 
     return plt_datas
 
