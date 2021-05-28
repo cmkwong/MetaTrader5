@@ -14,7 +14,7 @@ options = {
 data_options = {
     'start': (2015,1,1,0,0),
     'end': (2021,5,5,0,0),    # None = get the most current price
-    'symbols': ["AUDJPY", 	"AUDUSD", 	"CADJPY", 	"EURUSD", 	"NZDUSD", 	"USDCAD"],
+    'symbols': ["AUDJPY", 	"AUDUSD", 	"EURNOK", 	"EURSEK", 	"NZDUSD", 	"USDCAD"],
     'timeframe': mt5Model.get_txt2timeframe('H1'),
     'timezone': "Hongkong",
     'deposit_currency': 'USD',
@@ -23,9 +23,9 @@ data_options = {
     'price_plt_save_path': options['main_path'] + "coin_plt/",
 }
 train_options = {
-    'upper_th': 0.1,
-    'lower_th': -0.1,
-    'z_score_mean_window': 3,
+    'upper_th': 0.3,
+    'lower_th': -0.3,
+    'z_score_mean_window': 5,
     'z_score_std_window': 20
 }
 with mt5Controller.Helper():
