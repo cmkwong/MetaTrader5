@@ -47,7 +47,7 @@ def get_stat(Prices, signal, coefficient_vector, long_mode=True):
 
         # return
         stat['ret'] = {}
-        ret_list = returnModel.get_ret_list(Prices.o, Prices.quote_exchg, coefficient_vector, signal, long_mode)
+        ret_list = returnModel.get_ret_list(Prices.o, coefficient_vector, signal, long_mode)
         stat['ret']['count'] = get_action_total(signal)
         stat['ret']["accuracy"] = tools.get_accuracy(ret_list, 1.0) # calculate the accuracy separately, note 46a
         stat['ret']["total"] = returnModel.get_total_ret(ret_list)

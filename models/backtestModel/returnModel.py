@@ -11,24 +11,28 @@ def get_earning_list(exchg_q2d, points_dff_values_df, coefficient_vector, signal
         earnings.append(np.sum(earning[s + 1: e + 1]))  # see notes point 6
     return earnings
 
-def get_ret_list(open_prices, exchg_q2d, coefficient_vector, signal, long_mode):
+def get_ret_list(open_prices, coefficient_vector, signal, long_mode):
     """
     :param open_prices: pd.DataFrame
-    :param exchg_q2d: pd.DataFrame
     :param coefficient_vector: np.array, raw vector with interception(constant value)
     :param signal: pd.Series
     :param long_mode: Boolean
     :return: return list
     """
     start_index, end_index = indexModel.get_action_start_end_index(signal.reset_index(drop=True))   # discard the DateTimeIndex
-    ret = get_ret(open_prices, exchg_q2d, coefficient_vector, long_mode).reset_index(drop=True)     # discard the DateTimeIndex
+    ret = get_ret(open_prices, coefficient_vector, long_mode).reset_index(drop=True)     # discard the DateTimeIndex
     rets = []
     for s, e in zip(start_index, end_index):
         rets.append(ret[s + 1: e + 1].prod())  # why added 1, see notes (6)
     return rets
 
-def get_ret(open_prices, _, coefficient_vector, long_mode): # see note (45a)
-
+def get_ret(open_prices, coefficient_vector, long_mode): # see note (45a)
+    """
+    :param open_prices: pd.DataFrame
+    :param coefficient_vector: np.array
+    :param long_mode: Boolean
+    :return: pd.Series
+    """
     modified_coefficient_vector = tools.get_modify_coefficient_vector(coefficient_vector, long_mode)
     change = (open_prices - open_prices.shift(1)) / open_prices.shift(1)
     olds = np.sum(np.abs(modified_coefficient_vector))
@@ -88,22 +92,29 @@ def get_total_ret(rets):
         total_ret *= ret
     return total_ret
 
-def get_accum_earning(earning, signal):
+def get_accum_earning(signal, exchg_q2d, points_dff_values_df, coefficient_vector, long_mode):
     """
-    :param earning: pd.Series
     :param signal: pd.Series
+    :param exchg_q2d: pd.Dataframe, that exchange the dollar into same deposit assert
+    :param points_dff_values_df: points the change with respect to quote currency
+    :param coefficient_vector: np.array, raw vector with interception(constant value)
+    :param long_mode: Boolean
     :return: pd.Series with accumulative earning
     """
+    earning = get_earning(exchg_q2d, points_dff_values_df, coefficient_vector, long_mode)
     earning_by_signal = get_earning_by_signal(earning, signal)
     accum_earning = pd.Series(earning_by_signal.cumsum(), index=signal.index, name="accum_earning") # Simplify the function note 47a
     return accum_earning
 
-def get_accum_ret(ret, signal):
+def get_accum_ret(signal, open_price, coefficient_vector, long_mode):
     """
-    :param ret: pd.Series
     :param signal: pd.Series
+    :param open_prices: pd.DataFrame
+    :param coefficient_vector: np.array
+    :param long_mode: Boolean
     :return: pd.Series with accumulative return
     """
+    ret = get_ret(open_price, coefficient_vector, long_mode)
     ret_by_signal = get_ret_by_signal(ret, signal)
     accum_ret = pd.Series(ret_by_signal.cumprod(), index=signal.index, name="accum_ret") # Simplify the function note 47a
     return accum_ret
