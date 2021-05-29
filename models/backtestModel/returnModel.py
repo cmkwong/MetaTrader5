@@ -92,7 +92,7 @@ def get_total_ret(rets):
         total_ret *= ret
     return total_ret
 
-def get_accum_earning(signal, exchg_q2d, points_dff_values_df, coefficient_vector, long_mode):
+def get_accum_earning(earning, signal):
     """
     :param signal: pd.Series
     :param exchg_q2d: pd.Dataframe, that exchange the dollar into same deposit assert
@@ -101,12 +101,11 @@ def get_accum_earning(signal, exchg_q2d, points_dff_values_df, coefficient_vecto
     :param long_mode: Boolean
     :return: pd.Series with accumulative earning
     """
-    earning = get_earning(exchg_q2d, points_dff_values_df, coefficient_vector, long_mode)
     earning_by_signal = get_earning_by_signal(earning, signal)
     accum_earning = pd.Series(earning_by_signal.cumsum(), index=signal.index, name="accum_earning") # Simplify the function note 47a
     return accum_earning
 
-def get_accum_ret(signal, open_price, coefficient_vector, long_mode):
+def get_accum_ret(ret, signal):
     """
     :param signal: pd.Series
     :param open_prices: pd.DataFrame
@@ -114,7 +113,61 @@ def get_accum_ret(signal, open_price, coefficient_vector, long_mode):
     :param long_mode: Boolean
     :return: pd.Series with accumulative return
     """
-    ret = get_ret(open_price, coefficient_vector, long_mode)
     ret_by_signal = get_ret_by_signal(ret, signal)
     accum_ret = pd.Series(ret_by_signal.cumprod(), index=signal.index, name="accum_ret") # Simplify the function note 47a
     return accum_ret
+
+def modify_ret_earning_with_SLSP(ret_series, earning_series, sl, sp):
+    """
+    :param ret_series: pd.Series with numeric index
+    :param earning_series: pd.Series with numeric index
+    :param sl: stop-loss (negative value)
+    :param sp: stop-profit (positive value)
+    :return: ret (np.array), earning (np.array)
+    """
+    total = 0
+    sl_buffer, sp_buffer = sl, sp
+    ret_mask, earning_mask = np.ones((len(ret_series),)), np.zeros((len(ret_series),))
+    for i, (r, e) in enumerate(zip(ret_series, earning_series)):
+        total += e
+        if total >= sp:
+            ret_mask[i] = 1 + ((r-1)/e) * sp_buffer
+            earning_mask[i] = sp_buffer
+            break
+        elif total <= sl:
+            ret_mask[i] = 1 - ((1-r)/e) * sl_buffer
+            earning_mask[i] = sl_buffer
+            break
+        else:
+            ret_mask[i], earning_mask[i] = ret_series[i], earning_series[i]
+            sl_buffer -= e
+            sp_buffer -= e
+    return ret_mask, earning_mask
+
+def get_ret_earning_with_SLSP(signal, exchg_q2d, open_price, points_dff_values_df, coefficient_vector, long_mode, sl, sp):
+    """
+    :param signal: pd.Series
+    :param exchg_q2d: pd.DataFrame
+    :param open_price: pd.DataFrame
+    :param points_dff_values_df: pd.DataFrame
+    :param coefficient_vector: np.array
+    :param long_mode: Boolean
+    :param sl: stop-loss (negative value)
+    :param sp: stop-profit (positive value)
+    :return: ret_by_signal(pd.Series) and earning_by_signal(pd.Series), are modified with stop-loss and stop-profit
+    """
+    ret = get_ret(open_price, coefficient_vector, long_mode)
+    earning = get_earning(exchg_q2d, points_dff_values_df, coefficient_vector, long_mode)
+    ret_by_signal = get_ret_by_signal(ret, signal)
+    earning_by_signal = get_earning_by_signal(earning, signal)
+
+    # get the start index and end index
+    start_index, end_index = indexModel.get_action_start_end_index(signal.reset_index(drop=True))
+    for s, e in zip(start_index, end_index):
+        s, e = s+1, e+1
+        ret_by_signal.iloc[s:e], earning_by_signal.iloc[s:e] = modify_ret_earning_with_SLSP(ret[s:e], earning[s:e], sl, sp)
+    return ret_by_signal.rename("ret_by_signal_slsp"), earning_by_signal.rename("earning_by_signal_slsp")
+
+
+
+
