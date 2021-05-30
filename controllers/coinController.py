@@ -26,8 +26,10 @@ train_options = {
     'upper_th': 0.3,
     'lower_th': -0.3,
     'z_score_mean_window': 5,
-    'z_score_std_window': 20
+    'z_score_std_window': 20,
+    'slsp': (-100,100),
 }
+
 with mt5Controller.Helper():
 
     Prices = mt5Model.get_Prices(data_options['symbols'], data_options['timeframe'], data_options['timezone'],
@@ -39,8 +41,8 @@ with mt5Controller.Helper():
     # get Linear Regression coefficients
     coefficient_vector = coinModel.get_coefficient_vector(Train_Prices.c.values[:, :-1], Train_Prices.c.values[:, -1])
 
-    train_plt_datas = plotModel.get_coin_NN_plt_datas(Train_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'], train_options['z_score_mean_window'], train_options['z_score_std_window'])
-    test_plt_datas = plotModel.get_coin_NN_plt_datas(Test_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'], train_options['z_score_mean_window'], train_options['z_score_std_window'])
+    train_plt_datas = plotModel.get_coin_NN_plt_datas(Train_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'], train_options['z_score_mean_window'], train_options['z_score_std_window'], train_options['slsp'])
+    test_plt_datas = plotModel.get_coin_NN_plt_datas(Test_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'], train_options['z_score_mean_window'], train_options['z_score_std_window'], train_options['slsp'])
 
     # save the plot
     title = plotModel.get_coin_NN_plot_title(data_options['start'], data_options['end'], mt5Model.get_timeframe2txt(data_options['timeframe']))

@@ -24,22 +24,24 @@ def get_action_detail(open_price, signal):
         action_details[key] = r
     return action_details
 
-def get_stat(Prices, signal, coefficient_vector, long_mode=True):
+def get_stat(Prices, signal, coefficient_vector, long_mode=True, slsp=(0,0)):
     """
     :param Prices: collections nametuple object
     :param signal: pd.Series
     :param coefficient_vector: np.array, raw coefficient
     :param long_mode: Boolean
-    :return:
+    :param slsp: tuple(stop loss (negative), stop profit (positive))
+    :return: dictionary
     """
     stat = {}
     if signal.sum() != 0:
+        ret_list, earning_list = returnModel.get_ret_earning_list(Prices.o, Prices.quote_exchg, Prices.ptDv, coefficient_vector, signal, long_mode, slsp)
+        total_ret, total_earning = returnModel.get_total_ret_earning(ret_list, earning_list)
         # earning
         stat['earning'] = {}
-        earning_list = returnModel.get_earning_list(Prices.quote_exchg, Prices.ptDv, coefficient_vector, signal, long_mode)
         stat['earning']['count'] = get_action_total(signal)
         stat['earning']["accuracy"] = tools.get_accuracy(earning_list, 0.0) # calculate the accuracy separately, note 46a
-        stat['earning']["total"] = returnModel.get_total_earning(earning_list)
+        stat['earning']["total"] = total_earning
         stat['earning']["mean"] = np.mean(earning_list)
         stat['earning']["max"] = np.max(earning_list)
         stat['earning']["min"] = np.min(earning_list)
@@ -47,10 +49,9 @@ def get_stat(Prices, signal, coefficient_vector, long_mode=True):
 
         # return
         stat['ret'] = {}
-        ret_list = returnModel.get_ret_list(Prices.o, coefficient_vector, signal, long_mode)
         stat['ret']['count'] = get_action_total(signal)
         stat['ret']["accuracy"] = tools.get_accuracy(ret_list, 1.0) # calculate the accuracy separately, note 46a
-        stat['ret']["total"] = returnModel.get_total_ret(ret_list)
+        stat['ret']["total"] = total_ret
         stat['ret']["mean"] = np.mean(ret_list)
         stat['ret']["max"] = np.max(ret_list)
         stat['ret']["min"] = np.min(ret_list)
@@ -58,17 +59,18 @@ def get_stat(Prices, signal, coefficient_vector, long_mode=True):
 
     return stat
 
-def get_stats(Prices, long_signal, short_signal, coefficient_vector):
+def get_stats(Prices, long_signal, short_signal, coefficient_vector, slsp=(0,0)):
     """
     get stats both for long and short
     :param Prices: collections nametuple object
     :param long_signal: pd.Series
     :param short_signal: pd.Series
     :param coefficient_vector: np.array, raw coefficient
+    :param slsp: tuple(stop loss (negative), stop profit (positive))
     :return: dictionary
     """
     stats = {}
-    stats['long'] = get_stat(Prices, long_signal, coefficient_vector, long_mode=True)
-    stats['short'] = get_stat(Prices, short_signal, coefficient_vector, long_mode=False)
+    stats['long'] = get_stat(Prices, long_signal, coefficient_vector, long_mode=True, slsp=slsp)
+    stats['short'] = get_stat(Prices, short_signal, coefficient_vector, long_mode=False, slsp=slsp)
     return stats
 
