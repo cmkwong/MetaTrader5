@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 from production.codes.models import plotModel
 
 def save_plot(train_plt_data, test_plt_data, symbols, episode, saved_path, dt_str, dpi=500, linewidth=0.2, title=None,
-              figure_size=(28, 12), fontsize=9, bins=100, setting=''):
+              figure_size=(28, 12), fontsize=9, bins=100, setting='', hist_range=None):
     """
     :param setting:
     :param bins:
@@ -24,6 +24,8 @@ def save_plot(train_plt_data, test_plt_data, symbols, episode, saved_path, dt_st
     fig.suptitle(title, fontsize=fontsize*4)
     plt.figtext(0.1,0.9, setting, fontsize=fontsize*2)
     gs = fig.add_gridspec(plotModel.get_total_height(train_plt_data), 1)  # slice into grid with different size
+    # for histogram range
+    if hist_range != None: hist_range = (hist_range[0]+1, hist_range[1]-1) # exclude the range, see note (51a)
 
     # graph list
     for i in range(len(train_plt_data)):
@@ -40,8 +42,8 @@ def save_plot(train_plt_data, test_plt_data, symbols, episode, saved_path, dt_st
 
         # histogram (pd.Series)
         if type(train_plt_data[i]['hist']) == pd.Series and type(test_plt_data[i]['hist']) == pd.Series:
-            plt.hist(train_plt_data[i]['hist'], bins=bins, label="{} {}".format("Train", train_plt_data[i]['hist'].name))
-            plt.hist(test_plt_data[i]['hist'], bins=bins, label="{} {}".format("Test", test_plt_data[i]['hist'].name))
+            plt.hist(train_plt_data[i]['hist'], bins=bins, label="{} {}".format("Train", train_plt_data[i]['hist'].name), range=hist_range)
+            plt.hist(test_plt_data[i]['hist'], bins=bins, label="{} {}".format("Test", test_plt_data[i]['hist'].name), range=hist_range)
 
         # text
         if type(train_plt_data[i]['text']) == str and type(test_plt_data[i]['text']) == str:

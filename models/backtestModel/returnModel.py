@@ -11,7 +11,7 @@ import numpy as np
 #         earnings.append(np.sum(earning[s + 1: e + 1]))  # see notes point 6
 #     return earnings
 
-def get_ret_earning_list(open_prices, exchg_q2d, points_dff_values_df, coefficient_vector, signal, long_mode, slsp=(0,0)):
+def get_ret_earning_list(open_prices, exchg_q2d, points_dff_values_df, coefficient_vector, signal, long_mode, slsp=None):
     """
     :param open_prices: pd.DataFrame
     :param exchg_q2d: pd.DataFrame
@@ -29,7 +29,7 @@ def get_ret_earning_list(open_prices, exchg_q2d, points_dff_values_df, coefficie
     rets, earnings = [], []
     for s, e in zip(start_index, end_index):
         ret_series, earning_series = ret[s + 1: e + 1], earning[s + 1: e + 1] # why added 1, see notes (6)
-        if slsp != (0,0):
+        if slsp != None:
             ret_series, earning_series = modify_ret_earning_with_SLSP(ret_series, earning_series, slsp[0], slsp[1]) # modify the return and earning if has stop-loss and stop-profit setting
         rets.append(ret_series.prod())
         earnings.append(np.sum(earning_series))
@@ -82,7 +82,7 @@ def get_ret_earning(open_prices, exchg_q2d, points_dff_values_df, coefficient_ve
 #     earning_by_signal = pd.Series(signal.shift(2).values * earning.values, index=signal.index, name="earning_by_signal").fillna(0.0) # shift 2 unit see (30e)
 #     return earning_by_signal
 
-def get_ret_earning_by_signal(ret, earning, signal, slsp=(0,0)):
+def get_ret_earning_by_signal(ret, earning, signal, slsp=None):
     """
     :param ret: pd.Series
     :param earning: earning
@@ -92,7 +92,7 @@ def get_ret_earning_by_signal(ret, earning, signal, slsp=(0,0)):
     """
     ret_by_signal = pd.Series(signal.shift(2).values * ret.values, index=signal.index, name="ret_by_signal").fillna(1.0).replace({0: 1})
     earning_by_signal = pd.Series(signal.shift(2).values * earning.values, index=signal.index, name="earning_by_signal").fillna(0.0)  # shift 2 unit see (30e)
-    if slsp != (0,0):
+    if slsp != None:
         start_index, end_index = indexModel.get_action_start_end_index(signal.reset_index(drop=True))
         for s, e in zip(start_index, end_index):
             s, e = s + 1, e + 1
@@ -134,7 +134,7 @@ def get_total_ret_earning(rets, earnings):
 #     accum_earning = pd.Series(earning_by_signal.cumsum(), index=signal.index, name="accum_earning") # Simplify the function note 47a
 #     return accum_earning
 
-def get_accum_ret_earning(ret, earning, signal, slsp=(0,0)):
+def get_accum_ret_earning(ret, earning, signal, slsp=None):
     """
     :param ret: pd.Series
     :param earning: pd.Series

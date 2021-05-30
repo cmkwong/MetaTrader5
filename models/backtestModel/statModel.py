@@ -24,7 +24,7 @@ def get_action_detail(open_price, signal):
         action_details[key] = r
     return action_details
 
-def get_stat(Prices, signal, coefficient_vector, long_mode=True, slsp=(0,0)):
+def get_stat(Prices, signal, coefficient_vector, long_mode=True, slsp=None):
     """
     :param Prices: collections nametuple object
     :param signal: pd.Series
@@ -59,7 +59,7 @@ def get_stat(Prices, signal, coefficient_vector, long_mode=True, slsp=(0,0)):
 
     return stat
 
-def get_stats(Prices, long_signal, short_signal, coefficient_vector, slsp=(0,0)):
+def get_stats(Prices, long_signal, short_signal, coefficient_vector, slsp=None):
     """
     get stats both for long and short
     :param Prices: collections nametuple object
