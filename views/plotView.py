@@ -48,8 +48,8 @@ def save_plot(train_plt_data, test_plt_data, symbols, episode, saved_path, dt_st
         # text
         if type(train_plt_data[i]['text']) == str and type(test_plt_data[i]['text']) == str:
             train_start_index, test_start_index = train_plt_data[i]['df'].index[0], test_plt_data[0]['df'].index[0]
-            plt.text(train_start_index, df.iloc[:,0].quantile(0.01), "Train \n" + train_plt_data[i]['text'], fontsize=fontsize)   # calculate the quantile 0.1 to get the y-position
-            plt.text(test_start_index, df.iloc[:,0].quantile(0.01), "Test \n" + test_plt_data[i]['text'], fontsize=fontsize)     # calculate the quantile 0.1 to get the y-position
+            plt.text(train_start_index, df.iloc[:,0].quantile(0.01), "Train \n" + train_plt_data[i]['text'], fontsize=fontsize*0.7)   # calculate the quantile 0.1 to get the y-position
+            plt.text(test_start_index, df.iloc[:,0].quantile(0.01), "Test \n" + test_plt_data[i]['text'], fontsize=fontsize*0.7)     # calculate the quantile 0.1 to get the y-position
 
         # equation
         if type(train_plt_data[i]['equation']) == str and type(test_plt_data[i]['equation']) == str:

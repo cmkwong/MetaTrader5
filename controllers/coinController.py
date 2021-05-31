@@ -10,6 +10,7 @@ DT_STRING = now.strftime("%y%m%d%H%M%S")
 options = {
     'main_path': "C:/Users/Chris/projects/210215_mt5/production/docs/{}/".format(config.VERSION),
     'dt': DT_STRING,
+    'debug': True
 }
 data_options = {
     'start': (2015,1,1,0,0),
@@ -27,7 +28,7 @@ train_options = {
     'lower_th': -0.3,
     'z_score_mean_window': 5,
     'z_score_std_window': 20,
-    'slsp': (-100,1200), # if None means no constraint
+    'slsp': (-100,5000), # None means no constraint
 }
 
 with mt5Controller.Helper():
@@ -41,8 +42,12 @@ with mt5Controller.Helper():
     # get Linear Regression coefficients
     coefficient_vector = coinModel.get_coefficient_vector(Train_Prices.c.values[:, :-1], Train_Prices.c.values[:, -1])
 
-    train_plt_datas = plotModel.get_coin_NN_plt_datas(Train_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'], train_options['z_score_mean_window'], train_options['z_score_std_window'], train_options['slsp'])
-    test_plt_datas = plotModel.get_coin_NN_plt_datas(Test_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'], train_options['z_score_mean_window'], train_options['z_score_std_window'], train_options['slsp'])
+    train_plt_datas = plotModel.get_coin_NN_plt_datas(Train_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'],
+                                                      train_options['z_score_mean_window'], train_options['z_score_std_window'],
+                                                      train_options['slsp'], debug_file='{}_train.csv'.format(options['dt']), debug=options['debug'])
+    test_plt_datas = plotModel.get_coin_NN_plt_datas(Test_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'],
+                                                     train_options['z_score_mean_window'], train_options['z_score_std_window'], train_options['slsp'],
+                                                     debug_file='{}_test.csv'.format(options['dt']), debug=options['debug'])
 
     # save the plot
     title = plotModel.get_coin_NN_plot_title(data_options['start'], data_options['end'], mt5Model.get_timeframe2txt(data_options['timeframe']))

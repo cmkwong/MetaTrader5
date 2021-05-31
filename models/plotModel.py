@@ -44,14 +44,17 @@ def get_coin_NN_plot_image_name(dt_str, symbols, episode):
     name = "{}-{}-episode-{}.jpg".format(dt_str, episode, symbols_str)
     return name
 
-def get_coin_NN_plt_datas(Prices, coefficient_vector, upper_th, lower_th, z_score_mean_window, z_score_std_window, slsp=(0,0)):
+def get_coin_NN_plt_datas(Prices, coefficient_vector, upper_th, lower_th, z_score_mean_window, z_score_std_window, slsp=(0,0), debug_file='debug.csv', debug=False):
     """
     :param Prices: collections.nametuple object
     :param coefficient_vector: np.array
     :param upper_th: float
     :param lower_th: float
-    :param z_score_rolling_mean_window: int
+    :param z_score_mean_window: int
+    :param z_score_std_window: int
     :param slsp: tuple(stop loss (negative), stop profit (positive))
+    :param debug_file: str
+    :param debug: Boolean
     :return: nested dictionary
     """
     # prepare
@@ -134,13 +137,14 @@ def get_coin_NN_plt_datas(Prices, coefficient_vector, upper_th, lower_th, z_scor
     plt_datas[10] = _get_format_plot_data(hist=pd.Series(short_earning_list, name='short earning slsp'))
 
     # ------------ DEBUG -------------
-    df_debug = pd.DataFrame(index=Prices.c.index)
-    df_debug = pd.concat([df_debug, Prices.o, Prices.quote_exchg, Prices.base_exchg, Prices.ptDv, coin_data, long_signal, short_signal,
-                          long_ret, short_ret, accum_ret_df,
-                          long_earning, short_earning, accum_earning_df,
-                          long_accum_ret_slsp, short_accum_ret_slsp,
-                          long_accum_earning_slsp, short_accum_earning_slsp], axis=1)
-    df_debug.to_csv('C://Users//Chris//projects//210215_mt5//production//docs//1//debug.csv')
+    if debug:
+        df_debug = pd.DataFrame(index=Prices.c.index)
+        df_debug = pd.concat([df_debug, Prices.o, Prices.quote_exchg, Prices.base_exchg, Prices.ptDv, coin_data, long_signal, short_signal,
+                              long_ret, short_ret, accum_ret_df,
+                              long_earning, short_earning, accum_earning_df,
+                              long_accum_ret_slsp, short_accum_ret_slsp,
+                              long_accum_earning_slsp, short_accum_earning_slsp], axis=1)
+        df_debug.to_csv('C://Users//Chris//projects//210215_mt5//production//docs//1//debug//{}'.format(debug_file))
 
     return plt_datas
 
