@@ -1,4 +1,4 @@
-from production.codes.models import mt5Model, batchModel, coinNNModel, plotModel
+from production.codes.models import mt5Model, batchModel, coinNNModel, plotModel, priceModel
 from production.codes.views import printStat, plotView
 from production.codes.controllers import mt5Controller
 from production.codes import config
@@ -46,11 +46,11 @@ train_options = {
 
 with mt5Controller.Helper():
 
-    Prices = mt5Model.get_Prices(data_options['symbols'], data_options['timeframe'], data_options['timezone'],
+    Prices = priceModel.get_Prices(data_options['symbols'], data_options['timeframe'], data_options['timezone'],
                                  data_options['start'], data_options['end'], '1111', data_options['deposit_currency'])
 
     # split into train set and test set
-    Train_Prices, Test_Prices = mt5Model.split_Prices(Prices, percentage=data_options['trainTestSplit'])
+    Train_Prices, Test_Prices = priceModel.split_Prices(Prices, percentage=data_options['trainTestSplit'])
 
     lstm = coinNNModel.LSTM(model_options['input_size'], model_options['hidden_size'], model_options['layer'], data_options['seq_len'], model_options['batch_first'])
     optimizer = optim.Adam(lstm.parameters(), lr=model_options['lr'])

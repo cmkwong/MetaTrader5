@@ -1,5 +1,5 @@
 from production.codes import config
-from production.codes.models import mt5Model, plotModel
+from production.codes.models import mt5Model, plotModel, priceModel
 from production.codes.views import plotView
 from production.codes.controllers import mt5Controller
 from datetime import datetime
@@ -36,10 +36,10 @@ short_param = {
 }
 
 with mt5Controller.Helper():
-    Prices = mt5Model.get_Prices(data_options['symbols'], data_options['timeframe'], data_options['timezone'], data_options['start'], data_options['end'], ohlc='1111', deposit_currency='USD')
+    Prices = priceModel.get_Prices(data_options['symbols'], data_options['timeframe'], data_options['timezone'], data_options['start'], data_options['end'], ohlc='1111', deposit_currency='USD')
 
     # split into train set and test set
-    Train_Prices, Test_Prices = mt5Model.split_Prices(Prices, percentage=data_options['trainTestSplit'])
+    Train_Prices, Test_Prices = priceModel.split_Prices(Prices, percentage=data_options['trainTestSplit'])
 
     train_plt_datas = plotModel.get_ma_plt_datas(Train_Prices, long_param, short_param, train_options['limit_unit'])
     test_plt_datas = plotModel.get_ma_plt_datas(Test_Prices, long_param, short_param, train_options['limit_unit'])

@@ -1,6 +1,6 @@
 from production.codes import config
 from production.codes.controllers import mt5Controller
-from production.codes.models import mt5Model, plotModel, coinModel
+from production.codes.models import mt5Model, plotModel, coinModel, priceModel
 from production.codes.views import plotView
 
 from datetime import datetime
@@ -33,11 +33,11 @@ train_options = {
 
 with mt5Controller.Helper():
 
-    Prices = mt5Model.get_Prices(data_options['symbols'], data_options['timeframe'], data_options['timezone'],
+    Prices = priceModel.get_Prices(data_options['symbols'], data_options['timeframe'], data_options['timezone'],
                                            data_options['start'], data_options['end'], '1111', data_options['deposit_currency'])
 
     # split into train set and test set
-    Train_Prices, Test_Prices = mt5Model.split_Prices(Prices, percentage=data_options['trainTestSplit'])
+    Train_Prices, Test_Prices = priceModel.split_Prices(Prices, percentage=data_options['trainTestSplit'])
 
     # get Linear Regression coefficients
     coefficient_vector = coinModel.get_coefficient_vector(Train_Prices.c.values[:, :-1], Train_Prices.c.values[:, -1])
