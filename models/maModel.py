@@ -1,12 +1,11 @@
 import pandas as pd
 from production.codes.views import printStat
-from production.codes.controllers import mt5Controller
 from production.codes import config
 from production.codes.models import mt5Model
 from production.codes.models.backtestModel import signalModel,statModel, techModel
 
 def find_optimize_moving_average(options, max_index=201):
-    with mt5Controller.Helper() as helper:
+    with mt5Model.Helper() as helper:
         df = mt5Model.get_historical_data(options['symbol'], options['timeframe'], options['timezone'],
                                           options['start'], options['end'])
         for limit_unit in range(config.LIMIT_UNIT):

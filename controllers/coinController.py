@@ -1,5 +1,4 @@
 from production.codes import config
-from production.codes.controllers import mt5Controller
 from production.codes.models import mt5Model, plotModel, coinModel, priceModel
 from production.codes.views import plotView
 
@@ -31,10 +30,10 @@ train_options = {
     'slsp': (-100,5000), # None means no constraint
 }
 
-with mt5Controller.Helper():
+with mt5Model.Helper():
 
     Prices = priceModel.get_Prices(data_options['symbols'], data_options['timeframe'], data_options['timezone'],
-                                           data_options['start'], data_options['end'], '1111', data_options['deposit_currency'])
+                                   data_options['start'], data_options['end'], '1111', deposit_currency=data_options['deposit_currency'])
 
     # split into train set and test set
     Train_Prices, Test_Prices = priceModel.split_Prices(Prices, percentage=data_options['trainTestSplit'])

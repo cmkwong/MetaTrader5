@@ -39,3 +39,4 @@ def get_coin_data(close_prices, coefficient_vector, mean_window, std_window):
     coin_data['spread'] = spread
     coin_data['z_score'] = maths.z_score_with_rolling_mean(spread.values, mean_window, std_window)
     return coin_data
+

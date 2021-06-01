@@ -35,7 +35,7 @@ short_param = {
     'slow': 10
 }
 
-with mt5Controller.Helper():
+with mt5Model.Helper():
     Prices = priceModel.get_Prices(data_options['symbols'], data_options['timeframe'], data_options['timezone'], data_options['start'], data_options['end'], ohlc='1111', deposit_currency='USD')
 
     # split into train set and test set

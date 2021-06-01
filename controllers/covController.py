@@ -1,6 +1,5 @@
-from production.codes.models import mt5Model
+from production.codes.models import mt5Model, priceModel
 from production.codes.models import covModel
-from production.codes.controllers import mt5Controller
 
 data_options = {
     'start': (2010, 1, 1, 0, 0),
@@ -15,13 +14,13 @@ data_options = {
 def get_cor_matrix(symbols, start, end, timeframe, timezone, deposit_currency):
     symbols = sorted(symbols, reverse=False)# sorting the symbols
     print(symbols)
-    Prices = mt5Model.get_Prices(symbols, timeframe, timezone, start, end=end, ohlc='1111', deposit_currency=deposit_currency)
+    Prices = priceModel.get_Prices(symbols, timeframe, timezone, start, end=end, ohlc='1111', deposit_currency=deposit_currency)
     price_matrix = Prices.c.values
     cor_matrix = covModel.corela_matrix(price_matrix)
     cor_table = covModel.corela_table(cor_matrix, symbols)
     return cor_matrix, cor_table
 
-with mt5Controller.Helper():
+with mt5Model.Helper():
     cor_matrix, cor_table = get_cor_matrix(data_options['symbols'], data_options['start'], data_options['end'],
                                        data_options['timeframe'], data_options['timezone'], data_options['deposit_currency'])
 print()

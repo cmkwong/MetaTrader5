@@ -1,51 +1,32 @@
-import MetaTrader5 as mt5
+from production.codes.models import mt5Model, priceModel
 from production.codes import config
+from datetime import datetime
+now = datetime.now()
+DT_STRING = now.strftime("%y%m%d%H%M%S")
 
-def connect_server():
-    # connect to MetaTrader 5
-    if not mt5.initialize():
-        print("initialize() failed")
-        mt5.shutdown()
-    else:
-        print("MetaTrader Connected")
+options = {
+    'main_path': "C:/Users/Chris/projects/210215_mt5/production/docs/{}/".format(config.VERSION),
+    'dt': DT_STRING,
+    'debug': True
+}
+data_options = {
+    'start': (2015,1,1,0,0),
+    'end': (2021,5,5,0,0),    # None = get the most current price
+    'symbols': ["AUDJPY", 	"AUDUSD", 	"CADJPY", 	"EURUSD", 	"NZDUSD", 	"USDCAD"],
+    'timeframe': mt5Model.get_txt2timeframe('H1'),
+    'timezone': "Hongkong",
+    'count': 20,
+    'deposit_currency': 'USD',
+    'price_plt_save_path': options['main_path'] + "coin_plt/",
+}
 
-def disconnect_server():
-    # disconnect to MetaTrader 5
-    mt5.shutdown()
-    print("MetaTrader Shutdown.")
+with mt5Model.Helper():
+    Prices = priceModel.get_Prices(data_options['symbols'], data_options['timeframe'], data_options['timezone'],
+                          start=None, end=None, ohlc='1111', count=data_options['count'], deposit_currency=data_options['deposit_currency'])
 
-class Helper:
-    def __init__(self):
-        self.text = ''
-        self.text_line = 0
-
-    def __enter__(self):
-        connect_server()
-        return self
-
-    def __exit__(self, *args):
-        disconnect_server()
-
-    def append_dict_into_text(self, stat):
-        """
-        :param stat: dictionary {}
-        :return: None
-        """
-        if self.text_line == 0: # header only for first line
-            for key in stat.keys():
-                self.text += key + ','
-            index = self.text.rindex(',')           # find the last index
-            self.text = self.text[:index] + '\n'    # and replace
-            self.text_line += 1
-        for value in stat.values():
-            self.text += str(value) + ','
-        index = self.text.rindex(',')           # find the last index
-        self.text = self.text[:index] + '\n'    # and replace
-        self.text_line += 1
-
-    def write_csv(self):
-        print("\nFrame: {}\nLong Mode: {}\nFrom: {}\nTo: {}\n".format(str(config.TIMEFRAME_TEXT), str(config.LONG_MODE), config.START_STRING, config.END_STRING))
-        print("Writing csv ... ", end='')
-        with open(config.CSV_FILE_PATH + config.CSV_FILE_NAME, 'w') as f:
-            f.write(self.text)
-        print("OK")
+#     lots = [-1.59,176.43,1.52,-0.42,-1.45, 100]
+#     symbols = ['AUDJPY','AUDUSD','CADJPY','EURUSD','NZDUSD','USDCAD']
+#     requests = mt5Model.requests_format(symbols, lots, deviation=5, type_filling='fok')
+#     order_ids = mt5Model.requests_execute(requests)
+#
+    print()
