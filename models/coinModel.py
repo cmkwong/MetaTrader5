@@ -40,3 +40,22 @@ def get_coin_data(close_prices, coefficient_vector, mean_window, std_window):
     coin_data['z_score'] = maths.z_score_with_rolling_mean(spread.values, mean_window, std_window)
     return coin_data
 
+def check_action(close_price_with_last_tick_l, close_price_with_last_tick_s, coefficient_vector, z_score_mean_window, z_score_std_window, upper_th, lower_th, slsp):
+    """
+    :param close_price_with_last_tick_l: pd.DataFrame for long that replace with last unit of price into tick price
+    :param close_price_with_last_tick_s: pd.DataFrame for short that replace with last unit of price into tick price
+    :param coefficient_vector: np.array
+    :param z_score_mean_window: int
+    :param z_score_std_window: int
+    :param upper_th: float
+    :param lower_th: float
+    :param slsp: tuple, stop loss and stop profit
+    :return: long_spread, short_spread, close all deals
+    """
+    long_coin_data = get_coin_data(close_price_with_last_tick_l, coefficient_vector, z_score_mean_window, z_score_std_window)
+    if long_coin_data['z_score'][-1] < lower_th:
+        return 'long_spread'
+    short_coin_data = get_coin_data(close_price_with_last_tick_s, coefficient_vector, z_score_mean_window, z_score_std_window)
+    if short_coin_data['z_score'][-1] > upper_th:
+        return 'short_spread'
+

@@ -1,5 +1,8 @@
 from production.codes.models import mt5Model, priceModel
+from production.codes.utils import tools
 from production.codes import config
+import numpy as np
+
 from datetime import datetime
 now = datetime.now()
 DT_STRING = now.strftime("%y%m%d%H%M%S")
@@ -23,6 +26,11 @@ data_options = {
 with mt5Model.Helper():
     Prices = priceModel.get_Prices(data_options['symbols'], data_options['timeframe'], data_options['timezone'],
                           start=None, end=None, ohlc='1111', count=data_options['count'], deposit_currency=data_options['deposit_currency'])
+
+    coefficient_vector = np.array([2.58766,0.01589,-1.76342,-0.01522,0.00351,0.01389])
+
+    close_price_with_last_tick = tools.get_close_price_with_last_tick(Prices.c, coefficient_vector)
+
 
 #     lots = [-1.59,176.43,1.52,-0.42,-1.45, 100]
 #     symbols = ['AUDJPY','AUDUSD','CADJPY','EURUSD','NZDUSD','USDCAD']
