@@ -1,7 +1,9 @@
 from production.codes import config
 import MetaTrader5 as mt5
-from datetime import datetime
+import pandas as pd
 import collections
+from datetime import datetime, timedelta
+import pytz
 
 class Helper:
     def __init__(self):
@@ -74,6 +76,16 @@ def get_timeframe2txt(mt5_timeframe_txt):
                       mt5.TIMEFRAME_MN1: "MN1"}
     return timeframe_dicts[mt5_timeframe_txt]
 
+def get_utc_time(time, timezone):
+    """
+    :param time: tuple (year, month, day, hour, mins) eg: (2010, 10, 30, 0, 0)
+    :param timezone: Check: set(pytz.all_timezones_set) - (Etc/UTC)
+    :return: datetime format
+    """
+    tz = pytz.timezone(timezone)
+    utc_time = datetime(time[0], time[1], time[2], hour=time[3], minute=time[4], tzinfo=tz) + timedelta(hours=config.BROKER_TIME_BETWEEN_UTC, minutes=0)
+    return utc_time
+
 def get_time_string(tt):
     """
     :param tt: time_tuple: tuple (yyyy,m,d,h,m) 
@@ -108,6 +120,31 @@ def get_symbols(group=None):
     else:
         symbols = mt5.symbols_get()
     return symbols
+
+def get_spread_from_ticks(ticks_frame, symbol):
+    """
+    :param ticks_frame: pd.DataFrame, all tick info
+    :return: pd.Series
+    """
+    spread = pd.Series((ticks_frame['ask'] - ticks_frame['bid']) * (10 ** mt5.symbol_info(symbol).digits), index=ticks_frame.index, name='ask_bid_spread_pt')
+    spread = spread.groupby(spread.index).mean()    # groupby() note 56b
+    return spread
+
+def get_ticks_range(symbol, start, end, timezone):
+    """
+    :param symbol: str, symbol
+    :param start: tuple, (2019,1,1)
+    :param end: tuple, (2020,1,1)
+    :param count:
+    :return:
+    """
+    utc_from = get_utc_time(start, timezone)
+    utc_to = get_utc_time(end, timezone)
+    ticks = mt5.copy_ticks_range(symbol, utc_from, utc_to, mt5.COPY_TICKS_ALL)
+    ticks_frame = pd.DataFrame(ticks) # set to dataframe, several name of cols like, bid, ask, volume...
+    ticks_frame['time'] = pd.to_datetime(ticks_frame['time'], unit='s') # transfer numeric time into second
+    ticks_frame = ticks_frame.set_index('time') # set the index
+    return ticks_frame
 
 def get_last_tick(symbol):
     """

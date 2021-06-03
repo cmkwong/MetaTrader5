@@ -4,29 +4,24 @@ from production.codes.utils import tools
 import collections
 import MetaTrader5 as mt5
 import pandas as pd
-import pytz
-from datetime import datetime, timedelta
+from datetime import datetime
 
-from pandas.plotting import register_matplotlib_converters
-register_matplotlib_converters()
-
-def get_historical_data(symbol, timeframe, timezone, start, end=None, utc_diff=3):
+def get_historical_data(symbol, timeframe, timezone, start, end=None):
     """
     :param symbol: str
     :param timeframe: mt5.timeframe
     :param timezone: Check: set(pytz.all_timezones_set) - (Etc/UTC)
     :param start (local time): tuple (year, month, day, hour, mins) eg: (2010, 10, 30, 0, 0)
     :param end (local time): tuple (year, month, day, hour, mins), if None, then take data until present
-    :param utc_diff: difference between IC market (UTC+3) and UTC = 3 (see note 23a)
     :return: dataframe
     """
-    tz = pytz.timezone(timezone)
-    utc_from = datetime(start[0], start[1], start[2], hour=start[3], minute=start[4], tzinfo=tz) + timedelta(hours=utc_diff, minutes=0)
+    utc_from = mt5Model.get_utc_time(start, timezone)
     if end == None:
         now = datetime.today()
-        utc_to = datetime(now.year, now.month, now.day, hour=now.hour, minute=now.minute, tzinfo=tz) + timedelta(hours=utc_diff,                                                                                            minutes=0)
+        now_tuple = (now.year, now.month, now.day, now.hour, now.minute)
+        utc_to = mt5Model.get_utc_time(now_tuple, timezone)
     else:
-        utc_to = datetime(end[0], end[1], end[2], hour=end[3], minute=end[4], tzinfo=tz) + timedelta(hours=utc_diff, minutes=0)
+        utc_to = mt5Model.get_utc_time(end, timezone)
     rates = mt5.copy_rates_range(symbol, timeframe, utc_from, utc_to)
     rates_frame = pd.DataFrame(rates, dtype=float) # create DataFrame out of the obtained data
     rates_frame['time'] = pd.to_datetime(rates_frame['time'], unit='s') # convert time in seconds into the datetime format

@@ -28,7 +28,7 @@ def get_total_height(plt_datas):
         total_height += plt_data['height']
     return total_height
 
-def get_coin_NN_plot_title(start, end, timeframe_str):
+def get_plot_title(start, end, timeframe_str):
     start_str = mt5Model.get_time_string(start)
     if end != None:
         end_str = mt5Model.get_time_string(end)
@@ -206,6 +206,20 @@ def get_ma_plt_datas(Prices, long_param, short_param, limit_unit):
     # short_earning = returnModel.get_earning(Prices.quote_exchg, Prices.ptDv, coefficient_vector=np.array([]), long_mode=False)
 
     return plt_datas
+
+def get_spread_plt_datas(spreads):
+    """
+    :param spreads: pd.DataFrame
+    :return: plt_data, nested dict
+    """
+    i = 0
+    plt_data = {}
+    for symbol in spreads.columns:
+        plt_data[i] = _get_format_plot_data(df=pd.DataFrame(spreads[symbol]), text="mean: {:.2f} pt\nstd: {:.2f} pt".format(np.mean(spreads[symbol]), np.std(spreads[symbol]))) # np.mean(pd.Series) will ignore the nan value, note 56c
+        i += 1
+        plt_data[i] = _get_format_plot_data(hist=spreads[symbol])
+        i += 1
+    return plt_data
 
 def append_all_df_debug(df_list):
     # [Prices.c, Prices.o, points_dff_values_df, coin_signal, int_signal, changes, ret_by_signal]

@@ -44,7 +44,7 @@ with mt5Model.Helper():
     train_plt_datas = plotModel.get_ma_plt_datas(Train_Prices, long_param, short_param, train_options['limit_unit'])
     test_plt_datas = plotModel.get_ma_plt_datas(Test_Prices, long_param, short_param, train_options['limit_unit'])
 
-    title = plotModel.get_coin_NN_plot_title(data_options['start'], data_options['end'], mt5Model.get_timeframe2txt(data_options['timeframe']))
+    title = plotModel.get_plot_title(data_options['start'], data_options['end'], mt5Model.get_timeframe2txt(data_options['timeframe']))
     plotView.save_plot(train_plt_datas, test_plt_datas, data_options['symbols'], 0,
                        train_options['price_plt_save_path'], train_options['dt'], dpi=500, linewidth=0.2, title=title,
                        figure_size=(42, 18), fontsize=5, bins=100)

@@ -3,6 +3,9 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from production.codes.models import plotModel
 
+from pandas.plotting import register_matplotlib_converters
+register_matplotlib_converters()
+
 def save_plot(train_plt_data, test_plt_data, symbols, episode, saved_path, dt_str, dpi=500, linewidth=0.2, title=None,
               figure_size=(28, 12), fontsize=9, bins=100, setting='', hist_range=None):
     """
@@ -35,24 +38,39 @@ def save_plot(train_plt_data, test_plt_data, symbols, episode, saved_path, dt_st
         plt.subplot(gs[(i * grid_step):(i * grid_step + grid_step), :])
 
         # dataframe
-        if type(train_plt_data[i]['df']) == pd.DataFrame and type(test_plt_data[i]['df']) == pd.DataFrame:
-            df = pd.concat([train_plt_data[i]['df'], test_plt_data[i]['df']], axis=0)
-            for col_name in df:
-                plt.plot(df.index, df[col_name].values, linewidth=linewidth, label=col_name)
+        if test_plt_data == None:
+            if type(train_plt_data[i]['df']) == pd.DataFrame:
+                df = train_plt_data[i]['df']
+                for col_name in df.columns:
+                    plt.plot(df.index, df[col_name].values, linewidth=linewidth, label=col_name)
+        else:
+            if type(train_plt_data[i]['df']) == pd.DataFrame and type(test_plt_data[i]['df']) == pd.DataFrame:
+                df = pd.concat([train_plt_data[i]['df'], test_plt_data[i]['df']], axis=0)
+                for col_name in df.columns:
+                    plt.plot(df.index, df[col_name].values, linewidth=linewidth, label=col_name)
 
         # histogram (pd.Series)
-        if type(train_plt_data[i]['hist']) == pd.Series and type(test_plt_data[i]['hist']) == pd.Series:
-            plt.hist(train_plt_data[i]['hist'], bins=bins, label="{} {}".format("Train", train_plt_data[i]['hist'].name), range=hist_range)
-            plt.hist(test_plt_data[i]['hist'], bins=bins, label="{} {}".format("Test", test_plt_data[i]['hist'].name), range=hist_range)
+        if test_plt_data == None:
+            if type(train_plt_data[i]['hist']) == pd.Series:
+                plt.hist(train_plt_data[i]['hist'], bins=bins, label="{} {}".format("Train", train_plt_data[i]['hist'].name), range=hist_range)
+        else:
+            if type(train_plt_data[i]['hist']) == pd.Series and type(test_plt_data[i]['hist']) == pd.Series:
+                plt.hist(train_plt_data[i]['hist'], bins=bins, label="{} {}".format("Train", train_plt_data[i]['hist'].name), range=hist_range)
+                plt.hist(test_plt_data[i]['hist'], bins=bins, label="{} {}".format("Test", test_plt_data[i]['hist'].name), range=hist_range)
 
         # text
-        if type(train_plt_data[i]['text']) == str and type(test_plt_data[i]['text']) == str:
-            train_start_index, test_start_index = train_plt_data[i]['df'].index[0], test_plt_data[0]['df'].index[0]
-            plt.text(train_start_index, df.iloc[:,0].quantile(0.01), "Train \n" + train_plt_data[i]['text'], fontsize=fontsize*0.7)   # calculate the quantile 0.1 to get the y-position
-            plt.text(test_start_index, df.iloc[:,0].quantile(0.01), "Test \n" + test_plt_data[i]['text'], fontsize=fontsize*0.7)     # calculate the quantile 0.1 to get the y-position
+        if test_plt_data == None:
+            if type(train_plt_data[i]['text']) == str:
+                train_start_index = train_plt_data[i]['df'].index[0]
+                plt.text(train_start_index, df.iloc[:, 0].quantile(0.01), "Train \n" + train_plt_data[i]['text'], fontsize=fontsize * 0.7)
+        else:
+            if type(train_plt_data[i]['text']) == str and type(test_plt_data[i]['text']) == str:
+                train_start_index, test_start_index = train_plt_data[i]['df'].index[0], test_plt_data[0]['df'].index[0]
+                plt.text(train_start_index, df.iloc[:,0].quantile(0.01), "Train \n" + train_plt_data[i]['text'], fontsize=fontsize*0.7)   # calculate the quantile 0.1 to get the y-position
+                plt.text(test_start_index, df.iloc[:,0].quantile(0.01), "Test \n" + test_plt_data[i]['text'], fontsize=fontsize*0.7)     # calculate the quantile 0.1 to get the y-position
 
         # equation
-        if type(train_plt_data[i]['equation']) == str and type(test_plt_data[i]['equation']) == str:
+        if type(train_plt_data[i]['equation']) == str:
             plt.text(train_plt_data[i]['df'].index.mean(), df.iloc[:,0].quantile(0.1), train_plt_data[i]['equation'], fontsize=fontsize*2)
 
         plt.legend()

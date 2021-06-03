@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 from production.codes.models import mt5Model
 
 def shift_list(lst, s):
