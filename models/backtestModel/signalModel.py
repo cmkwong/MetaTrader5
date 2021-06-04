@@ -132,7 +132,7 @@ def get_movingAverage_signal(long_ma_data, short_ma_data, limit_unit):
         short_signal = maxLimitClosed(short_signal, limit_unit)
     return long_signal, short_signal
 
-def get_coin_NN_signal(coin_NN_data, upper_th, lower_th):
+def get_coin_NN_signal(coin_NN_data, upper_th, lower_th, discard=True):
     """
     this function can available for coinNN and coin model
     :param coin_NN_data: pd.Dataframe(), columns='real','predict','spread','z_score'
@@ -142,6 +142,7 @@ def get_coin_NN_signal(coin_NN_data, upper_th, lower_th):
     """
     long_signal = pd.Series(coin_NN_data['z_score'].values < lower_th, index=coin_NN_data.index, name='long_signal')
     short_signal = pd.Series(coin_NN_data['z_score'].values > upper_th, index=coin_NN_data.index, name='short_signal')
-    long_signal = discard_head_tail_signal(long_signal) # see 40c
-    short_signal = discard_head_tail_signal(short_signal)
+    if discard:
+        long_signal = discard_head_tail_signal(long_signal) # see 40c
+        short_signal = discard_head_tail_signal(short_signal)
     return long_signal, short_signal

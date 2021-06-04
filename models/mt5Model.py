@@ -5,30 +5,32 @@ import collections
 from datetime import datetime, timedelta
 import pytz
 
+
+def connect_server():
+    # connect to MetaTrader 5
+    if not mt5.initialize():
+        print("initialize() failed")
+        mt5.shutdown()
+    else:
+        print("MetaTrader Connected")
+
+
+def disconnect_server():
+    # disconnect to MetaTrader 5
+    mt5.shutdown()
+    print("MetaTrader Shutdown.")
+
 class Helper:
     def __init__(self):
         self.text = ''
         self.text_line = 0
 
     def __enter__(self):
-        self.connect_server()
+        connect_server()
         return self
 
     def __exit__(self, *args):
-        self.disconnect_server()
-
-    def connect_server(self):
-        # connect to MetaTrader 5
-        if not mt5.initialize():
-            print("initialize() failed")
-            mt5.shutdown()
-        else:
-            print("MetaTrader Connected")
-
-    def disconnect_server(self):
-        # disconnect to MetaTrader 5
-        mt5.shutdown()
-        print("MetaTrader Shutdown.")
+        disconnect_server()
 
     def append_dict_into_text(self, stat):
         """
@@ -53,6 +55,135 @@ class Helper:
         with open(config.CSV_FILE_PATH + config.CSV_FILE_NAME, 'w') as f:
             f.write(self.text)
         print("OK")
+
+class Trader:
+    def __init__(self, deviation=5, type_filling='ioc'):
+        """
+        :param type_filling: 'fok', 'ioc', 'return'
+        :param deviation: int
+        """
+        self.deviation = deviation
+        self.type_filling = type_filling
+        self.history, self.status, self.strategy_lots, self.strategy_symbols = {}, {}, {}, {}
+        self.deal_count = 0
+
+    def __enter__(self):
+        connect_server()
+        return self
+
+    def __exit__(self, *args):
+        disconnect_server()
+
+    def update_history(self, strategy_id, mt5_order_ids, dt_string, open_positions, close_positions, ret, earning):
+
+        # new record
+        record = {}
+        record['mt5_order_ids'] = mt5_order_ids
+        record['open_time'] = dt_string
+        record['ret'] = ret
+        record['earning'] = earning
+        detail = ''
+        for symbol, open_position, close_position, lot in zip(self.strategy_symbols[strategy_id], open_positions, close_positions, self.strategy_lots[strategy_id]):
+            detail += "{}: opened at {} closed at {} with lot {}.\n".format(symbol, open_position, close_position, lot)
+        record['detail'] = detail
+        self.history[strategy_id].append(record)
+
+    # def update_status(self, strategy_id, holding=False):
+    #     if holding:
+    #         self.status[strategy_id] = 1
+    #     else:
+    #         self.status[strategy_id] = 0
+
+    def register_strategy(self, strategy_id, symbols, lots):
+        """
+        :param strategy_id: str
+        :param symbols: [str]
+        :param lots: [float]
+        :return: None
+        """
+        self.history[strategy_id] = []
+        self.status[strategy_id] = 0 # 1 = Holding, 0 = None
+        self.strategy_lots[strategy_id] = lots
+        self.strategy_symbols[strategy_id] = symbols
+
+    def strategy_execute(self, strategy_id, pos_open=False):
+        """
+        :param strategy_id: str
+        :param pos_open_close: Boolean
+        :return:
+        """
+        requests = self.requests_format(strategy_id)
+        mt5_order_ids = self.requests_execute(requests)
+        if pos_open:
+            self.status[strategy_id] = 1
+        else:
+            self.status[strategy_id] = 0
+
+    def requests_format(self, strategy_id):
+        """
+        :param symbols: [str]
+        :param lots: [float]
+        :return:
+        """
+        # the target with respect to the strategy id
+        symbols = self.strategy_symbols[strategy_id]
+        lots = self.strategy_lots[strategy_id]
+        # type of filling
+        tf = None
+        if self.type_filling == 'fok':
+            tf = mt5.ORDER_FILLING_FOK
+        elif self.type_filling == 'ioc':
+            tf = mt5.ORDER_FILLING_IOC
+        elif self.type_filling == 'return':
+            tf = mt5.ORDER_FILLING_RETURN
+        # bui;ding each request
+        requests = []
+        for symbol, lot in zip(symbols, lots):
+            if lot > 0:
+                action_type = mt5.ORDER_TYPE_BUY
+                price = mt5.symbol_info_tick(symbol).ask
+            elif lot < 0:
+                action_type = mt5.ORDER_TYPE_SELL
+                lot = -lot
+                price = mt5.symbol_info_tick(symbol).bid
+            else:
+                continue # if lot equal to 0, do not append the request
+            request = {
+                'action': mt5.TRADE_ACTION_DEAL,
+                'symbol': symbol,
+                'volume': float(lot),
+                'type': action_type,
+                'price': price,
+                'deviation': self.deviation,
+                "type_time": mt5.ORDER_TIME_GTC,
+                "type_filling": tf,
+            }
+            requests.append(request)
+        return requests
+
+    def requests_execute(self, requests):
+        """
+        :param requests: [request]
+        :return: Boolean
+        """
+        # execute the request first and store the results
+        results = []
+        for request in requests:
+            result = mt5.order_send(request)  # sending the request
+            if result.retcode != mt5.TRADE_RETCODE_DONE:
+                print("order_send failed, symbol={}, retcode={}".format(request['symbol'], result.retcode))
+                return False
+            results.append(result)
+        # print the results
+        mt5_order_ids = []
+        for request, result in zip(requests, results):
+            print("order_send(): by {} {} lots at {} (ptDiff={:.1f} ({} - {}))".format(
+                request['symbol'], result.volume, result.price,
+                (request['price'] - result.price) * 10 ** mt5.symbol_info(request['symbol']).digits,
+                request['price'], result.price)
+            )
+            mt5_order_ids.append(result.order)
+        return mt5_order_ids
 
 def get_txt2timeframe(timeframe_txt):
     timeframe_dicts = {"M1": mt5.TIMEFRAME_M1, "M2": mt5.TIMEFRAME_M2, "M3": mt5.TIMEFRAME_M3, "M4": mt5.TIMEFRAME_M4,
@@ -178,66 +309,3 @@ def get_all_symbols_info():
         else:
             symbols_info[symbol_name].pt_value = 1     # 1 dollar for quote per each point  (See note Stock Market - Knowledge - note 3)
     return symbols_info
-
-def requests_format(symbols, lots, deviation=5, type_filling='ioc'):
-    """
-    :param symbols: [str]
-    :param lots: [float]
-    :param deviation: int
-    :param type_filling: 'fok', 'ioc', 'return'
-    :return:
-    """
-    # type of filling
-    tf = None
-    if type_filling == 'fok':
-        tf = mt5.ORDER_FILLING_FOK
-    elif type_filling == 'ioc':
-        tf = mt5.ORDER_FILLING_IOC
-    elif type_filling == 'return':
-        tf = mt5.ORDER_FILLING_RETURN
-    # bui;ding each request
-    requests = []
-    for symbol, lot in zip(symbols, lots):
-        if lot > 0:
-            action_type = mt5.ORDER_TYPE_BUY
-            price = mt5.symbol_info_tick(symbol).ask
-        else:
-            action_type = mt5.ORDER_TYPE_SELL
-            lot = -lot
-            price = mt5.symbol_info_tick(symbol).bid
-        request = {
-            'action': mt5.TRADE_ACTION_DEAL,
-            'symbol': symbol,
-            'volume': float(lot),
-            'type': action_type,
-            'price': price,
-            'deviation': deviation,
-            "type_time": mt5.ORDER_TIME_GTC,
-            "type_filling": tf,
-        }
-        requests.append(request)
-    return requests
-
-def requests_execute(requests):
-    """
-    :param requests: [request]
-    :return: Boolean
-    """
-    # execute the request first and store the results
-    results = []
-    for request in requests:
-        result = mt5.order_send(request) # sending the request
-        if result.retcode != mt5.TRADE_RETCODE_DONE:
-            print("order_send failed, symbol={}, retcode={}".format(request['symbol'], result.retcode))
-            return False
-        results.append(result)
-    # print the results
-    order_ids = []
-    for request, result in zip(requests, results):
-        print("order_send(): by {} {} lots at {} (ptDiff={:.1f} ({} - {}))".format(
-            request['symbol'], result.volume, result.price,
-            (request['price'] - result.price) * 10 ** mt5.symbol_info(request['symbol']).digits,
-            request['price'], result.price)
-        )
-        order_ids.append(result.order)
-    return order_ids

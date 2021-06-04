@@ -1,15 +1,7 @@
 from production.codes.models.backtestModel import indexModel
-from production.codes.utils import tools
+from production.codes.models import coinModel
 import pandas as pd
 import numpy as np
-
-# def get_earning_list(exchg_q2d, points_dff_values_df, coefficient_vector, signal, long_mode):
-#     start_index, end_index = indexModel.get_action_start_end_index(signal.reset_index(drop=True))                   # discard the DateTimeIndex
-#     earning = get_earning(exchg_q2d, points_dff_values_df, coefficient_vector, long_mode).reset_index(drop=True)    # discard the DateTimeIndex
-#     earnings = []
-#     for s, e in zip(start_index, end_index):
-#         earnings.append(np.sum(earning[s + 1: e + 1]))  # see notes point 6
-#     return earnings
 
 def get_ret_earning_list(open_prices, exchg_q2d, points_dff_values_df, coefficient_vector, signal, long_mode, slsp=None):
     """
@@ -44,7 +36,7 @@ def get_ret_earning(open_prices, exchg_q2d, points_dff_values_df, coefficient_ve
     :param long_mode: Boolean
     :return: pd.Series, pd.Series
     """
-    modified_coefficient_vector = tools.get_modify_coefficient_vector(coefficient_vector, long_mode)
+    modified_coefficient_vector = coinModel.get_modify_coefficient_vector(coefficient_vector, long_mode)
 
     # ret
     change = (open_prices - open_prices.shift(1)) / open_prices.shift(1)
@@ -58,29 +50,6 @@ def get_ret_earning(open_prices, exchg_q2d, points_dff_values_df, coefficient_ve
     earning = pd.Series(np.sum(exchg_q2d.shift(1).values * weighted_pt_diff, axis=1), index=exchg_q2d.index, name="earning")  # see note 34b and 35 why shift(1)
 
     return ret, earning
-
-# def get_earning(exchg_q2d, points_dff_values_df, coefficient_vector, long_mode):
-#     """
-#     :param exchg_q2d: pd.Dataframe, that exchange the dollar into same deposit assert
-#     :param points_dff_values_df: points the change with respect to quote currency
-#     :param coefficient_vector: np.array, raw vector with interception(constant value)
-#     :param long_mode: Boolean
-#     :return: pd.Series
-#     """
-#     modified_coefficient_vector = tools.get_modify_coefficient_vector(coefficient_vector, long_mode)
-#     weighted_pt_diff = points_dff_values_df.values * modified_coefficient_vector.reshape(-1,)
-#     # calculate the price in required deposit dollar
-#     earning = pd.Series(np.sum(exchg_q2d.shift(1).values * weighted_pt_diff, axis=1), index=exchg_q2d.index, name="earning")  # see note 34b and 35 why shift(1)
-#     return earning
-
-# def get_earning_by_signal(earning, signal):
-#     """
-#     :param earning: earning
-#     :param signal: pd.Series (Boolean)
-#     :return: pd.DataFrame
-#     """
-#     earning_by_signal = pd.Series(signal.shift(2).values * earning.values, index=signal.index, name="earning_by_signal").fillna(0.0) # shift 2 unit see (30e)
-#     return earning_by_signal
 
 def get_ret_earning_by_signal(ret, earning, signal, slsp=None):
     """
@@ -99,16 +68,6 @@ def get_ret_earning_by_signal(ret, earning, signal, slsp=None):
             ret_by_signal.iloc[s:e], earning_by_signal.iloc[s:e] = modify_ret_earning_with_SLSP(ret.iloc[s:e], earning.iloc[s:e], slsp[0], slsp[1])
     return ret_by_signal, earning_by_signal
 
-# def get_total_earning(earnings):
-#     """
-#     :param earnings: earning list
-#     :return: float
-#     """
-#     total_earning = 0
-#     for earning in earnings:
-#         total_earning += earning
-#     return total_earning
-
 def get_total_ret_earning(rets, earnings):
     """
     :param rets: return list
@@ -120,19 +79,6 @@ def get_total_ret_earning(rets, earnings):
         total_ret *= ret
         total_earning += earning
     return total_ret, total_earning
-
-# def get_accum_earning(earning, signal):
-#     """
-#     :param signal: pd.Series
-#     :param exchg_q2d: pd.Dataframe, that exchange the dollar into same deposit assert
-#     :param points_dff_values_df: points the change with respect to quote currency
-#     :param coefficient_vector: np.array, raw vector with interception(constant value)
-#     :param long_mode: Boolean
-#     :return: pd.Series with accumulative earning
-#     """
-#     earning_by_signal = get_earning_by_signal(earning, signal)
-#     accum_earning = pd.Series(earning_by_signal.cumsum(), index=signal.index, name="accum_earning") # Simplify the function note 47a
-#     return accum_earning
 
 def get_accum_ret_earning(ret, earning, signal, slsp=None):
     """
@@ -174,30 +120,6 @@ def modify_ret_earning_with_SLSP(ret_series, earning_series, sl, sp):
             sl_buffer -= e
             sp_buffer -= e
     return ret_mask, earning_mask
-
-# def get_ret_earning_with_SLSP(signal, exchg_q2d, open_price, points_dff_values_df, coefficient_vector, long_mode, sl, sp):
-#     """
-#     :param signal: pd.Series
-#     :param exchg_q2d: pd.DataFrame
-#     :param open_price: pd.DataFrame
-#     :param points_dff_values_df: pd.DataFrame
-#     :param coefficient_vector: np.array
-#     :param long_mode: Boolean
-#     :param sl: stop-loss (negative value)
-#     :param sp: stop-profit (positive value)
-#     :return: ret_by_signal(pd.Series) and earning_by_signal(pd.Series), are modified with stop-loss and stop-profit
-#     """
-#     ret = get_ret(open_price, coefficient_vector, long_mode)
-#     earning = get_earning(exchg_q2d, points_dff_values_df, coefficient_vector, long_mode)
-#     ret_by_signal = get_ret_by_signal(ret, signal)
-#     earning_by_signal = get_earning_by_signal(earning, signal)
-#
-#     # get the start index and end index
-#     start_index, end_index = indexModel.get_action_start_end_index(signal.reset_index(drop=True))
-#     for s, e in zip(start_index, end_index):
-#         s, e = s+1, e+1
-#         ret_by_signal.iloc[s:e], earning_by_signal.iloc[s:e] = modify_ret_earning_with_SLSP(ret.iloc[s:e], earning.iloc[s:e], sl, sp)
-#     return ret_by_signal.rename("ret_by_signal_slsp"), earning_by_signal.rename("earning_by_signal_slsp")
 
 
 

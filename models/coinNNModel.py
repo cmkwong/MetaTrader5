@@ -2,7 +2,7 @@ import torch
 from torch import nn
 import numpy as np
 import pandas as pd
-from production.codes.models import criterionModel
+from production.codes.models import criterionModel, coinModel
 from production.codes.utils import maths
 
 class LSTM(nn.Module):
@@ -98,6 +98,9 @@ class Trainer:
             steps += 1
         mean_loss = total_loss / steps
         return mean_loss
+
+def get_modify_coefficient_vector(coefficient_vector, long_mode):
+    return coinModel.get_modify_coefficient_vector(coefficient_vector, long_mode) # note 57e
 
 def get_coinNN_data(close_prices, model, mean_window, std_window):
     """

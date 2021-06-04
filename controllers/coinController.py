@@ -52,7 +52,7 @@ with mt5Model.Helper():
     title = plotModel.get_plot_title(data_options['start'], data_options['end'], mt5Model.get_timeframe2txt(data_options['timeframe']))
     setting = plotModel.get_setting_txt(train_options)
     plotView.save_plot(train_plt_datas, test_plt_datas, data_options['symbols'], 0, data_options['plt_save_path'],
-                       options['dt'], dpi=500, linewidth=0.2, title=title, figure_size=(56, 24), fontsize=6, bins=500,
+                       options['dt'], dpi=500, linewidth=0.2, title=title, figure_size=(40, 56), fontsize=6, bins=500,
                        setting=setting, hist_range=train_options['slsp'])
 
 print("Saved successfully. \n{}".format(data_options['plt_save_path']))

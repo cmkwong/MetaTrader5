@@ -1,4 +1,4 @@
-from production.codes.models import mt5Model
+from production.codes.models import mt5Model, coinModel
 from production.codes.models.backtestModel import pointsModel
 from production.codes.utils import tools
 import collections
@@ -213,3 +213,34 @@ def get_exchange_symbols(symbols, all_symbols_info, deposit_currency='USD', type
         else: # if the symbol already relative to deposit currency
             exchange_symbols.append(symbol)
     return exchange_symbols
+
+def get_close_price_with_last_tick(close_price, coefficient_vector): # that is not useful, note 57a
+    """
+    :param close_price: pd.DataFrame
+    :param coefficient_vector: np.array
+    :return: dict with pd.DataFrame
+    """
+    long_modified_coefficient_vector = coinModel.get_modify_coefficient_vector(coefficient_vector, long_mode=True)
+
+    # re-create the dataframe
+    close_price_with_last_tick = {}
+    close_price_with_last_tick['long_spread'] = close_price.copy() # why using copy(), see note 55b
+    close_price_with_last_tick['short_spread'] = close_price.copy()
+    symbols = close_price.columns
+    for i, symbol in enumerate(symbols):
+        lasttick = mt5Model.get_last_tick(symbol)
+        if long_modified_coefficient_vector[i] >= 0:
+            close_price_with_last_tick['long_spread'].iloc[-1, i] = lasttick['ask']
+            close_price_with_last_tick['short_spread'].iloc[-1, i] = lasttick['bid']
+        else:
+            close_price_with_last_tick['long_spread'].iloc[-1, i] = lasttick['bid']
+            close_price_with_last_tick['short_spread'].iloc[-1, i] = lasttick['ask']
+    return close_price_with_last_tick
+
+def get_open_price_masked_with_last_price(open_price, close_price): # note 57f
+    """
+    :param Prices: Prices object
+    :return: pd.DataFrame
+    """
+    open_price.iloc[-1,:] = close_price.iloc[-1,:]
+    return open_price

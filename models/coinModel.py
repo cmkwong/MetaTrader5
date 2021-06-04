@@ -1,6 +1,20 @@
 import numpy as np
 import pandas as pd
-from production.codes.utils import maths
+from production.codes.utils import maths, tools
+from production.codes.models import priceModel
+from production.codes.models.backtestModel import signalModel, returnModel
+
+def get_modify_coefficient_vector(coefficient_vector, long_mode):
+    """
+    :param coefficient_vector: np.array, if empty array, it has no coefficient vector -> 1 or -1
+    :param long_mode: Boolean, True = long spread, False = short spread
+    :return: np.array
+    """
+    if long_mode:
+        modified_coefficient_vector = np.append(-1 * coefficient_vector[1:], 1)  # buy real, sell predict
+    else:
+        modified_coefficient_vector = np.append(coefficient_vector[1:], -1)  # buy predict, sell real
+    return modified_coefficient_vector.reshape(-1,)
 
 def get_coefficient_vector(input, target):
     """
@@ -40,22 +54,47 @@ def get_coin_data(close_prices, coefficient_vector, mean_window, std_window):
     coin_data['z_score'] = maths.z_score_with_rolling_mean(spread.values, mean_window, std_window)
     return coin_data
 
-def check_action(close_price_with_last_tick_l, close_price_with_last_tick_s, coefficient_vector, z_score_mean_window, z_score_std_window, upper_th, lower_th, slsp):
+def get_strategy_id(train_options):
+    id = 'coin'
+    for key, value in train_options.items():
+        id += str(value)
+    long_id = id + 'long'
+    short_id = id + 'short'
+    return long_id, short_id
+
+def get_action(trader, strategy_id, masked_open_prices, quote_exchg, ptDv, coefficient_vector, signal, slsp, long_mode):
     """
-    :param close_price_with_last_tick_l: pd.DataFrame for long that replace with last unit of price into tick price
-    :param close_price_with_last_tick_s: pd.DataFrame for short that replace with last unit of price into tick price
+    :param trader: Class Trader object
+    :param strategy_id: str, each strategy has unique id for identity
+    :param masked_open_prices: open price with last price masked by current price
+    :param quote_exchg: pd.DataFrame
+    :param ptDv: exchg: pd.DataFrame
     :param coefficient_vector: np.array
-    :param z_score_mean_window: int
-    :param z_score_std_window: int
-    :param upper_th: float
-    :param lower_th: float
-    :param slsp: tuple, stop loss and stop profit
-    :return: long_spread, short_spread, close all deals
+    :param signal: pd.Series
+    :param slsp: tuple, (stop-loss, stop-profit)
+    :param long_mode: Boolean
+    :return: None
     """
-    long_coin_data = get_coin_data(close_price_with_last_tick_l, coefficient_vector, z_score_mean_window, z_score_std_window)
-    if long_coin_data['z_score'][-1] < lower_th:
-        return 'long_spread'
-    short_coin_data = get_coin_data(close_price_with_last_tick_s, coefficient_vector, z_score_mean_window, z_score_std_window)
-    if short_coin_data['z_score'][-1] > upper_th:
-        return 'short_spread'
+    # long spread
+    if signal[-2] == True and signal[-3] == False and trader.status[strategy_id] == 0:
+        trader.strategy_execute(strategy_id, pos_open=True)      # open position
+    elif signal[-2] == False and signal[-3] == True and trader.status[strategy_id] == 1:
+        trader.strategy_execute(strategy_id, pos_open=False)     # close position
+    elif trader.status[strategy_id] == 1:
+        _, earning = returnModel.get_ret_earning(masked_open_prices, quote_exchg, ptDv, coefficient_vector, long_mode=long_mode)
+        _, accum_earning = returnModel.get_accum_ret_earning(_, earning, signal)
+        if accum_earning[-1] > slsp[1]:
+            trader.strategy_execute(strategy_id, pos_open=False)   # close position
+        elif accum_earning[-1] < slsp[0]:
+            trader.strategy_execute(strategy_id, pos_open=False)
+    # # short spread
+    # if short_signal[-2] == 1 and short_signal[-3] == 0 and short_status == 0:
+    #     return short_lots # open short-spread
+    # elif short_signal[-2] == 0 and short_signal[-3] == 1 and short_status == 1:
+    #     return long_lots # close short-spread
+    # elif short_status == 1:
+    #     _, short_earning = returnModel.get_ret_earning(masked_open_prices, quote_exchg, ptDv, coefficient_vector, long_mode=False)
+    #     _, short_accum_earning = returnModel.get_accum_ret_earning(_, short_earning, signal)
+    #     if short_accum_earning < slsp[0]:
+    #         return long_lots # close short-spread
 
