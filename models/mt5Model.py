@@ -1,10 +1,11 @@
 from production.codes import config
 import MetaTrader5 as mt5
+import numpy as np
 import pandas as pd
 import collections
 from datetime import datetime, timedelta
+import os
 import pytz
-
 
 def connect_server():
     # connect to MetaTrader 5
@@ -57,77 +58,137 @@ class Helper:
         print("OK")
 
 class Trader:
-    def __init__(self, deviation=5, type_filling='ioc'):
+    def __init__(self, history_path, deviations, type_filling='ioc'):
         """
         :param type_filling: 'fok', 'ioc', 'return'
         :param deviation: int
         """
-        self.deviation = deviation
+        self.history_path = history_path
+        self.deviations = deviations
         self.type_filling = type_filling
-        self.history, self.status, self.strategy_lots, self.strategy_symbols = {}, {}, {}, {}
-        self.deal_count = 0
+        self.history, self.record, self.status, self.strategy_lots, self.strategy_symbols = {}, {}, {}, {}, {}
 
     def __enter__(self):
         connect_server()
         return self
 
     def __exit__(self, *args):
+        self.write_history_csv()
         disconnect_server()
 
-    def update_history(self, strategy_id, mt5_order_ids, dt_string, open_positions, close_positions, ret, earning):
+    def write_history_csv(self):
+        # current time
+        now = datetime.now()
+        dt_string = now.strftime("%y%m%d%H%M%S")
+        for strategy_id, history_df in self.history.items():
+            if history_df != None:
+                full_path = os.path.join(self.history_path, "{}_{}.csv".format(dt_string, strategy_id))
+                history_df.to_csv(full_path)
+            else:
+                print("No histories being printed.")
+        print("The histories are wrote to {}".format(self.history_path))
 
-        # new record
-        record = {}
-        record['mt5_order_ids'] = mt5_order_ids
-        record['open_time'] = dt_string
-        record['ret'] = ret
-        record['earning'] = earning
-        detail = ''
-        for symbol, open_position, close_position, lot in zip(self.strategy_symbols[strategy_id], open_positions, close_positions, self.strategy_lots[strategy_id]):
-            detail += "{}: opened at {} closed at {} with lot {}.\n".format(symbol, open_position, close_position, lot)
-        record['detail'] = detail
-        self.history[strategy_id].append(record)
-
-    # def update_status(self, strategy_id, holding=False):
-    #     if holding:
-    #         self.status[strategy_id] = 1
-    #     else:
-    #         self.status[strategy_id] = 0
-
-    def register_strategy(self, strategy_id, symbols, lots):
+    def curr_record_format(self, strategy_id):
         """
         :param strategy_id: str
-        :param symbols: [str]
-        :param lots: [float]
         :return: None
         """
-        self.history[strategy_id] = []
-        self.status[strategy_id] = 0 # 1 = Holding, 0 = None
-        self.strategy_lots[strategy_id] = lots
-        self.strategy_symbols[strategy_id] = symbols
+        symbols = self.strategy_symbols[strategy_id]
+        column_index_arr = [
+            np.array(['open'] * (len(symbols) + 1)  + ['close'] * (len(symbols) + 3)),
+            np.array(['time', *symbols, 'time', *symbols, 'ret', 'earning'])    # Asterisk * unpacking the list, Programming/Python note 14
+        ]
+        self.record[strategy_id] = pd.DataFrame(columns=column_index_arr)
 
-    def strategy_execute(self, strategy_id, pos_open=False):
+    def update_curr_record(self, strategy_id, order_ids, expected_positions, ret, earning, open_pos):
         """
         :param strategy_id: str
-        :param pos_open_close: Boolean
+        :param order_ids: [int]
+        :param expected_positions: [float]
+        :param ret: float
+        :param earning: float
+        :param open_pos: Boolean
+        :return: None
+        """
+        # current time
+        now = datetime.now()
+        dt_string = now.strftime("%y%m%d%H%M%S")
+
+        # judge if it is open position or close position
+        if open_pos:
+            type_position = 'open'
+        else:
+            # if it is close position, it need to fill the return and earning
+            type_position = 'close'
+            self.record[strategy_id].loc[0, (type_position, 'ret')] = ret
+            self.record[strategy_id].loc[0, (type_position, 'earning')] = earning
+
+        # data need to fill in for both open and close position
+        self.record[type_position]['time'] = dt_string
+        for symbol, order_id, expect in zip(self.strategy_symbols[strategy_id], order_ids, expected_positions):
+            result_txt = ''
+            real = mt5.orders_get(ticket=order_id)._asdict()['price_open']
+            diff = expect - real
+            if diff >= 0: result_txt = "{:.5f}+{} ({})".format(expect, diff, order_id)
+            elif diff < 0: result_txt = "{:.5f}-{} ({})".format(expect, diff, order_id)
+            self.record[strategy_id].loc[0, (type_position, symbol)] = result_txt
+
+    def update_record_history_status(self, strategy_id, order_ids, expected_positions, ret=0, earning=0):
+        """
+        :param strategy_id: str
+        :param order_ids: [int], from mt5 order ids
+        :param expected_positions: [float]
+        :param ret: float
+        :param earning: float
+        :param open_pos: Boolean
         :return:
         """
-        requests = self.requests_format(strategy_id)
-        mt5_order_ids = self.requests_execute(requests)
-        if pos_open:
+        if self.status[strategy_id] == 0:
+            self.update_curr_record(strategy_id, order_ids, expected_positions, ret=ret, earning=earning, open_pos=True)
             self.status[strategy_id] = 1
-        else:
+        elif self.status[strategy_id] == 1:
+            self.update_curr_record(strategy_id, order_ids, expected_positions, ret=ret, earning=earning, open_pos=False)
+            if self.history[strategy_id] == None:
+                self.history[strategy_id] = self.record[strategy_id]
+            else:
+                self.history[strategy_id] = pd.concat([self.history[strategy_id], self.record[strategy_id]], axis=0)
+            self.record[strategy_id] = self.curr_record_format(strategy_id) # format the current record after append the record
             self.status[strategy_id] = 0
 
-    def requests_format(self, strategy_id):
+    def register_strategy(self, strategy_id, symbols):
         """
+        :param strategy_id: str
         :param symbols: [str]
+        :param lots: [float], that is lots of open position. If close the position, product with negative 1
+        :return: None
+        """
+        self.status[strategy_id] = 0 # 1 = Holding, 0 = None
+        self.strategy_symbols[strategy_id] = symbols
+        self.history[strategy_id] = None
+        self.record[strategy_id] = self.curr_record_format(strategy_id)
+
+    def strategy_execute(self, strategy_id, lots, prices_at):
+        """
+        :param strategy_id: str
+        :param lots: [float], that is lots going to buy(+ve) / sell(-ve)
+        :param prices_at: [float]
+        :param pos_open_close: Boolean
+        :return: order_ids
+        """
+        requests = self.requests_format(strategy_id, lots, prices_at)
+        order_ids = self.requests_execute(requests)
+        return order_ids
+
+    def requests_format(self, strategy_id, lots, prices_at):
+        """
+        :param strategy_id: str, belong to specific strategy
         :param lots: [float]
-        :return:
+        :param prices_at: [float]
+        :return: requests, [dict], a list of request
         """
         # the target with respect to the strategy id
         symbols = self.strategy_symbols[strategy_id]
-        lots = self.strategy_lots[strategy_id]
+
         # type of filling
         tf = None
         if self.type_filling == 'fok':
@@ -138,14 +199,12 @@ class Trader:
             tf = mt5.ORDER_FILLING_RETURN
         # bui;ding each request
         requests = []
-        for symbol, lot in zip(symbols, lots):
+        for symbol, lot, price, deviation in zip(symbols, lots, prices_at, self.deviations):
             if lot > 0:
                 action_type = mt5.ORDER_TYPE_BUY
-                price = mt5.symbol_info_tick(symbol).ask
             elif lot < 0:
                 action_type = mt5.ORDER_TYPE_SELL
                 lot = -lot
-                price = mt5.symbol_info_tick(symbol).bid
             else:
                 continue # if lot equal to 0, do not append the request
             request = {
@@ -154,7 +213,7 @@ class Trader:
                 'volume': float(lot),
                 'type': action_type,
                 'price': price,
-                'deviation': self.deviation,
+                'deviation': deviation,
                 "type_time": mt5.ORDER_TIME_GTC,
                 "type_filling": tf,
             }
@@ -175,15 +234,15 @@ class Trader:
                 return False
             results.append(result)
         # print the results
-        mt5_order_ids = []
+        order_ids = []
         for request, result in zip(requests, results):
             print("order_send(): by {} {} lots at {} (ptDiff={:.1f} ({} - {}))".format(
                 request['symbol'], result.volume, result.price,
                 (request['price'] - result.price) * 10 ** mt5.symbol_info(request['symbol']).digits,
                 request['price'], result.price)
             )
-            mt5_order_ids.append(result.order)
-        return mt5_order_ids
+            order_ids.append(result.order)
+        return order_ids
 
 def get_txt2timeframe(timeframe_txt):
     timeframe_dicts = {"M1": mt5.TIMEFRAME_M1, "M2": mt5.TIMEFRAME_M2, "M3": mt5.TIMEFRAME_M3, "M4": mt5.TIMEFRAME_M4,
