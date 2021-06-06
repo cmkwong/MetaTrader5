@@ -77,27 +77,27 @@ def get_action(trader, strategy_id, masked_open_prices, quote_exchg, ptDv, coeff
     """
     # init
     accum_ret, accum_earning = 0.0, 0.0
-    order_ids = False
+    deal_finish = False
     prices_at = list(masked_open_prices.iloc[-1,:])
     open_pos_lots, close_pos_lots = lots, [-l for l in lots]
 
     # Buy signal occurred
     if signal[-2] == True and signal[-3] == False and trader.status[strategy_id] == 0:
-        order_ids = trader.strategy_execute(strategy_id, open_pos_lots, prices_at)      # open position
+        deal_finish = trader.strategy_execute(strategy_id, open_pos_lots, prices_at)      # open position
     # Sell signal occurred
     elif signal[-2] == False and signal[-3] == True and trader.status[strategy_id] == 1:
-        order_ids = trader.strategy_execute(strategy_id, close_pos_lots, prices_at)     # close position
+        deal_finish = trader.strategy_execute(strategy_id, close_pos_lots, prices_at)     # close position
     # Stop loss and Stop profit occurred
     elif trader.status[strategy_id] == 1:
         ret, earning = returnModel.get_ret_earning(masked_open_prices, quote_exchg, ptDv, coefficient_vector, long_mode=long_mode)
         accum_ret, accum_earning = returnModel.get_accum_ret_earning(ret, earning, signal)
         if accum_earning[-1] > slsp[1]:
-            order_ids = trader.strategy_execute(strategy_id, close_pos_lots, prices_at)   # close position
+            deal_finish = trader.strategy_execute(strategy_id, close_pos_lots, prices_at)   # close position
         elif accum_earning[-1] < slsp[0]:
-            order_ids = trader.strategy_execute(strategy_id, close_pos_lots, prices_at)    # close position
+            deal_finish = trader.strategy_execute(strategy_id, close_pos_lots, prices_at)    # close position
 
     # update the status and record the result
-    if order_ids != False:  # if order is executed successfully
-        trader.update_record_history_status(strategy_id, order_ids, prices_at, ret=accum_ret, earning=accum_earning)
+    if deal_finish:  # if order is executed successfully
+        trader.update_record_history_status(strategy_id, prices_at, ret=accum_ret, earning=accum_earning)
 
 

@@ -66,10 +66,11 @@ class Trader:
         self.history_path = history_path
         self.deviations = deviations
         self.type_filling = type_filling
-        self.history, self.record, self.status, self.strategy_lots, self.strategy_symbols = {}, {}, {}, {}, {}
+        self.history, self.record, self.status, self.strategy_symbols, self.order_ids = {}, {}, {}, {}, {}
 
     def __enter__(self):
         connect_server()
+        self.all_symbol_info = get_all_symbols_info()
         return self
 
     def __exit__(self, *args):
@@ -88,9 +89,31 @@ class Trader:
                 print("No histories being printed.")
         print("The histories are wrote to {}".format(self.history_path))
 
+    def order_id_format(self, strategy_id):
+        """
+        update the order_id and it has container which is dictionary, note 59b
+        :param strategy_id: str
+        :return: None
+        """
+        self.order_ids[strategy_id] = {}
+        for symbol in self.strategy_symbols[strategy_id]:
+            self.order_ids[strategy_id][symbol] = 'NO DEAL'
+
+    def update_order_id(self, strategy_id, requests, results):
+        """
+        initialize the container dictionary, note 59b
+        :param strategy_id: str
+        :param requests: [request], mt5 request: https://www.mql5.com/en/docs/constants/structures/mqltraderequest
+        :param results: [result], mt5 result: https://www.mql5.com/en/docs/constants/structures/mqltraderesult
+        :return:
+        """
+        for request, result in zip(requests, results):
+            self.order_ids[strategy_id][request['symbol']] = result.order
+
     def curr_record_format(self, strategy_id):
         """
         :param strategy_id: str
+        :param symbols: [str]
         :return: None
         """
         symbols = self.strategy_symbols[strategy_id]
@@ -100,10 +123,9 @@ class Trader:
         ]
         self.record[strategy_id] = pd.DataFrame(columns=column_index_arr)
 
-    def update_curr_record(self, strategy_id, order_ids, expected_positions, ret, earning, open_pos):
+    def update_curr_record(self, strategy_id, expected_positions, ret, earning, open_pos):
         """
         :param strategy_id: str
-        :param order_ids: [int]
         :param expected_positions: [float]
         :param ret: float
         :param earning: float
@@ -125,7 +147,7 @@ class Trader:
 
         # data need to fill in for both open and close position
         self.record[type_position]['time'] = dt_string
-        for symbol, order_id, expect in zip(self.strategy_symbols[strategy_id], order_ids, expected_positions):
+        for symbol, order_id, expect in zip(self.strategy_symbols[strategy_id], self.order_ids[strategy_id].values, expected_positions):
             result_txt = ''
             real = mt5.orders_get(ticket=order_id)._asdict()['price_open']
             diff = expect - real
@@ -133,7 +155,7 @@ class Trader:
             elif diff < 0: result_txt = "{:.5f}-{} ({})".format(expect, diff, order_id)
             self.record[strategy_id].loc[0, (type_position, symbol)] = result_txt
 
-    def update_record_history_status(self, strategy_id, order_ids, expected_positions, ret=0, earning=0):
+    def update_record_history_status(self, strategy_id, expected_positions, ret=0, earning=0):
         """
         :param strategy_id: str
         :param order_ids: [int], from mt5 order ids
@@ -144,16 +166,18 @@ class Trader:
         :return:
         """
         if self.status[strategy_id] == 0:
-            self.update_curr_record(strategy_id, order_ids, expected_positions, ret=ret, earning=earning, open_pos=True)
+            self.update_curr_record(strategy_id, expected_positions, ret=ret, earning=earning, open_pos=True)
             self.status[strategy_id] = 1
         elif self.status[strategy_id] == 1:
-            self.update_curr_record(strategy_id, order_ids, expected_positions, ret=ret, earning=earning, open_pos=False)
+            self.update_curr_record(strategy_id, expected_positions, ret=ret, earning=earning, open_pos=False)
             if self.history[strategy_id] == None:
                 self.history[strategy_id] = self.record[strategy_id]
             else:
                 self.history[strategy_id] = pd.concat([self.history[strategy_id], self.record[strategy_id]], axis=0)
             self.record[strategy_id] = self.curr_record_format(strategy_id) # format the current record after append the record
             self.status[strategy_id] = 0
+        # init order id dictionary at every deal
+        self.order_id_format(strategy_id)
 
     def register_strategy(self, strategy_id, symbols):
         """
@@ -166,6 +190,31 @@ class Trader:
         self.strategy_symbols[strategy_id] = symbols
         self.history[strategy_id] = None
         self.record[strategy_id] = self.curr_record_format(strategy_id)
+        self.order_ids[strategy_id] = self.order_id_format(strategy_id)
+
+    def check_allowed_with_deviation(self, requests):
+        """
+        if condition cannot meet, return False
+        :param strategy_id: str
+        :param lots: [float], that is lots going to buy(+ve) / sell(-ve)
+        :param prices_at: [float]
+        :return: Boolean
+        """
+        for request in requests:
+            symbol, price_at, deviation, lot = request['symbol'], request['price'], request['deviation'], request['volume']
+            if lot > 0:
+                cost_price = mt5.symbol_info_tick(symbol).ask
+                diff_pt = (cost_price - price_at) * (10 ** self.all_symbol_info[symbol].digits)
+                if diff_pt > deviation:
+                    print("{} have large deviation. {:.5f}(ask) - {:.5f}(price_at) = {:.3f}".format(symbol, cost_price, price_at, diff_pt))
+                    return False
+            else:
+                cost_price = mt5.symbol_info_tick(symbol).bid
+                diff_pt = (price_at - cost_price) * (10 ** self.all_symbol_info[symbol].digits)
+                if diff_pt > deviation:
+                    print("{} have large deviation. {:.5f}(price_at) - {:.5f}(bid) = {:.3f}".format(symbol, price_at, cost_price, diff_pt))
+                    return False
+        return True
 
     def strategy_execute(self, strategy_id, lots, prices_at):
         """
@@ -173,11 +222,15 @@ class Trader:
         :param lots: [float], that is lots going to buy(+ve) / sell(-ve)
         :param prices_at: [float]
         :param pos_open_close: Boolean
-        :return: order_ids
+        :return: Boolean
         """
         requests = self.requests_format(strategy_id, lots, prices_at)
-        order_ids = self.requests_execute(requests)
-        return order_ids
+        deviation_allowed = self.check_allowed_with_deviation(requests)
+        if not deviation_allowed:
+            return False
+        results = self.requests_execute(requests)
+        self.update_order_id(strategy_id, requests, results)
+        return True
 
     def requests_format(self, strategy_id, lots, prices_at):
         """
@@ -234,15 +287,13 @@ class Trader:
                 return False
             results.append(result)
         # print the results
-        order_ids = []
         for request, result in zip(requests, results):
             print("order_send(): by {} {} lots at {} (ptDiff={:.1f} ({} - {}))".format(
                 request['symbol'], result.volume, result.price,
                 (request['price'] - result.price) * 10 ** mt5.symbol_info(request['symbol']).digits,
                 request['price'], result.price)
             )
-            order_ids.append(result.order)
-        return order_ids
+        return True
 
 def get_txt2timeframe(timeframe_txt):
     timeframe_dicts = {"M1": mt5.TIMEFRAME_M1, "M2": mt5.TIMEFRAME_M2, "M3": mt5.TIMEFRAME_M3, "M4": mt5.TIMEFRAME_M4,

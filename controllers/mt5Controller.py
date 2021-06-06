@@ -34,9 +34,9 @@ coin_option = {
 
 with mt5Model.Trader(history_path=trader_options["history_path"], deviations=trader_options['deviations'], type_filling=trader_options['type_filling']) as trader:
 
-    coefficient_vector = np.array([2.58766,0.01589,-1.76342,-0.01522,0.00351,0.01389])
-    long_lots = [round(i * options['lot_times'], 2) for i in coinModel.get_modify_coefficient_vector(coefficient_vector, long_mode=True)]
-    short_lots = [round(i * options['lot_times'], 2) for i in coinModel.get_modify_coefficient_vector(coefficient_vector, long_mode=False)]
+    coefficient_vector = np.array([2.58766,0.01589,-1.76342,-0.01522,0.00351,0.01389]) # will be round to 2 decimal
+    long_lots = [round(i * trader_options['lot_times'], 2) for i in coinModel.get_modify_coefficient_vector(coefficient_vector, long_mode=True)]
+    short_lots = [round(i * trader_options['lot_times'], 2) for i in coinModel.get_modify_coefficient_vector(coefficient_vector, long_mode=False)]
 
     long_strategy_id, short_strategy_id = coinModel.get_strategy_id(coin_option)
     trader.register_strategy(long_strategy_id, trader_options['symbols'])
@@ -57,10 +57,3 @@ with mt5Model.Trader(history_path=trader_options["history_path"], deviations=tra
         coinModel.get_action(trader, short_strategy_id, masked_open_prices, Prices.quote_exchg, Prices.ptDv, coefficient_vector, short_signal, coin_option['slsp'], short_lots, long_mode=False)
 
         time.sleep(30)
-
-
-#     lots = [-1.59,176.43,1.52,-0.42,-1.45, 100]
-#     symbols = ['AUDJPY','AUDUSD','CADJPY','EURUSD','NZDUSD','USDCAD']
-#     requests = mt5Model.requests_format(symbols, lots, deviation=5, type_filling='fok')
-#     order_ids = mt5Model.requests_execute(requests)
-#
