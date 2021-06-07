@@ -58,7 +58,7 @@ class Helper:
         print("OK")
 
 class Trader:
-    def __init__(self, history_path, deviations, type_filling='ioc'):
+    def __init__(self, dt_string, history_path, deviations, type_filling='ioc'):
         """
         :param type_filling: 'fok', 'ioc', 'return'
         :param deviation: int
@@ -66,7 +66,8 @@ class Trader:
         self.history_path = history_path
         self.deviations = deviations
         self.type_filling = type_filling
-        self.history, self.record, self.status, self.strategy_symbols, self.order_ids = {}, {}, {}, {}, {}
+        self.dt_string = dt_string
+        self.history, self.record, self.status, self.strategy_symbols, self.order_ids = {}, {}, {}, {}, {} # see note 60b
 
     def __enter__(self):
         connect_server()
@@ -78,26 +79,24 @@ class Trader:
         disconnect_server()
 
     def write_history_csv(self):
-        # current time
-        now = datetime.now()
-        dt_string = now.strftime("%y%m%d%H%M%S")
         for strategy_id, history_df in self.history.items():
             if history_df != None:
-                full_path = os.path.join(self.history_path, "{}_{}.csv".format(dt_string, strategy_id))
+                full_path = os.path.join(self.history_path, "{}_{}.csv".format(self.dt_string, strategy_id))
                 history_df.to_csv(full_path)
             else:
                 print("No histories being printed.")
         print("The histories are wrote to {}".format(self.history_path))
 
-    def order_id_format(self, strategy_id):
+    def order_id_format(self, symbols):
         """
         update the order_id and it has container which is dictionary, note 59b
         :param strategy_id: str
-        :return: None
+        :return: dictionary
         """
-        self.order_ids[strategy_id] = {}
-        for symbol in self.strategy_symbols[strategy_id]:
-            self.order_ids[strategy_id][symbol] = 'NO DEAL'
+        sub_order_ids = {}
+        for symbol in symbols:
+            sub_order_ids[symbol] = 'NO DEAL'
+        return sub_order_ids
 
     def update_order_id(self, strategy_id, requests, results):
         """
@@ -110,20 +109,18 @@ class Trader:
         for request, result in zip(requests, results):
             self.order_ids[strategy_id][request['symbol']] = result.order
 
-    def curr_record_format(self, strategy_id):
+    def curr_record_format(self, symbols):
         """
-        :param strategy_id: str
         :param symbols: [str]
-        :return: None
+        :return: pd.DataFrame
         """
-        symbols = self.strategy_symbols[strategy_id]
         column_index_arr = [
             np.array(['open'] * (len(symbols) + 1)  + ['close'] * (len(symbols) + 3)),
             np.array(['time', *symbols, 'time', *symbols, 'ret', 'earning'])    # Asterisk * unpacking the list, Programming/Python note 14
         ]
-        self.record[strategy_id] = pd.DataFrame(columns=column_index_arr)
+        return pd.DataFrame(columns=column_index_arr)
 
-    def update_curr_record(self, strategy_id, expected_positions, ret, earning, open_pos):
+    def update_curr_record(self, strategy_id, results, expected_positions, ret, earning, open_pos):
         """
         :param strategy_id: str
         :param expected_positions: [float]
@@ -146,19 +143,19 @@ class Trader:
             self.record[strategy_id].loc[0, (type_position, 'earning')] = earning
 
         # data need to fill in for both open and close position
-        self.record[type_position]['time'] = dt_string
-        for symbol, order_id, expect in zip(self.strategy_symbols[strategy_id], self.order_ids[strategy_id].values, expected_positions):
+        self.record[strategy_id].loc[0, (type_position, 'time')] = dt_string
+        for symbol, order_id, result, expect in zip(self.strategy_symbols[strategy_id], self.order_ids[strategy_id].values(), results, expected_positions):
             result_txt = ''
-            real = mt5.orders_get(ticket=order_id)._asdict()['price_open']
+            real = result.price
             diff = expect - real
             if diff >= 0: result_txt = "{:.5f}+{} ({})".format(expect, diff, order_id)
             elif diff < 0: result_txt = "{:.5f}-{} ({})".format(expect, diff, order_id)
             self.record[strategy_id].loc[0, (type_position, symbol)] = result_txt
 
-    def update_record_history_status(self, strategy_id, expected_positions, ret=0, earning=0):
+    def update_record_history_status(self, strategy_id, results, expected_positions, ret=0, earning=0):
         """
         :param strategy_id: str
-        :param order_ids: [int], from mt5 order ids
+        :param results: mt5 results object
         :param expected_positions: [float]
         :param ret: float
         :param earning: float
@@ -166,18 +163,18 @@ class Trader:
         :return:
         """
         if self.status[strategy_id] == 0:
-            self.update_curr_record(strategy_id, expected_positions, ret=ret, earning=earning, open_pos=True)
+            self.update_curr_record(strategy_id, results, expected_positions, ret=ret, earning=earning, open_pos=True)
             self.status[strategy_id] = 1
         elif self.status[strategy_id] == 1:
-            self.update_curr_record(strategy_id, expected_positions, ret=ret, earning=earning, open_pos=False)
-            if self.history[strategy_id] == None:
-                self.history[strategy_id] = self.record[strategy_id]
+            self.update_curr_record(strategy_id, results, expected_positions, ret=ret, earning=earning, open_pos=False)
+            if self.history[strategy_id].empty:
+                self.history[strategy_id] = self.record[strategy_id].copy()
             else:
                 self.history[strategy_id] = pd.concat([self.history[strategy_id], self.record[strategy_id]], axis=0)
-            self.record[strategy_id] = self.curr_record_format(strategy_id) # format the current record after append the record
+            self.record[strategy_id] = self.curr_record_format(self.strategy_symbols[strategy_id]) # format the current record after append the record
             self.status[strategy_id] = 0
         # init order id dictionary at every deal
-        self.order_id_format(strategy_id)
+        self.order_ids[strategy_id] = self.order_id_format(self.strategy_symbols[strategy_id])
 
     def register_strategy(self, strategy_id, symbols):
         """
@@ -188,9 +185,9 @@ class Trader:
         """
         self.status[strategy_id] = 0 # 1 = Holding, 0 = None
         self.strategy_symbols[strategy_id] = symbols
-        self.history[strategy_id] = None
-        self.record[strategy_id] = self.curr_record_format(strategy_id)
-        self.order_ids[strategy_id] = self.order_id_format(strategy_id)
+        self.history[strategy_id] = pd.DataFrame()
+        self.record[strategy_id] = self.curr_record_format(self.strategy_symbols[strategy_id])
+        self.order_ids[strategy_id] = self.order_id_format(self.strategy_symbols[strategy_id])
 
     def check_allowed_with_deviation(self, requests):
         """
@@ -225,12 +222,14 @@ class Trader:
         :return: Boolean
         """
         requests = self.requests_format(strategy_id, lots, prices_at)
-        deviation_allowed = self.check_allowed_with_deviation(requests)
+        deviation_allowed = self.check_allowed_with_deviation(requests) # note 59a
         if not deviation_allowed:
             return False
         results = self.requests_execute(requests)
+        if not results:
+            return False
         self.update_order_id(strategy_id, requests, results)
-        return True
+        return results
 
     def requests_format(self, strategy_id, lots, prices_at):
         """
@@ -288,12 +287,12 @@ class Trader:
             results.append(result)
         # print the results
         for request, result in zip(requests, results):
-            print("order_send(): by {} {} lots at {} (ptDiff={:.1f} ({} - {}))".format(
+            print("order_send(): by {} {:.2f} lots at {} (ptDiff={:.1f} ({}[expected] - {}[real]))".format(
                 request['symbol'], result.volume, result.price,
                 (request['price'] - result.price) * 10 ** mt5.symbol_info(request['symbol']).digits,
                 request['price'], result.price)
             )
-        return True
+        return results
 
 def get_txt2timeframe(timeframe_txt):
     timeframe_dicts = {"M1": mt5.TIMEFRAME_M1, "M2": mt5.TIMEFRAME_M2, "M3": mt5.TIMEFRAME_M3, "M4": mt5.TIMEFRAME_M4,

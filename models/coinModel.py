@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from production.codes.utils import maths
+from production.codes.models import priceModel
 from production.codes.models.backtestModel import returnModel
 
 def get_modify_coefficient_vector(coefficient_vector, long_mode):
@@ -61,11 +62,12 @@ def get_strategy_id(train_options):
     short_id = id + 'short'
     return long_id, short_id
 
-def get_action(trader, strategy_id, masked_open_prices, quote_exchg, ptDv, coefficient_vector, signal, slsp, lots, long_mode):
+def get_action(trader, strategy_id, open_prices, close_prices, quote_exchg, ptDv, coefficient_vector, signal, slsp, lots, long_mode):
     """
     :param trader: Class Trader object
     :param strategy_id: str, each strategy has unique id for identity
-    :param masked_open_prices: open price with last price masked by current price
+    :param open_prices: pd.DataFrame, open price
+    :param close_prices: pd.DataFrame, close price
     :param quote_exchg: pd.DataFrame
     :param ptDv: exchg: pd.DataFrame
     :param coefficient_vector: np.array
@@ -74,30 +76,39 @@ def get_action(trader, strategy_id, masked_open_prices, quote_exchg, ptDv, coeff
     :param lots: [float], that is lots of open position. If close the position, product with negative 1
     :param long_mode: Boolean
     :return: None
+    :param masked_open_prices: open price with last price masked by current price
     """
     # init
-    accum_ret, accum_earning = 0.0, 0.0
-    deal_finish = False
-    prices_at = list(masked_open_prices.iloc[-1,:])
+    deal_ret, deal_earning = 0.0, 0.0
+    results = False
+    latest_close_prices, latest_open_prices = list(close_prices.iloc[-1,:]), list(open_prices.iloc[-1,:])
     open_pos_lots, close_pos_lots = lots, [-l for l in lots]
 
     # Buy signal occurred
+    prices_at = latest_open_prices
     if signal[-2] == True and signal[-3] == False and trader.status[strategy_id] == 0:
-        deal_finish = trader.strategy_execute(strategy_id, open_pos_lots, prices_at)      # open position
+        print("\n----------------------------------Long Spread {}: Open trade----------------------------------".format(str(long_mode)))
+        results = trader.strategy_execute(strategy_id, open_pos_lots, prices_at)      # open position
     # Sell signal occurred
     elif signal[-2] == False and signal[-3] == True and trader.status[strategy_id] == 1:
-        deal_finish = trader.strategy_execute(strategy_id, close_pos_lots, prices_at)     # close position
+        print("\n----------------------------------Long Spread {}: Close trade----------------------------------".format(str(long_mode)))
+        results = trader.strategy_execute(strategy_id, close_pos_lots, prices_at)     # close position
     # Stop loss and Stop profit occurred
     elif trader.status[strategy_id] == 1:
+        masked_open_prices = priceModel.get_open_price_masked_with_last_price(open_prices, close_prices)  # masked with last price with close price
         ret, earning = returnModel.get_ret_earning(masked_open_prices, quote_exchg, ptDv, coefficient_vector, long_mode=long_mode)
         accum_ret, accum_earning = returnModel.get_accum_ret_earning(ret, earning, signal)
-        if accum_earning[-1] > slsp[1]:
-            deal_finish = trader.strategy_execute(strategy_id, close_pos_lots, prices_at)   # close position
-        elif accum_earning[-1] < slsp[0]:
-            deal_finish = trader.strategy_execute(strategy_id, close_pos_lots, prices_at)    # close position
+        deal_ret, deal_earning = accum_ret[-1], accum_earning[-1] # extract the last value in the series
+        prices_at = latest_close_prices
+        if deal_earning > slsp[1]:
+            print("\n----------------------------------Long Spread {}: Close trade (Stop profit)----------------------------------".format(str(long_mode)))
+            results = trader.strategy_execute(strategy_id, close_pos_lots, prices_at)   # close position
+        elif deal_earning < slsp[0]:
+            print("\n----------------------------------Long Spread {}: Close trade (Stop Loss)----------------------------------".format(str(long_mode)))
+            results = trader.strategy_execute(strategy_id, close_pos_lots, prices_at)    # close position
 
     # update the status and record the result
-    if deal_finish:  # if order is executed successfully
-        trader.update_record_history_status(strategy_id, prices_at, ret=accum_ret, earning=accum_earning)
+    if results:  # if order is executed successfully
+        trader.update_record_history_status(strategy_id, results, prices_at, ret=deal_ret, earning=deal_earning)
 
 
