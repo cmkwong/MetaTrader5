@@ -167,19 +167,21 @@ def get_latest_Prices(all_symbols_info, symbols, timeframe, timezone, count=10, 
 
     # get latest open prices and close prices
     prices_df = _get_prices_df(symbols, timeframe, timezone, ohlc='1001', count=count)
-    new_index = prices_df.loc[:, 'open'].index.union([mt5Model.get_current_utc_time_from_broker(timezone)])
+    new_index = prices_df.loc[:, 'open'].index.union([mt5Model.get_current_utc_time_from_broker(timezone)]) # plus 1 length of data
     latest_open_price_arr = np.concatenate((prices_df['open'].values, prices_df['close'].values[-1,:].reshape(1,-1)), axis=0)
     latest_open_prices_df = pd.DataFrame(latest_open_price_arr, columns=['open'] * len(symbols), index=new_index)
     latest_close_price_arr = np.concatenate((prices_df['close'].values, prices_df['close'].values[-1, :].reshape(1, -1)), axis=0)
     latest_close_prices_df = pd.DataFrame(latest_close_price_arr, columns=['close'] * len(symbols), index=new_index)
 
-    # get point diff values
+    # get point diff values with latest value
     diff_name = "ptDv"
     points_dff_values_df = pointsModel.get_points_dff_values_df(symbols, latest_open_prices_df, all_symbols_info, temp_col_name=diff_name)
 
+    # get quote exchange with values
     q2d_name = "q2d"
     q2d_exchange_rate_df_o, q2d_modified_names = get_exchange_df(symbols, all_symbols_info, deposit_currency, timeframe, timezone, '1000', count, exchg_type=q2d_name)
     q2d_exchange_rate_df_c, _ = get_exchange_df(symbols, all_symbols_info, deposit_currency, timeframe, timezone, '0001', count, exchg_type=q2d_name)
+    # TODO if len(q2d_exchange_rate_df_o) or len(q2d_exchange_rate_df_c) == 39, return false and run again
     q2d_exchange_rate_arr = np.concatenate((q2d_exchange_rate_df_o.values, q2d_exchange_rate_df_c.values[-1, :].reshape(1, -1)), axis=0)
     q2d_exchange_rate_df = pd.DataFrame(q2d_exchange_rate_arr, columns=[q2d_name] * len(symbols), index=new_index)
 

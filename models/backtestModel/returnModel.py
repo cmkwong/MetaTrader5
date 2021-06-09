@@ -121,18 +121,5 @@ def modify_ret_earning_with_SLSP(ret_series, earning_series, sl, sp):
             sp_buffer -= e
     return ret_mask, earning_mask
 
-def get_latest_ret_earning(open_prices, latest_prices, signal, coefficient_vector,  all_symbols_info, deposit_currency, long_mode=True):
-    modified_coefficient_vector = coinModel.get_modify_coefficient_vector(coefficient_vector, long_mode)
-    int_signal = signalModel.get_int_signal(signal)
-    prices_at_index = indexModel.get_open_index(int_signal)[-1]
-    prices_at = open_prices.iloc[prices_at_index,:]
-
-    # get latest q2d df
-    symbols = open_prices.columns
-    q2d_exchange_symbols = priceModel.get_exchange_symbols(symbols, all_symbols_info, deposit_currency, exchg_type='q2d')
-    q2d_exchange_rate_df = _get_prices_df(q2d_exchange_symbols, timeframe, timezone, start, end, ohlc='1000', count=count)
-
-    # get latest ptDv df
-
 
 

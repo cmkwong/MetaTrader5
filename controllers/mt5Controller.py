@@ -53,9 +53,9 @@ with mt5Model.Trader(dt_string=options['dt'], history_path=trader_options["histo
         # calculate for checking for stop-loss and stop-profit reached
         long_signal, short_signal = signalModel.get_coin_NN_signal(coin_data, coin_option['upper_th'], coin_option['lower_th'], discard=False)
 
-        coinModel.get_action(trader, long_strategy_id, Prices.o, Prices.c, Prices.quote_exchg, Prices.ptDv,
+        coinModel.get_action(trader, long_strategy_id, Prices.l_o, Prices.l_quote_exchg, Prices.l_ptDv,
                              coefficient_vector, long_signal, coin_option['slsp'], long_lots, long_mode=True)
-        coinModel.get_action(trader, short_strategy_id, Prices.o, Prices.c, Prices.quote_exchg, Prices.ptDv,
+        coinModel.get_action(trader, short_strategy_id, Prices.l_o, Prices.l_quote_exchg, Prices.l_ptDv,
                              coefficient_vector, short_signal, coin_option['slsp'], short_lots, long_mode=False)
 
         time.sleep(10)

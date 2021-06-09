@@ -295,7 +295,7 @@ class Trader:
             results.append(result)
         # print the results
         for request, result in zip(requests, results):
-            print("order_send(): by {} {:.2f} lots at {:.5f} (ptDiff={:.1f} ({}[expected] - {}[real]))".format(
+            print("order_send(): by {} {:.2f} lots at {:.5f} (ptDiff={:.1f} ({:.5f}[expected] - {:.5f}[real]))".format(
                 request['symbol'], result.volume, result.price,
                 (request['price'] - result.price) * 10 ** mt5.symbol_info(request['symbol']).digits,
                 request['price'], result.price)

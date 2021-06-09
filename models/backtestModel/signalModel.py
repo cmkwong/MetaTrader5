@@ -25,34 +25,6 @@ def discard_head_tail_signal(signal):
                 break
     return signal
 
-# def discard_head_signal(signal):
-#     """
-#     :param signal: pd.Series
-#     :return: signal: pd.Series
-#     """
-#     if signal[0] == True:
-#         for index, value in signal.items():
-#             if value == True:
-#                 signal[index] = False
-#             else:
-#                 break
-#     return signal
-#
-# def discard_tail_signal(signal):
-#     """
-#     :param signal: Series
-#     :return: signal: Series
-#     """
-#     if signal[len(signal) - 1] == True or signal[len(signal) - 2] == True:  # See Note 6. and 11.
-#         length = len(signal)
-#         signal[length - 1] = True  # Set the last index is True, it will set back to false in following looping
-#         for ii, value in enumerate(reversed(signal.values)):
-#             if value == True:
-#                 signal[length - 1 - ii] = False
-#             else:
-#                 break
-#     return signal
-
 def get_int_signal(signal):
     """
     :param signal: pd.Series()
@@ -60,12 +32,6 @@ def get_int_signal(signal):
     """
     int_signal = signal.astype(int).diff(1)
     return int_signal
-
-# def get_int_signal(signal):
-#     int_signal = pd.DataFrame(index=signal.index)
-#     int_signal['long'] = signal['long'].astype(int).diff(1)
-#     int_signal['short'] = signal['short'].astype(int).diff(1)
-#     return int_signal
 
 def maxLimitClosed(signal, limit_unit):
     """
@@ -146,3 +112,15 @@ def get_coin_NN_signal(coin_NN_data, upper_th, lower_th, discard=True):
         long_signal = discard_head_tail_signal(long_signal) # see 40c
         short_signal = discard_head_tail_signal(short_signal)
     return long_signal, short_signal
+
+def get_latest_signal(signal, latest_index):
+    """
+    :param signal:
+    :param latest_index:
+    :return:
+    """
+    latest_signal = pd.Series(False, index=latest_index)
+    int_signal = get_int_signal(signal)
+    open_index = indexModel.get_signal_start_index(int_signal.reset_index(drop=True))[-1]
+    latest_signal.iloc[open_index:] = True
+    return latest_signal
