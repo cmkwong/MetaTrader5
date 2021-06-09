@@ -215,7 +215,11 @@ class Trader:
         return True
 
     def strategy_close(self, strategy_id, lots):
-
+        """
+        :param strategy_id: str
+        :param lots: [float], that is open position that lots going to buy(+ve) / sell(-ve)
+        :return: dict: requests, results
+        """
         lots = [-l for l in lots]
         requests = self.requests_format(strategy_id, lots, prices_at=[0]*len(self.strategy_symbols[strategy_id]), close_pos=True)
         results = self.requests_execute(requests)
@@ -224,7 +228,7 @@ class Trader:
     def strategy_open(self, strategy_id, lots, prices_at):
         """
         :param strategy_id: str
-        :param lots: [float], that is lots going to buy(+ve) / sell(-ve)
+        :param lots: [float], that is open position that lots going to buy(+ve) / sell(-ve)
         :param prices_at: [float]
         :param close_pos: Boolean
         :return: dict: requests, results
@@ -234,6 +238,10 @@ class Trader:
         deviation_allowed = self.check_allowed_with_deviation(requests) # note 59a
         if deviation_allowed:
             results = self.requests_execute(requests)
+        # if results is False, then close the opened position
+        if results == False: # note 63b
+            self.strategy_close(strategy_id, lots)
+            print("{}: The open position is failed. The opened position are closed.".format(strategy_id))
         return results, requests
 
     def requests_format(self, strategy_id, lots, prices_at, close_pos=False):
@@ -275,7 +283,10 @@ class Trader:
                 "type_time": mt5.ORDER_TIME_GTC,
                 "type_filling": tf,
             }
-            if close_pos: request['position'] = self.order_ids[strategy_id][symbol] # note 61b
+            if close_pos:
+                if self.order_ids[strategy_id][symbol] == 0:
+                    continue    # if there is no order id, do not append the request, note 63b
+                request['position'] = self.order_ids[strategy_id][symbol] # note 61b
             requests.append(request)
         return requests
 

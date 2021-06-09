@@ -167,6 +167,9 @@ def get_latest_Prices(all_symbols_info, symbols, timeframe, timezone, count=10, 
 
     # get latest open prices and close prices
     prices_df = _get_prices_df(symbols, timeframe, timezone, ohlc='1001', count=count)
+    if len(prices_df) != count:  # note 63a
+        print("prices_df length of Data is not equal to count")
+        return False
     new_index = prices_df.loc[:, 'open'].index.union([mt5Model.get_current_utc_time_from_broker(timezone)]) # plus 1 length of data
     latest_open_price_arr = np.concatenate((prices_df['open'].values, prices_df['close'].values[-1,:].reshape(1,-1)), axis=0)
     latest_open_prices_df = pd.DataFrame(latest_open_price_arr, columns=['open'] * len(symbols), index=new_index)
@@ -182,6 +185,9 @@ def get_latest_Prices(all_symbols_info, symbols, timeframe, timezone, count=10, 
     q2d_exchange_rate_df_o, q2d_modified_names = get_exchange_df(symbols, all_symbols_info, deposit_currency, timeframe, timezone, '1000', count, exchg_type=q2d_name)
     q2d_exchange_rate_df_c, _ = get_exchange_df(symbols, all_symbols_info, deposit_currency, timeframe, timezone, '0001', count, exchg_type=q2d_name)
     # TODO if len(q2d_exchange_rate_df_o) or len(q2d_exchange_rate_df_c) == 39, return false and run again
+    if len(q2d_exchange_rate_df_o) != count or len(q2d_exchange_rate_df_c) != count: # note 63a
+        print("q2d_exchange_rate_df_o or q2d_exchange_rate_df_c length of Data is not equal to count")
+        return False
     q2d_exchange_rate_arr = np.concatenate((q2d_exchange_rate_df_o.values, q2d_exchange_rate_df_c.values[-1, :].reshape(1, -1)), axis=0)
     q2d_exchange_rate_df = pd.DataFrame(q2d_exchange_rate_arr, columns=[q2d_name] * len(symbols), index=new_index)
 
