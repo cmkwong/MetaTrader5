@@ -4,6 +4,7 @@ from production.codes.utils import tools
 import collections
 import MetaTrader5 as mt5
 import pandas as pd
+import numpy as np
 from datetime import datetime
 
 def get_historical_data(symbol, timeframe, timezone, start, end=None):
@@ -15,13 +16,13 @@ def get_historical_data(symbol, timeframe, timezone, start, end=None):
     :param end (local time): tuple (year, month, day, hour, mins), if None, then take data until present
     :return: dataframe
     """
-    utc_from = mt5Model.get_utc_time(start, timezone)
+    utc_from = mt5Model.get_utc_time_from_broker(start, timezone)
     if end == None:
         now = datetime.today()
         now_tuple = (now.year, now.month, now.day, now.hour, now.minute)
-        utc_to = mt5Model.get_utc_time(now_tuple, timezone)
+        utc_to = mt5Model.get_utc_time_from_broker(now_tuple, timezone)
     else:
-        utc_to = mt5Model.get_utc_time(end, timezone)
+        utc_to = mt5Model.get_utc_time_from_broker(end, timezone)
     rates = mt5.copy_rates_range(symbol, timeframe, utc_from, utc_to)
     rates_frame = pd.DataFrame(rates, dtype=float) # create DataFrame out of the obtained data
     rates_frame['time'] = pd.to_datetime(rates_frame['time'], unit='s') # convert time in seconds into the datetime format
@@ -79,6 +80,27 @@ def _get_prices_df(symbols, timeframe, timezone, start=None, end=None, ohlc='111
             prices_df = pd.concat([prices_df, price], axis=1, join='inner')
     return prices_df
 
+def get_exchange_df(symbols, all_symbols_info, deposit_currency, timeframe, timezone, ohlc, count, exchg_type, start=None, end=None):
+    """
+    :param symbols: [str]
+    :param all_symbols_info: mt5.symbols_info object
+    :param deposit_currency: str, USD / GBP / EUR
+    :param timeframe: mt5.timeFrame
+    :param timezone: str "Hongkong"
+    :param start: (2010,1,1,0,0)
+    :param end: (2020,1,1,0,0)
+    :param ohlc: 'str', eg: '1000'
+    :param count: int
+    :param exchg_type: q2d = quote exchange to deposit, b2d = base exchange to deposit
+    :return: pd.DataFrame
+    """
+    exchange_symbols = get_exchange_symbols(symbols, all_symbols_info, deposit_currency, exchg_type=exchg_type)
+    exchange_rate_df = _get_prices_df(exchange_symbols, timeframe, timezone, start, end, ohlc=ohlc, count=count)  # just need the open price
+    exchange_rate_df, modified_names = modify_exchange_rate(symbols, exchange_symbols, exchange_rate_df,
+                                                                    deposit_currency, exchg_type=exchg_type)
+    exchange_rate_df.columns = [exchg_type] * len(exchange_symbols)  # assign temp name
+    return exchange_rate_df, modified_names
+
 def get_Prices(symbols, timeframe, timezone, start=None, end=None, ohlc='1111', count=10, deposit_currency='USD'):
     """
     :param count:
@@ -100,21 +122,23 @@ def get_Prices(symbols, timeframe, timezone, start=None, end=None, ohlc='1111', 
 
     # get the quote to deposit exchange rate
     q2d_name = "q2d"
-    q2d_exchange_symbols = get_exchange_symbols(symbols, all_symbols_info, deposit_currency, type='q2d')
-    q2d_exchange_rate_df = _get_prices_df(q2d_exchange_symbols, timeframe, timezone, start, end, ohlc='1000', count=count) # just need the open price
-    q2d_exchange_rate_df, q2d_modified_names = modify_exchange_rate(symbols, q2d_exchange_symbols, q2d_exchange_rate_df,
-                                                                    deposit_currency, exchg_type='q2d')
-    q2d_exchange_rate_df.columns = [q2d_name] * len(q2d_exchange_symbols) # assign temp name
+    q2d_exchange_rate_df, q2d_modified_names = get_exchange_df(symbols, all_symbols_info, deposit_currency, timeframe, timezone, '1000', count, exchg_type=q2d_name, start=start, end=end)
+    # q2d_exchange_symbols = get_exchange_symbols(symbols, all_symbols_info, deposit_currency, exchg_type='q2d')
+    # q2d_exchange_rate_df = _get_prices_df(q2d_exchange_symbols, timeframe, timezone, start, end, ohlc='1000', count=count) # just need the open price
+    # q2d_exchange_rate_df, q2d_modified_names = modify_exchange_rate(symbols, q2d_exchange_symbols, q2d_exchange_rate_df,
+    #                                                                 deposit_currency, exchg_type='q2d')
+    # q2d_exchange_rate_df.columns = [q2d_name] * len(q2d_exchange_symbols) # assign temp name
 
     # get the base to deposit exchange rate
     b2d_name = "b2d"
-    b2d_exchange_symbols = get_exchange_symbols(symbols, all_symbols_info, deposit_currency, type='b2d')
-    b2d_exchange_rate_df = _get_prices_df(b2d_exchange_symbols, timeframe, timezone, start, end, ohlc='1000', count=count)  # just need the open price
-    b2d_exchange_rate_df, b2d_modified_names = modify_exchange_rate(symbols, b2d_exchange_symbols, b2d_exchange_rate_df,
-                                                                    deposit_currency, exchg_type='b2d')
-    b2d_exchange_rate_df.columns = [b2d_name] * len(b2d_exchange_symbols)  # assign temp name
+    b2d_exchange_rate_df, b2d_modified_names = get_exchange_df(symbols, all_symbols_info, deposit_currency, timeframe, timezone, '1000', count, exchg_type=b2d_name, start=start, end=end)
+    # b2d_exchange_symbols = get_exchange_symbols(symbols, all_symbols_info, deposit_currency, exchg_type='b2d')
+    # b2d_exchange_rate_df = _get_prices_df(b2d_exchange_symbols, timeframe, timezone, start, end, ohlc='1000', count=count)  # just need the open price
+    # b2d_exchange_rate_df, b2d_modified_names = modify_exchange_rate(symbols, b2d_exchange_symbols, b2d_exchange_rate_df,
+    #                                                                 deposit_currency, exchg_type='b2d')
+    # b2d_exchange_rate_df.columns = [b2d_name] * len(b2d_exchange_symbols)  # assign temp name
 
-    # joining two dataframe to get the consistent index
+    # inner joining two dataframe to get the consistent index
     prices_df = pd.concat([prices_df, points_dff_values_df, q2d_exchange_rate_df, b2d_exchange_rate_df], axis=1, join='inner')
 
     # assign the column into each collection tuple
@@ -136,6 +160,46 @@ def get_Prices(symbols, timeframe, timezone, start=None, end=None, ohlc='1111', 
             df.columns = b2d_modified_names
 
     return Prices
+
+def get_latest_Prices(all_symbols_info, symbols, timeframe, timezone, count=10, deposit_currency='USD'):
+
+    Prices_collection = collections.namedtuple("Prices_collection", ['c', 'l_o', 'l_ptDv', 'l_quote_exchg'])
+
+    # get latest open prices and close prices
+    prices_df = _get_prices_df(symbols, timeframe, timezone, ohlc='1001', count=count)
+    new_index = prices_df.loc[:, 'open'].index.union([mt5Model.get_current_utc_time_from_broker(timezone)])
+    latest_open_price_arr = np.concatenate((prices_df['open'].values, prices_df['close'].values[-1,:].reshape(1,-1)), axis=0)
+    latest_open_prices_df = pd.DataFrame(latest_open_price_arr, columns=['open'] * len(symbols), index=new_index)
+    latest_close_price_arr = np.concatenate((prices_df['close'].values, prices_df['close'].values[-1, :].reshape(1, -1)), axis=0)
+    latest_close_prices_df = pd.DataFrame(latest_close_price_arr, columns=['close'] * len(symbols), index=new_index)
+
+    # get point diff values
+    diff_name = "ptDv"
+    points_dff_values_df = pointsModel.get_points_dff_values_df(symbols, latest_open_prices_df, all_symbols_info, temp_col_name=diff_name)
+
+    q2d_name = "q2d"
+    q2d_exchange_rate_df_o, q2d_modified_names = get_exchange_df(symbols, all_symbols_info, deposit_currency, timeframe, timezone, '1000', count, exchg_type=q2d_name)
+    q2d_exchange_rate_df_c, _ = get_exchange_df(symbols, all_symbols_info, deposit_currency, timeframe, timezone, '0001', count, exchg_type=q2d_name)
+    q2d_exchange_rate_arr = np.concatenate((q2d_exchange_rate_df_o.values, q2d_exchange_rate_df_c.values[-1, :].reshape(1, -1)), axis=0)
+    q2d_exchange_rate_df = pd.DataFrame(q2d_exchange_rate_arr, columns=[q2d_name] * len(symbols), index=new_index)
+
+    joined_prices_df = pd.concat([latest_open_prices_df, latest_close_prices_df, points_dff_values_df, q2d_exchange_rate_df], axis=1, join='inner')
+
+    Prices = Prices_collection(c=joined_prices_df.loc[:,'close'].iloc[:-1,:], # discard the last row
+                               l_o=pd.DataFrame(joined_prices_df.loc[:, 'open'], index=joined_prices_df.index),
+                               l_ptDv=pd.DataFrame(points_dff_values_df.loc[:, diff_name], index=joined_prices_df.index),
+                               l_quote_exchg=pd.DataFrame(q2d_exchange_rate_df.loc[:, q2d_name], index=joined_prices_df.index))
+
+    # re-assign the columns name
+    for i, df in enumerate(Prices):
+        if i < len(Prices) - 1:
+            df.columns = symbols
+        elif i == len(Prices) - 1:
+            df.columns = q2d_modified_names
+
+    return Prices
+
+
 
 def split_Prices(Prices, percentage):
     keys = list(Prices._asdict().keys())
@@ -184,21 +248,21 @@ def modify_exchange_rate(symbols, exchange_symbols, exchange_rate_df, deposit_cu
 
     return exchange_rate_df, symbol_new_names
 
-def get_exchange_symbols(symbols, all_symbols_info, deposit_currency='USD', type='q2d'):
+def get_exchange_symbols(symbols, all_symbols_info, deposit_currency='USD', exchg_type='q2d'):
     """
     Find all the currency pair related to and required currency and deposit symbol
     :param symbols: [str] : ["AUDJPY", "AUDUSD", "CADJPY", "EURUSD", "NZDUSD", "USDCAD"]
     :param all_symbols_info: dict with nametuple
     :param deposit_currency: str: USD/GBP/EUR, main currency for deposit
-    :param type: str, 'q2d' = quote to deposit OR 'b2d' = base to deposit
+    :param exchg_type: str, 'q2d' = quote to deposit OR 'b2d' = base to deposit
     :return: [str], get required exchange symbol in list: ['USDJPY', 'AUDUSD', 'USDJPY', 'EURUSD', 'NZDUSD', 'USDCAD']
     """
     symbol_names = list(all_symbols_info.keys())
     exchange_symbols = []
     target_symbol = None
     for symbol in symbols:
-        if type == 'b2d': target_symbol = symbol[:3]
-        elif type == 'q2d': target_symbol = symbol[3:]
+        if exchg_type == 'b2d': target_symbol = symbol[:3]
+        elif exchg_type == 'q2d': target_symbol = symbol[3:]
         if target_symbol != deposit_currency:  # if the symbol not relative to required deposit currency
             test_symbol_1 = target_symbol + deposit_currency
             test_symbol_2 = deposit_currency + target_symbol
@@ -237,10 +301,21 @@ def get_close_price_with_last_tick(close_price, coefficient_vector): # that is n
             close_price_with_last_tick['short_spread'].iloc[-1, i] = lasttick['ask']
     return close_price_with_last_tick
 
-def get_open_price_masked_with_last_price(open_price, close_price): # note 57f
+def get_open_price_append_with_latest_price(open_prices, close_prices): # note 57f
     """
     :param Prices: Prices object
     :return: pd.DataFrame
     """
-    open_price.iloc[-1,:] = close_price.iloc[-1,:]
-    return open_price
+    open_prices = pd.concat([open_prices, close_prices.iloc[-1,:]], axis=0)
+    return open_prices
+
+def get_append_latest_quote_exchange(symbols, all_symbols_info, deposit_currency, timeframe, timezone, quote_exchg):
+    q2d_name = "q2d"
+    q2d_exchange_symbols = get_exchange_symbols(symbols, all_symbols_info, deposit_currency, exchg_type='q2d')
+    q2d_exchange_rate_df = _get_prices_df(q2d_exchange_symbols, timeframe, timezone, start=None, end=None, ohlc='0001', count=1)  # just need the open price
+    q2d_exchange_rate_df, q2d_modified_names = modify_exchange_rate(symbols, q2d_exchange_symbols, q2d_exchange_rate_df, deposit_currency, exchg_type='q2d')
+    q2d_exchange_rate_df.columns = [q2d_name] * len(q2d_exchange_symbols)  # assign temp name
+    q2d_exchange_symbols = quote_exchg
+
+def get_latest_ptDv():
+    pass

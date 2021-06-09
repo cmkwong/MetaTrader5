@@ -80,35 +80,40 @@ def get_action(trader, strategy_id, open_prices, close_prices, quote_exchg, ptDv
     """
     # init
     deal_ret, deal_earning = 0.0, 0.0
-    results = False
+    if long_mode:
+        mode_txt = 'long'
+    else:
+        mode_txt = 'short'
+    results, requests = False, False
     latest_close_prices, latest_open_prices = list(close_prices.iloc[-1,:]), list(open_prices.iloc[-1,:])
-    open_pos_lots, close_pos_lots = lots, [-l for l in lots]
 
     # Buy signal occurred
     prices_at = latest_open_prices
     if signal[-2] == True and signal[-3] == False and trader.status[strategy_id] == 0:
-        print("\n----------------------------------Long Spread {}: Open trade----------------------------------".format(str(long_mode)))
-        results = trader.strategy_execute(strategy_id, open_pos_lots, prices_at)      # open position
-    # Sell signal occurred
-    elif signal[-2] == False and signal[-3] == True and trader.status[strategy_id] == 1:
-        print("\n----------------------------------Long Spread {}: Close trade----------------------------------".format(str(long_mode)))
-        results = trader.strategy_execute(strategy_id, close_pos_lots, prices_at)     # close position
-    # Stop loss and Stop profit occurred
+        print("\n----------------------------------{} Spread: Open position----------------------------------".format(mode_txt))
+        results, requests = trader.strategy_open(strategy_id, lots, prices_at)      # open position
+
     elif trader.status[strategy_id] == 1:
-        masked_open_prices = priceModel.get_open_price_masked_with_last_price(open_prices, close_prices)  # masked with last price with close price
+        masked_open_prices = priceModel.get_open_price_append_with_latest_price(open_prices, close_prices)  # masked with last price with close price
         ret, earning = returnModel.get_ret_earning(masked_open_prices, quote_exchg, ptDv, coefficient_vector, long_mode=long_mode)
         accum_ret, accum_earning = returnModel.get_accum_ret_earning(ret, earning, signal)
         deal_ret, deal_earning = accum_ret[-1], accum_earning[-1] # extract the last value in the series
         prices_at = latest_close_prices
-        if deal_earning > slsp[1]:
-            print("\n----------------------------------Long Spread {}: Close trade (Stop profit)----------------------------------".format(str(long_mode)))
-            results = trader.strategy_execute(strategy_id, close_pos_lots, prices_at)   # close position
+        # Opposite Signal occurred
+        if signal[-2] == False and signal[-3]:
+            print("\n----------------------------------{} Spread: Close position----------------------------------".format(mode_txt))
+            results, requests = trader.strategy_close(strategy_id, lots)  # close position
+        # Stop Profit
+        elif deal_earning > slsp[1]:
+            print("\n----------------------------------{} Spread: Close position (Stop profit)----------------------------------".format(mode_txt))
+            results, requests = trader.strategy_close(strategy_id, lots)   # close position
+        # Stop Loss
         elif deal_earning < slsp[0]:
-            print("\n----------------------------------Long Spread {}: Close trade (Stop Loss)----------------------------------".format(str(long_mode)))
-            results = trader.strategy_execute(strategy_id, close_pos_lots, prices_at)    # close position
+            print("\n----------------------------------{} Spread: Close position (Stop Loss)----------------------------------".format(mode_txt))
+            results, requests = trader.strategy_close(strategy_id, lots)    # close position
 
     # update the status and record the result
     if results:  # if order is executed successfully
-        trader.update_record_history_status(strategy_id, results, prices_at, ret=deal_ret, earning=deal_earning)
+        trader.update_trader(strategy_id, results, requests, prices_at, ret=deal_ret, earning=deal_earning)
 
 

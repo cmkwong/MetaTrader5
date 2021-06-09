@@ -15,7 +15,6 @@ def connect_server():
     else:
         print("MetaTrader Connected")
 
-
 def disconnect_server():
     # disconnect to MetaTrader 5
     mt5.shutdown()
@@ -93,12 +92,12 @@ class Trader:
         :param strategy_id: str
         :return: dictionary
         """
-        sub_order_ids = {}
+        oid = {}
         for symbol in symbols:
-            sub_order_ids[symbol] = 'NO DEAL'
-        return sub_order_ids
+            oid[symbol] = 0
+        return oid
 
-    def update_order_id(self, strategy_id, requests, results):
+    def update_order_id(self, strategy_id, results, requests):
         """
         initialize the container dictionary, note 59b
         :param strategy_id: str
@@ -120,13 +119,13 @@ class Trader:
         ]
         return pd.DataFrame(columns=column_index_arr)
 
-    def update_curr_record(self, strategy_id, results, expected_positions, ret, earning, open_pos):
+    def update_curr_record(self, strategy_id, results, expected_positions, ret, earning, close_pos):
         """
         :param strategy_id: str
         :param expected_positions: [float]
         :param ret: float
         :param earning: float
-        :param open_pos: Boolean
+        :param close_pos: Boolean
         :return: None
         """
         # current time
@@ -134,13 +133,13 @@ class Trader:
         dt_string = now.strftime("%y%m%d%H%M%S")
 
         # judge if it is open position or close position
-        if open_pos:
-            type_position = 'open'
-        else:
-            # if it is close position, it need to fill the return and earning
+        if close_pos:
             type_position = 'close'
             self.record[strategy_id].loc[0, (type_position, 'ret')] = ret
             self.record[strategy_id].loc[0, (type_position, 'earning')] = earning
+        else:
+            # if it is close position, it need to fill the return and earning
+            type_position = 'open'
 
         # data need to fill in for both open and close position
         self.record[strategy_id].loc[0, (type_position, 'time')] = dt_string
@@ -152,29 +151,31 @@ class Trader:
             elif diff < 0: result_txt = "{:.5f}-{} ({})".format(expect, diff, order_id)
             self.record[strategy_id].loc[0, (type_position, symbol)] = result_txt
 
-    def update_record_history_status(self, strategy_id, results, expected_positions, ret=0, earning=0):
+    def update_trader(self, strategy_id, results, requests, expected_positions, ret=0, earning=0):
         """
         :param strategy_id: str
         :param results: mt5 results object
+        :param requests: [request], request = dictionary
         :param expected_positions: [float]
         :param ret: float
         :param earning: float
         :param open_pos: Boolean
-        :return:
+        :return: None
         """
+        self.update_order_id(strategy_id, results, requests)
         if self.status[strategy_id] == 0:
-            self.update_curr_record(strategy_id, results, expected_positions, ret=ret, earning=earning, open_pos=True)
+            self.update_curr_record(strategy_id, results, expected_positions, ret=ret, earning=earning, close_pos=False)
             self.status[strategy_id] = 1
         elif self.status[strategy_id] == 1:
-            self.update_curr_record(strategy_id, results, expected_positions, ret=ret, earning=earning, open_pos=False)
+            self.update_curr_record(strategy_id, results, expected_positions, ret=ret, earning=earning, close_pos=True)
             if self.history[strategy_id].empty:
                 self.history[strategy_id] = self.record[strategy_id].copy()
             else:
                 self.history[strategy_id] = pd.concat([self.history[strategy_id], self.record[strategy_id]], axis=0)
             self.record[strategy_id] = self.curr_record_format(self.strategy_symbols[strategy_id]) # format the current record after append the record
             self.status[strategy_id] = 0
-        # init order id dictionary at every deal
-        self.order_ids[strategy_id] = self.order_id_format(self.strategy_symbols[strategy_id])
+            # init order id dictionary after close position
+            self.order_ids[strategy_id] = self.order_id_format(self.strategy_symbols[strategy_id])
 
     def register_strategy(self, strategy_id, symbols):
         """
@@ -197,15 +198,15 @@ class Trader:
         :param prices_at: [float]
         :return: Boolean
         """
-        for request in requests:
-            symbol, price_at, deviation, lot = request['symbol'], request['price'], request['deviation'], request['volume']
-            if lot > 0:
+        for i, request in enumerate(requests):
+            symbol, price_at, deviation, action_type = request['symbol'], request['price'], self.deviations[i], request['type']
+            if action_type == mt5.ORDER_TYPE_BUY:
                 cost_price = mt5.symbol_info_tick(symbol).ask
                 diff_pt = (cost_price - price_at) * (10 ** self.all_symbol_info[symbol].digits)
                 if diff_pt > deviation:
                     print("{} have large deviation. {:.5f}(ask) - {:.5f}(price_at) = {:.3f}".format(symbol, cost_price, price_at, diff_pt))
                     return False
-            else:
+            elif action_type == mt5.ORDER_TYPE_SELL:
                 cost_price = mt5.symbol_info_tick(symbol).bid
                 diff_pt = (price_at - cost_price) * (10 ** self.all_symbol_info[symbol].digits)
                 if diff_pt > deviation:
@@ -213,29 +214,33 @@ class Trader:
                     return False
         return True
 
-    def strategy_execute(self, strategy_id, lots, prices_at):
+    def strategy_close(self, strategy_id, lots):
+
+        lots = [-l for l in lots]
+        requests = self.requests_format(strategy_id, lots, prices_at=[0]*len(self.strategy_symbols[strategy_id]), close_pos=True)
+        results = self.requests_execute(requests)
+        return results, requests
+
+    def strategy_open(self, strategy_id, lots, prices_at):
         """
         :param strategy_id: str
         :param lots: [float], that is lots going to buy(+ve) / sell(-ve)
         :param prices_at: [float]
-        :param pos_open_close: Boolean
-        :return: Boolean
+        :param close_pos: Boolean
+        :return: dict: requests, results
         """
+        results = False
         requests = self.requests_format(strategy_id, lots, prices_at)
         deviation_allowed = self.check_allowed_with_deviation(requests) # note 59a
-        if not deviation_allowed:
-            return False
-        results = self.requests_execute(requests)
-        if not results:
-            return False
-        self.update_order_id(strategy_id, requests, results)
-        return results
+        if deviation_allowed:
+            results = self.requests_execute(requests)
+        return results, requests
 
-    def requests_format(self, strategy_id, lots, prices_at):
+    def requests_format(self, strategy_id, lots, prices_at, close_pos=False):
         """
         :param strategy_id: str, belong to specific strategy
         :param lots: [float]
-        :param prices_at: [float]
+        :param prices_at: [float], if prices_at == 0, that means trade on market price
         :return: requests, [dict], a list of request
         """
         # the target with respect to the strategy id
@@ -249,13 +254,15 @@ class Trader:
             tf = mt5.ORDER_FILLING_IOC
         elif self.type_filling == 'return':
             tf = mt5.ORDER_FILLING_RETURN
-        # bui;ding each request
+        # building each request
         requests = []
-        for symbol, lot, price, deviation in zip(symbols, lots, prices_at, self.deviations):
+        for symbol, lot, price in zip(symbols, lots, prices_at):
             if lot > 0:
-                action_type = mt5.ORDER_TYPE_BUY
+                action_type = mt5.ORDER_TYPE_BUY # int = 0
+                if price == 0: price = mt5.symbol_info_tick(symbol).ask
             elif lot < 0:
-                action_type = mt5.ORDER_TYPE_SELL
+                action_type = mt5.ORDER_TYPE_SELL # int = 1
+                if price == 0: price = mt5.symbol_info_tick(symbol).bid
                 lot = -lot
             else:
                 continue # if lot equal to 0, do not append the request
@@ -265,10 +272,10 @@ class Trader:
                 'volume': float(lot),
                 'type': action_type,
                 'price': price,
-                'deviation': deviation,
                 "type_time": mt5.ORDER_TIME_GTC,
                 "type_filling": tf,
             }
+            if close_pos: request['position'] = self.order_ids[strategy_id][symbol] # note 61b
             requests.append(request)
         return requests
 
@@ -283,11 +290,12 @@ class Trader:
             result = mt5.order_send(request)  # sending the request
             if result.retcode != mt5.TRADE_RETCODE_DONE:
                 print("order_send failed, symbol={}, retcode={}".format(request['symbol'], result.retcode))
+                # TODO - cancel the previous positions
                 return False
             results.append(result)
         # print the results
         for request, result in zip(requests, results):
-            print("order_send(): by {} {:.2f} lots at {} (ptDiff={:.1f} ({}[expected] - {}[real]))".format(
+            print("order_send(): by {} {:.2f} lots at {:.5f} (ptDiff={:.1f} ({}[expected] - {}[real]))".format(
                 request['symbol'], result.volume, result.price,
                 (request['price'] - result.price) * 10 ** mt5.symbol_info(request['symbol']).digits,
                 request['price'], result.price)
@@ -316,14 +324,25 @@ def get_timeframe2txt(mt5_timeframe_txt):
                       mt5.TIMEFRAME_MN1: "MN1"}
     return timeframe_dicts[mt5_timeframe_txt]
 
-def get_utc_time(time, timezone):
+def get_utc_time_from_broker(time, timezone):
     """
     :param time: tuple (year, month, day, hour, mins) eg: (2010, 10, 30, 0, 0)
     :param timezone: Check: set(pytz.all_timezones_set) - (Etc/UTC)
     :return: datetime format
     """
-    tz = pytz.timezone(timezone)
-    utc_time = datetime(time[0], time[1], time[2], hour=time[3], minute=time[4], tzinfo=tz) + timedelta(hours=config.BROKER_TIME_BETWEEN_UTC, minutes=0)
+    dt = datetime(time[0], time[1], time[2], hour=time[3], minute=time[4]) + timedelta(hours=2, minutes=0)
+    utc_time = pytz.timezone(timezone).localize(dt)
+    return utc_time
+
+def get_current_utc_time_from_broker(timezone):
+    """
+    :param time: tuple (year, month, day, hour, mins) eg: (2010, 10, 30, 0, 0)
+    :param timezone: Check: set(pytz.all_timezones_set) - (Etc/UTC)
+    :return: datetime format
+    """
+    now = datetime.today()
+    dt = datetime(now.year, now.month, now.day, hour=now.hour, minute=now.minute) + timedelta(hours=config.BROKER_TIME_BETWEEN_UTC, minutes=0)
+    utc_time = pytz.timezone(timezone).localize(dt)
     return utc_time
 
 def get_time_string(tt):
@@ -378,8 +397,8 @@ def get_ticks_range(symbol, start, end, timezone):
     :param count:
     :return:
     """
-    utc_from = get_utc_time(start, timezone)
-    utc_to = get_utc_time(end, timezone)
+    utc_from = get_utc_time_from_broker(start, timezone)
+    utc_to = get_utc_time_from_broker(end, timezone)
     ticks = mt5.copy_ticks_range(symbol, utc_from, utc_to, mt5.COPY_TICKS_ALL)
     ticks_frame = pd.DataFrame(ticks) # set to dataframe, several name of cols like, bid, ask, volume...
     ticks_frame['time'] = pd.to_datetime(ticks_frame['time'], unit='s') # transfer numeric time into second

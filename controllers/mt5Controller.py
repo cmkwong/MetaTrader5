@@ -44,8 +44,8 @@ with mt5Model.Trader(dt_string=options['dt'], history_path=trader_options["histo
     trader.register_strategy(short_strategy_id, trader_options['symbols'])
 
     while True:
-        Prices = priceModel.get_Prices(trader_options['symbols'], trader_options['timeframe'], trader_options['timezone'],
-                                       start=None, end=None, ohlc='1111', count=trader_options['count'], deposit_currency=trader_options['deposit_currency'])
+        Prices = priceModel.get_latest_Prices(trader.all_symbol_info, trader_options['symbols'], trader_options['timeframe'], trader_options['timezone'],
+                                       count=trader_options['count'], deposit_currency=trader_options['deposit_currency'])
 
         # calculate for checking if signal occur
         coin_data = coinModel.get_coin_data(Prices.c, coefficient_vector, coin_option['z_score_mean_window'], coin_option['z_score_std_window'])
