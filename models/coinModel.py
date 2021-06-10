@@ -95,7 +95,13 @@ def get_action(trader, strategy_id, latest_open_prices, latest_quote_exchg, late
     elif trader.status[strategy_id] == 1:
         # Opposite Signal occurred
         if signal[-2] == False and signal[-3]:
+            ret_list, earning_list = returnModel.get_ret_earning_list(latest_open_prices.iloc[:-1,:], latest_quote_exchg.iloc[:-1,:], latest_ptDv.iloc[:-1,:], coefficient_vector, signal, long_mode=long_mode)
+            # modified_signal = signalModel.get_latest_signal(signal, latest_open_prices.iloc[:-1,:].index)
+            # accum_ret, accum_earning = returnModel.get_accum_ret_earning(ret, earning, modified_signal)
+            deal_ret, deal_earning = ret_list[-1], earning_list[-1]  # extract the last value in the series
             prices_at = list(latest_open_prices.iloc[-2, :])
+            print("ret: {}, earning: {}".format(deal_ret, deal_earning))
+            print(str(prices_at))
             print("\n----------------------------------{} Spread: Close position----------------------------------".format(mode_txt))
             results, requests = trader.strategy_close(strategy_id, lots)  # close position
         # Stop Profit
@@ -105,6 +111,8 @@ def get_action(trader, strategy_id, latest_open_prices, latest_quote_exchg, late
             accum_ret, accum_earning = returnModel.get_accum_ret_earning(ret, earning, latest_signal)
             deal_ret, deal_earning = accum_ret[-1], accum_earning[-1]  # extract the last value in the series
             prices_at = list(latest_open_prices.iloc[-1, :])
+            print("ret: {}, earning: {}".format(deal_ret, deal_earning))
+            print(str(prices_at))
             if deal_earning > slsp[1]:
                 print("\n----------------------------------{} Spread: Close position (Stop profit)----------------------------------".format(mode_txt))
                 results, requests = trader.strategy_close(strategy_id, lots)   # close position

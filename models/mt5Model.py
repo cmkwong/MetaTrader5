@@ -57,16 +57,15 @@ class Helper:
         print("OK")
 
 class Trader:
-    def __init__(self, dt_string, history_path, deviations, type_filling='ioc'):
+    def __init__(self, dt_string, history_path, type_filling='ioc'):
         """
         :param type_filling: 'fok', 'ioc', 'return'
         :param deviation: int
         """
         self.history_path = history_path
-        self.deviations = deviations
         self.type_filling = type_filling
         self.dt_string = dt_string
-        self.history, self.record, self.status, self.strategy_symbols, self.order_ids = {}, {}, {}, {}, {} # see note 60b
+        self.history, self.record, self.status, self.strategy_symbols, self.order_ids, self.deviations = {}, {}, {}, {}, {}, {} # see note 60b
 
     def __enter__(self):
         connect_server()
@@ -177,7 +176,7 @@ class Trader:
             # init order id dictionary after close position
             self.order_ids[strategy_id] = self.order_id_format(self.strategy_symbols[strategy_id])
 
-    def register_strategy(self, strategy_id, symbols):
+    def register_strategy(self, strategy_id, symbols, deviations):
         """
         :param strategy_id: str
         :param symbols: [str]
@@ -189,28 +188,28 @@ class Trader:
         self.history[strategy_id] = pd.DataFrame()
         self.record[strategy_id] = self.curr_record_format(self.strategy_symbols[strategy_id])
         self.order_ids[strategy_id] = self.order_id_format(self.strategy_symbols[strategy_id])
+        self.deviations[strategy_id] = deviations
 
-    def check_allowed_with_deviation(self, requests):
+    def check_allowed_with_deviation(self, requests, deviations):
         """
         if condition cannot meet, return False
-        :param strategy_id: str
-        :param lots: [float], that is lots going to buy(+ve) / sell(-ve)
-        :param prices_at: [float]
+        :param requests: [dictionary]
+        :param deviations: list
         :return: Boolean
         """
         for i, request in enumerate(requests):
-            symbol, price_at, deviation, action_type = request['symbol'], request['price'], self.deviations[i], request['type']
+            symbol, price_at, deviation, action_type = request['symbol'], request['price'], deviations[i], request['type']
             if action_type == mt5.ORDER_TYPE_BUY:
                 cost_price = mt5.symbol_info_tick(symbol).ask
                 diff_pt = (cost_price - price_at) * (10 ** self.all_symbol_info[symbol].digits)
                 if diff_pt > deviation:
-                    print("{} have large deviation. {:.5f}(ask) - {:.5f}(price_at) = {:.3f}".format(symbol, cost_price, price_at, diff_pt))
+                    print("Buy {} have large deviation. {:.5f}(ask) - {:.5f}(price_at) = {:.3f}".format(symbol, cost_price, price_at, diff_pt))
                     return False
             elif action_type == mt5.ORDER_TYPE_SELL:
                 cost_price = mt5.symbol_info_tick(symbol).bid
                 diff_pt = (price_at - cost_price) * (10 ** self.all_symbol_info[symbol].digits)
                 if diff_pt > deviation:
-                    print("{} have large deviation. {:.5f}(price_at) - {:.5f}(bid) = {:.3f}".format(symbol, price_at, cost_price, diff_pt))
+                    print("Sell {} have large deviation. {:.5f}(price_at) - {:.5f}(bid) = {:.3f}".format(symbol, price_at, cost_price, diff_pt))
                     return False
         return True
 
@@ -235,7 +234,7 @@ class Trader:
         """
         results = False
         requests = self.requests_format(strategy_id, lots, prices_at)
-        deviation_allowed = self.check_allowed_with_deviation(requests) # note 59a
+        deviation_allowed = self.check_allowed_with_deviation(requests, self.deviations[strategy_id]) # note 59a
         if deviation_allowed:
             results = self.requests_execute(requests)
         # if results is False, then close the opened position

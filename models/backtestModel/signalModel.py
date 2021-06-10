@@ -1,6 +1,18 @@
 from production.codes.models.backtestModel import techModel, indexModel
 import pandas as pd
 
+def get_latest_signal(signal, latest_index):
+    """
+    :param signal:
+    :param latest_index:
+    :return:
+    """
+    latest_signal = pd.Series(False, index=latest_index)
+    int_signal = get_int_signal(signal)
+    open_index = indexModel.get_signal_start_index(int_signal.reset_index(drop=True))[-1]
+    latest_signal.iloc[open_index:] = True
+    return latest_signal
+
 def discard_head_tail_signal(signal):
     """
     :param signal: pd.Series
@@ -112,15 +124,3 @@ def get_coin_NN_signal(coin_NN_data, upper_th, lower_th, discard=True):
         long_signal = discard_head_tail_signal(long_signal) # see 40c
         short_signal = discard_head_tail_signal(short_signal)
     return long_signal, short_signal
-
-def get_latest_signal(signal, latest_index):
-    """
-    :param signal:
-    :param latest_index:
-    :return:
-    """
-    latest_signal = pd.Series(False, index=latest_index)
-    int_signal = get_int_signal(signal)
-    open_index = indexModel.get_signal_start_index(int_signal.reset_index(drop=True))[-1]
-    latest_signal.iloc[open_index:] = True
-    return latest_signal
