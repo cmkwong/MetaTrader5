@@ -20,7 +20,8 @@ trader_options = {
     'count': 40,
     'deposit_currency': 'USD',
     'history_path': os.path.join(options['main_path'], "history"),
-    'deviations': [3, 3, 3, 3, 3, 3], # /[60, 40, 70, 50, 80, 50]
+    'deviations': [8,8,8,8,8,8], # /[60, 40, 70, 50, 80, 50]
+    'avg_spreads': [4,2,3,3,7,2],
     'type_filling': 'ioc', # ioc / fok / return
     'lot_times': 10
 }
@@ -46,7 +47,7 @@ with mt5Model.Trader(dt_string=options['dt'], history_path=trader_options["histo
         Prices = priceModel.get_latest_Prices(trader.all_symbol_info, trader_options['symbols'], trader_options['timeframe'], trader_options['timezone'],
                                        count=trader_options['count'], deposit_currency=trader_options['deposit_currency'])
         if not Prices:
-            time.sleep(5)
+            time.sleep(2)
             continue
 
         # calculate for checking if signal occur
@@ -60,4 +61,4 @@ with mt5Model.Trader(dt_string=options['dt'], history_path=trader_options["histo
         coinModel.get_action(trader, short_strategy_id, Prices.l_o, Prices.l_quote_exchg, Prices.l_ptDv,
                              coefficient_vector, short_signal, coin_option['slsp'], short_lots, long_mode=False)
 
-        time.sleep(10)
+        time.sleep(5)

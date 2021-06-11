@@ -65,7 +65,7 @@ class Trader:
         self.history_path = history_path
         self.type_filling = type_filling
         self.dt_string = dt_string
-        self.history, self.record, self.status, self.strategy_symbols, self.order_ids, self.deviations = {}, {}, {}, {}, {}, {} # see note 60b
+        self.history, self.record, self.status, self.strategy_symbols, self.order_ids, self.deviations, self.costs = {}, {}, {}, {}, {}, {}, {} # see note 60b
 
     def __enter__(self):
         connect_server()
@@ -146,8 +146,8 @@ class Trader:
             result_txt = ''
             real = result.price
             diff = expect - real
-            if diff >= 0: result_txt = "{:.5f}+{} ({})".format(expect, diff, order_id)
-            elif diff < 0: result_txt = "{:.5f}-{} ({})".format(expect, diff, order_id)
+            if diff >= 0: result_txt = "{:.5f}+{:.5f} ({})".format(expect, diff, order_id)
+            elif diff < 0: result_txt = "{:.5f}-{:.5f} ({})".format(expect, diff, order_id)
             self.record[strategy_id].loc[0, (type_position, symbol)] = result_txt
 
     def update_trader(self, strategy_id, results, requests, expected_positions, ret=0, earning=0):
@@ -189,6 +189,7 @@ class Trader:
         self.record[strategy_id] = self.curr_record_format(self.strategy_symbols[strategy_id])
         self.order_ids[strategy_id] = self.order_id_format(self.strategy_symbols[strategy_id])
         self.deviations[strategy_id] = deviations
+        self.costs[strategy_id] = 0.0
 
     def check_allowed_with_deviation(self, requests, deviations):
         """
@@ -212,6 +213,22 @@ class Trader:
                     print("Sell {} have large deviation. {:.5f}(price_at) - {:.5f}(bid) = {:.3f}".format(symbol, price_at, cost_price, diff_pt))
                     return False
         return True
+
+    def update_strategy_cost(self, strategy_id, last_quote_exchgs, results, expected_positions, lots):
+        cost = 0.0
+        symbols = self.strategy_symbols[strategy_id]
+        for symbol, quote_exchg, result, expected_position, lot in zip(symbols, last_quote_exchgs, results, expected_positions, lots):
+            cost += (np.abs((result.price - expected_position) * lot) * (10 ** self.all_symbol_info[symbol].digits) * self.all_symbol_info[symbol].pt_value) * quote_exchg
+        self.costs[strategy_id] += cost
+
+    def get_strategy_floating_cost(self, strategy_id, last_quote_exchgs, lots):
+        cost = 0
+        symbols = self.strategy_symbols[strategy_id]
+        for symbol, quote_exchg, lot in zip(symbols, last_quote_exchgs, lots):
+            if lot < 0:
+                cost += (mt5.symbol_info(symbol).spread * self.all_symbol_info[symbol].pt_value) * quote_exchg
+        floating_cost = self.costs[strategy_id] + cost
+        return floating_cost
 
     def strategy_close(self, strategy_id, lots):
         """
@@ -300,12 +317,12 @@ class Trader:
             result = mt5.order_send(request)  # sending the request
             if result.retcode != mt5.TRADE_RETCODE_DONE:
                 print("order_send failed, symbol={}, retcode={}".format(request['symbol'], result.retcode))
-                # TODO - cancel the previous positions
                 return False
             results.append(result)
         # print the results
         for request, result in zip(requests, results):
-            print("order_send(): by {} {:.2f} lots at {:.5f} (ptDiff={:.1f} ({:.5f}[expected] - {:.5f}[real]))".format(
+            print("Action: {}; by {} {:.2f} lots at {:.5f} (ptDiff={:.1f} ({:.5f}[expected] - {:.5f}[real]))".format(
+                request['type'],
                 request['symbol'], result.volume, result.price,
                 (request['price'] - result.price) * 10 ** mt5.symbol_info(request['symbol']).digits,
                 request['price'], result.price)

@@ -123,20 +123,10 @@ def get_Prices(symbols, timeframe, timezone, start=None, end=None, ohlc='1111', 
     # get the quote to deposit exchange rate
     q2d_name = "q2d"
     q2d_exchange_rate_df, q2d_modified_names = get_exchange_df(symbols, all_symbols_info, deposit_currency, timeframe, timezone, '1000', count, exchg_type=q2d_name, start=start, end=end)
-    # q2d_exchange_symbols = get_exchange_symbols(symbols, all_symbols_info, deposit_currency, exchg_type='q2d')
-    # q2d_exchange_rate_df = _get_prices_df(q2d_exchange_symbols, timeframe, timezone, start, end, ohlc='1000', count=count) # just need the open price
-    # q2d_exchange_rate_df, q2d_modified_names = modify_exchange_rate(symbols, q2d_exchange_symbols, q2d_exchange_rate_df,
-    #                                                                 deposit_currency, exchg_type='q2d')
-    # q2d_exchange_rate_df.columns = [q2d_name] * len(q2d_exchange_symbols) # assign temp name
 
     # get the base to deposit exchange rate
     b2d_name = "b2d"
     b2d_exchange_rate_df, b2d_modified_names = get_exchange_df(symbols, all_symbols_info, deposit_currency, timeframe, timezone, '1000', count, exchg_type=b2d_name, start=start, end=end)
-    # b2d_exchange_symbols = get_exchange_symbols(symbols, all_symbols_info, deposit_currency, exchg_type='b2d')
-    # b2d_exchange_rate_df = _get_prices_df(b2d_exchange_symbols, timeframe, timezone, start, end, ohlc='1000', count=count)  # just need the open price
-    # b2d_exchange_rate_df, b2d_modified_names = modify_exchange_rate(symbols, b2d_exchange_symbols, b2d_exchange_rate_df,
-    #                                                                 deposit_currency, exchg_type='b2d')
-    # b2d_exchange_rate_df.columns = [b2d_name] * len(b2d_exchange_symbols)  # assign temp name
 
     # inner joining two dataframe to get the consistent index
     prices_df = pd.concat([prices_df, points_dff_values_df, q2d_exchange_rate_df, b2d_exchange_rate_df], axis=1, join='inner')
@@ -206,8 +196,6 @@ def get_latest_Prices(all_symbols_info, symbols, timeframe, timezone, count=10, 
             df.columns = q2d_modified_names
 
     return Prices
-
-
 
 def split_Prices(Prices, percentage):
     keys = list(Prices._asdict().keys())
@@ -285,45 +273,3 @@ def get_exchange_symbols(symbols, all_symbols_info, deposit_currency='USD', exch
         else: # if the symbol already relative to deposit currency
             exchange_symbols.append(symbol)
     return exchange_symbols
-
-def get_close_price_with_last_tick(close_price, coefficient_vector): # that is not useful, note 57a
-    """
-    :param close_price: pd.DataFrame
-    :param coefficient_vector: np.array
-    :return: dict with pd.DataFrame
-    """
-    long_modified_coefficient_vector = coinModel.get_modify_coefficient_vector(coefficient_vector, long_mode=True)
-
-    # re-create the dataframe
-    close_price_with_last_tick = {}
-    close_price_with_last_tick['long_spread'] = close_price.copy() # why using copy(), see note 55b
-    close_price_with_last_tick['short_spread'] = close_price.copy()
-    symbols = close_price.columns
-    for i, symbol in enumerate(symbols):
-        lasttick = mt5Model.get_last_tick(symbol)
-        if long_modified_coefficient_vector[i] >= 0:
-            close_price_with_last_tick['long_spread'].iloc[-1, i] = lasttick['ask']
-            close_price_with_last_tick['short_spread'].iloc[-1, i] = lasttick['bid']
-        else:
-            close_price_with_last_tick['long_spread'].iloc[-1, i] = lasttick['bid']
-            close_price_with_last_tick['short_spread'].iloc[-1, i] = lasttick['ask']
-    return close_price_with_last_tick
-
-def get_open_price_append_with_latest_price(open_prices, close_prices): # note 57f
-    """
-    :param Prices: Prices object
-    :return: pd.DataFrame
-    """
-    open_prices = pd.concat([open_prices, close_prices.iloc[-1,:]], axis=0)
-    return open_prices
-
-def get_append_latest_quote_exchange(symbols, all_symbols_info, deposit_currency, timeframe, timezone, quote_exchg):
-    q2d_name = "q2d"
-    q2d_exchange_symbols = get_exchange_symbols(symbols, all_symbols_info, deposit_currency, exchg_type='q2d')
-    q2d_exchange_rate_df = _get_prices_df(q2d_exchange_symbols, timeframe, timezone, start=None, end=None, ohlc='0001', count=1)  # just need the open price
-    q2d_exchange_rate_df, q2d_modified_names = modify_exchange_rate(symbols, q2d_exchange_symbols, q2d_exchange_rate_df, deposit_currency, exchg_type='q2d')
-    q2d_exchange_rate_df.columns = [q2d_name] * len(q2d_exchange_symbols)  # assign temp name
-    q2d_exchange_symbols = quote_exchg
-
-def get_latest_ptDv():
-    pass

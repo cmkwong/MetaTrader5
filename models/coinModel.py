@@ -78,33 +78,36 @@ def get_action(trader, strategy_id, latest_open_prices, latest_quote_exchg, late
     :param masked_open_prices: open price with last price masked by current price
     """
     # init
-    deal_ret, deal_earning = 0.0, 0.0
     if long_mode:
         mode_txt = 'long'
     else:
         mode_txt = 'short'
-    results, requests = False, False
-    prices_at = None
 
     # Buy signal occurred
     if signal[-2] == True and signal[-3] == False and trader.status[strategy_id] == 0:
         prices_at = list(latest_open_prices.iloc[-2,:])
         print("\n----------------------------------{} Spread: Open position----------------------------------".format(mode_txt))
         results, requests = trader.strategy_open(strategy_id, lots, prices_at)      # open position
+        if results:  # if order is executed successfully
+            trader.update_trader(strategy_id, results, requests, prices_at, ret=0, earning=0)
+            trader.update_strategy_cost(strategy_id, latest_quote_exchg.values[-2,:], results, prices_at, lots)
+            print("The open cost: {:.5f}".format(trader.costs[strategy_id]))
 
     elif trader.status[strategy_id] == 1:
         # Opposite Signal occurred
         if signal[-2] == False and signal[-3]:
             ret_list, earning_list = returnModel.get_ret_earning_list(latest_open_prices.iloc[:-1,:], latest_quote_exchg.iloc[:-1,:], latest_ptDv.iloc[:-1,:], coefficient_vector, signal, long_mode=long_mode)
-            # modified_signal = signalModel.get_latest_signal(signal, latest_open_prices.iloc[:-1,:].index)
-            # accum_ret, accum_earning = returnModel.get_accum_ret_earning(ret, earning, modified_signal)
             deal_ret, deal_earning = ret_list[-1], earning_list[-1]  # extract the last value in the series
             prices_at = list(latest_open_prices.iloc[-2, :])
             print("ret: {}, earning: {}".format(deal_ret, deal_earning))
             print(str(prices_at))
             print("\n----------------------------------{} Spread: Close position----------------------------------".format(mode_txt))
             results, requests = trader.strategy_close(strategy_id, lots)  # close position
-        # Stop Profit
+            if results:  # if order is executed successfully
+                trader.update_trader(strategy_id, results, requests, prices_at, ret=deal_ret, earning=deal_earning)
+                trader.update_strategy_cost(strategy_id, latest_quote_exchg.values[-2, :], results, prices_at, lots)
+                print("The total cost: {:.5f}".format(trader.costs[strategy_id]))
+                trader.costs[strategy_id] = 0
         else:
             ret, earning = returnModel.get_ret_earning(latest_open_prices, latest_quote_exchg, latest_ptDv, coefficient_vector, long_mode=long_mode)
             latest_signal = signalModel.get_latest_signal(signal, latest_open_prices.index)
@@ -113,16 +116,22 @@ def get_action(trader, strategy_id, latest_open_prices, latest_quote_exchg, late
             prices_at = list(latest_open_prices.iloc[-1, :])
             print("ret: {}, earning: {}".format(deal_ret, deal_earning))
             print(str(prices_at))
-            if deal_earning > slsp[1]:
+            cost = trader.get_strategy_floating_cost(strategy_id, latest_quote_exchg.values[-1,:], lots)
+            print("The floating cost: {:.5f}".format(cost))
+            if deal_earning > slsp[1]: # Stop Profit
                 print("\n----------------------------------{} Spread: Close position (Stop profit)----------------------------------".format(mode_txt))
                 results, requests = trader.strategy_close(strategy_id, lots)   # close position
-            # Stop Loss
-            elif deal_earning < slsp[0]:
+                if results:  # if order is executed successfully
+                    trader.update_trader(strategy_id, results, requests, prices_at, ret=deal_ret, earning=deal_earning)
+                    trader.update_strategy_cost(strategy_id, latest_quote_exchg.values[-1, :], results, prices_at, lots)
+                    print("The total cost: {:.5f}".format(trader.costs[strategy_id]))
+                    trader.costs[strategy_id] = 0
+            elif deal_earning < slsp[0]: # Stop Loss
                 print("\n----------------------------------{} Spread: Close position (Stop Loss)----------------------------------".format(mode_txt))
                 results, requests = trader.strategy_close(strategy_id, lots)    # close position
-
-    # update the status and record the result
-    if results:  # if order is executed successfully
-        trader.update_trader(strategy_id, results, requests, prices_at, ret=deal_ret, earning=deal_earning)
-
+                if results:  # if order is executed successfully
+                    trader.update_trader(strategy_id, results, requests, prices_at, ret=deal_ret, earning=deal_earning)
+                    trader.update_strategy_cost(strategy_id, latest_quote_exchg.values[-1, :], results, prices_at, lots)
+                    print("The total cost: {:.5f}".format(trader.costs[strategy_id]))
+                    trader.costs[strategy_id] = 0
 
