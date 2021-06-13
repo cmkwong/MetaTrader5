@@ -1,5 +1,5 @@
 from production.codes import config
-from production.codes.models import mt5Model, plotModel, priceModel
+from production.codes.models import mt5Model, plotModel, priceModel, timeModel
 from production.codes.views import plotView
 from datetime import datetime
 now = datetime.now()
@@ -14,7 +14,7 @@ data_options = {
     'start': (2010, 1, 1, 0, 0),
     'end': (2020, 12, 30, 0, 0),
     'symbols': ["EURUSD"],
-    'timeframe': mt5Model.get_txt2timeframe('D1'),
+    'timeframe': timeModel.get_txt2timeframe('D1'),
     'timezone': "Hongkong",
     'deposit_currency': 'USD',
     'trainTestSplit': 0.7,
@@ -43,7 +43,7 @@ with mt5Model.Helper():
     train_plt_datas = plotModel.get_ma_plt_datas(Train_Prices, train_options['long_param'], train_options['short_param'], train_options['limit_unit'])
     test_plt_datas = plotModel.get_ma_plt_datas(Test_Prices, train_options['long_param'], train_options['short_param'], train_options['limit_unit'])
 
-    title = plotModel.get_plot_title(data_options['start'], data_options['end'], mt5Model.get_timeframe2txt(data_options['timeframe']))
+    title = plotModel.get_plot_title(data_options['start'], data_options['end'], timeModel.get_timeframe2txt(data_options['timeframe']))
     plotView.save_plot(train_plt_datas, test_plt_datas, data_options['symbols'], 0,
                        data_options['price_plt_save_path'], options['dt'], dpi=500, linewidth=0.2, title=title,
                        figure_size=(42, 18), fontsize=5, bins=data_options['hist_bins'])

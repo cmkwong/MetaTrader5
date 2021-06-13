@@ -1,4 +1,4 @@
-from production.codes.models import mt5Model, priceModel, coinModel
+from production.codes.models import mt5Model, priceModel, coinModel, timeModel
 from production.codes.models.backtestModel import signalModel
 from production.codes import config
 import os
@@ -15,12 +15,12 @@ options = {
 }
 trader_options = {
     'symbols': ["AUDJPY", 	"AUDUSD", 	"CADJPY", 	"EURUSD", 	"NZDUSD", 	"USDCAD"],
-    'timeframe': mt5Model.get_txt2timeframe('M5'), # H1
+    'timeframe': timeModel.get_txt2timeframe('M5'), # H1
     'timezone': "Hongkong",
     'count': 40,
     'deposit_currency': 'USD',
     'history_path': os.path.join(options['main_path'], "history"),
-    'deviations': [8,8,8,8,8,8], # /[60, 40, 70, 50, 80, 50]
+    'max_deviations': [3,3,3,3,3,3],
     'avg_spreads': [4,2,3,3,7,2],
     'type_filling': 'ioc', # ioc / fok / return
     'lot_times': 10
@@ -40,8 +40,8 @@ with mt5Model.Trader(dt_string=options['dt'], history_path=trader_options["histo
     short_lots = [round(i * trader_options['lot_times'], 2) for i in coinModel.get_modify_coefficient_vector(coefficient_vector, long_mode=False)]
 
     long_strategy_id, short_strategy_id = coinModel.get_strategy_id(coin_option)
-    trader.register_strategy(long_strategy_id, trader_options['symbols'], trader_options['deviations'])
-    trader.register_strategy(short_strategy_id, trader_options['symbols'], trader_options['deviations'])
+    trader.register_strategy(long_strategy_id, trader_options['symbols'], trader_options['max_deviations'], trader_options['avg_spreads'], trader_options['lot_times'])
+    trader.register_strategy(short_strategy_id, trader_options['symbols'], trader_options['max_deviations'], trader_options['avg_spreads'], trader_options['lot_times'])
 
     while True:
         Prices = priceModel.get_latest_Prices(trader.all_symbol_info, trader_options['symbols'], trader_options['timeframe'], trader_options['timezone'],

@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from production.codes.models import mt5Model, coinModel, maModel
+from production.codes.models import coinModel, maModel, timeModel
 from production.codes.utils import maths
 from production.codes.models.backtestModel import returnModel, signalModel, statModel
 
@@ -29,11 +29,11 @@ def get_total_height(plt_datas):
     return total_height
 
 def get_plot_title(start, end, timeframe_str):
-    start_str = mt5Model.get_time_string(start)
+    start_str = timeModel.get_time_string(start)
     if end != None:
-        end_str = mt5Model.get_time_string(end)
+        end_str = timeModel.get_time_string(end)
     else:
-        end_str = mt5Model.get_current_time_string()
+        end_str = timeModel.get_current_time_string()
     title = "{} : {}, {}".format(start_str, end_str, timeframe_str)
     return title
 

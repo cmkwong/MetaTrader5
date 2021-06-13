@@ -3,7 +3,7 @@ import pandas as pd
 from production.codes.utils import maths
 from production.codes.models.backtestModel import returnModel, signalModel
 
-def get_modify_coefficient_vector(coefficient_vector, long_mode):
+def get_modify_coefficient_vector(coefficient_vector, long_mode, times=1):
     """
     :param coefficient_vector: np.array, if empty array, it has no coefficient vector -> 1 or -1
     :param long_mode: Boolean, True = long spread, False = short spread
@@ -13,7 +13,7 @@ def get_modify_coefficient_vector(coefficient_vector, long_mode):
         modified_coefficient_vector = np.append(-1 * coefficient_vector[1:], 1)  # buy real, sell predict
     else:
         modified_coefficient_vector = np.append(coefficient_vector[1:], -1)  # buy predict, sell real
-    return modified_coefficient_vector.reshape(-1,)
+    return modified_coefficient_vector.reshape(-1,) * times
 
 def get_coefficient_vector(input, target):
     """
@@ -78,6 +78,7 @@ def get_action(trader, strategy_id, latest_open_prices, latest_quote_exchg, late
     :param masked_open_prices: open price with last price masked by current price
     """
     # init
+    results = False
     if long_mode:
         mode_txt = 'long'
     else:
@@ -86,12 +87,11 @@ def get_action(trader, strategy_id, latest_open_prices, latest_quote_exchg, late
     # Buy signal occurred
     if signal[-2] == True and signal[-3] == False and trader.status[strategy_id] == 0:
         prices_at = list(latest_open_prices.iloc[-2,:])
+        q2d_at = latest_quote_exchg.iloc[-2,:]
         print("\n----------------------------------{} Spread: Open position----------------------------------".format(mode_txt))
-        results, requests = trader.strategy_open(strategy_id, lots, prices_at)      # open position
-        if results:  # if order is executed successfully
-            trader.update_trader(strategy_id, results, requests, prices_at, ret=0, earning=0)
-            trader.update_strategy_cost(strategy_id, latest_quote_exchg.values[-2,:], results, prices_at, lots)
-            print("The open cost: {:.5f}".format(trader.costs[strategy_id]))
+        results = trader.strategy_open(strategy_id, lots)      # open position
+        if results:
+            trader.strategy_open_update(strategy_id, results, prices_at, q2d_at)
 
     elif trader.status[strategy_id] == 1:
         # Opposite Signal occurred
@@ -102,12 +102,8 @@ def get_action(trader, strategy_id, latest_open_prices, latest_quote_exchg, late
             print("ret: {}, earning: {}".format(deal_ret, deal_earning))
             print(str(prices_at))
             print("\n----------------------------------{} Spread: Close position----------------------------------".format(mode_txt))
-            results, requests = trader.strategy_close(strategy_id, lots)  # close position
-            if results:  # if order is executed successfully
-                trader.update_trader(strategy_id, results, requests, prices_at, ret=deal_ret, earning=deal_earning)
-                trader.update_strategy_cost(strategy_id, latest_quote_exchg.values[-2, :], results, prices_at, lots)
-                print("The total cost: {:.5f}".format(trader.costs[strategy_id]))
-                trader.costs[strategy_id] = 0
+            results = trader.strategy_close(strategy_id, lots)  # close position
+
         else:
             ret, earning = returnModel.get_ret_earning(latest_open_prices, latest_quote_exchg, latest_ptDv, coefficient_vector, long_mode=long_mode)
             latest_signal = signalModel.get_latest_signal(signal, latest_open_prices.index)
@@ -116,22 +112,15 @@ def get_action(trader, strategy_id, latest_open_prices, latest_quote_exchg, late
             prices_at = list(latest_open_prices.iloc[-1, :])
             print("ret: {}, earning: {}".format(deal_ret, deal_earning))
             print(str(prices_at))
-            cost = trader.get_strategy_floating_cost(strategy_id, latest_quote_exchg.values[-1,:], lots)
-            print("The floating cost: {:.5f}".format(cost))
+            # cost = trader.get_strategy_floating_cost(strategy_id, latest_quote_exchg.values[-1,:], lots)
+            # print("The floating cost: {:.5f}".format(cost))
             if deal_earning > slsp[1]: # Stop Profit
                 print("\n----------------------------------{} Spread: Close position (Stop profit)----------------------------------".format(mode_txt))
-                results, requests = trader.strategy_close(strategy_id, lots)   # close position
-                if results:  # if order is executed successfully
-                    trader.update_trader(strategy_id, results, requests, prices_at, ret=deal_ret, earning=deal_earning)
-                    trader.update_strategy_cost(strategy_id, latest_quote_exchg.values[-1, :], results, prices_at, lots)
-                    print("The total cost: {:.5f}".format(trader.costs[strategy_id]))
-                    trader.costs[strategy_id] = 0
+                results = trader.strategy_close(strategy_id, lots)   # close position
             elif deal_earning < slsp[0]: # Stop Loss
                 print("\n----------------------------------{} Spread: Close position (Stop Loss)----------------------------------".format(mode_txt))
-                results, requests = trader.strategy_close(strategy_id, lots)    # close position
-                if results:  # if order is executed successfully
-                    trader.update_trader(strategy_id, results, requests, prices_at, ret=deal_ret, earning=deal_earning)
-                    trader.update_strategy_cost(strategy_id, latest_quote_exchg.values[-1, :], results, prices_at, lots)
-                    print("The total cost: {:.5f}".format(trader.costs[strategy_id]))
-                    trader.costs[strategy_id] = 0
+                results = trader.strategy_close(strategy_id, lots)    # close position
+        if results:
+            trader.strategy_close_update(strategy_id, results, coefficient_vector, prices_at, deal_ret, deal_earning, long_mode)
+
 

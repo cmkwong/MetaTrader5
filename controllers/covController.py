@@ -1,4 +1,4 @@
-from production.codes.models import mt5Model, priceModel
+from production.codes.models import mt5Model, priceModel, timeModel
 from production.codes.models import covModel
 
 data_options = {
@@ -6,7 +6,7 @@ data_options = {
     'end': (2020, 12, 30, 0, 0),
     'symbols': ["EURUSD", "GBPUSD", "USDCHF", "USDJPY", "EURCAD","USDCAD", "AUDUSD", "EURGBP", "NZDUSD",
                "EURNOK", "EURSEK", "AUDJPY", "EURSGD", "GBPSGD", "GBPAUD", "CADJPY"],
-    'timeframe': mt5Model.get_txt2timeframe('H1'),
+    'timeframe': timeModel.get_txt2timeframe('H1'),
     'timezone': "Hongkong",
     'deposit_currency': 'USD',
 }

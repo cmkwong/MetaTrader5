@@ -1,4 +1,4 @@
-from production.codes.models import mt5Model, coinModel
+from production.codes.models import mt5Model, timeModel
 from production.codes.models.backtestModel import pointsModel
 from production.codes.utils import tools
 import collections
@@ -16,13 +16,13 @@ def get_historical_data(symbol, timeframe, timezone, start, end=None):
     :param end (local time): tuple (year, month, day, hour, mins), if None, then take data until present
     :return: dataframe
     """
-    utc_from = mt5Model.get_utc_time_from_broker(start, timezone)
+    utc_from = timeModel.get_utc_time_from_broker(start, timezone)
     if end == None:
         now = datetime.today()
         now_tuple = (now.year, now.month, now.day, now.hour, now.minute)
-        utc_to = mt5Model.get_utc_time_from_broker(now_tuple, timezone)
+        utc_to = timeModel.get_utc_time_from_broker(now_tuple, timezone)
     else:
-        utc_to = mt5Model.get_utc_time_from_broker(end, timezone)
+        utc_to = timeModel.get_utc_time_from_broker(end, timezone)
     rates = mt5.copy_rates_range(symbol, timeframe, utc_from, utc_to)
     rates_frame = pd.DataFrame(rates, dtype=float) # create DataFrame out of the obtained data
     rates_frame['time'] = pd.to_datetime(rates_frame['time'], unit='s') # convert time in seconds into the datetime format
@@ -160,7 +160,7 @@ def get_latest_Prices(all_symbols_info, symbols, timeframe, timezone, count=10, 
     if len(prices_df) != count:  # note 63a
         print("prices_df length of Data is not equal to count")
         return False
-    new_index = prices_df.loc[:, 'open'].index.union([mt5Model.get_current_utc_time_from_broker(timezone)]) # plus 1 length of data
+    new_index = prices_df.loc[:, 'open'].index.union([timeModel.get_current_utc_time_from_broker(timezone)]) # plus 1 length of data
     latest_open_price_arr = np.concatenate((prices_df['open'].values, prices_df['close'].values[-1,:].reshape(1,-1)), axis=0)
     latest_open_prices_df = pd.DataFrame(latest_open_price_arr, columns=['open'] * len(symbols), index=new_index)
     latest_close_price_arr = np.concatenate((prices_df['close'].values, prices_df['close'].values[-1, :].reshape(1, -1)), axis=0)

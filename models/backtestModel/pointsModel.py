@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 def get_points_dff_values_df(symbols, open_prices, all_symbols_info, temp_col_name=None):
     """
@@ -13,7 +14,14 @@ def get_points_dff_values_df(symbols, open_prices, all_symbols_info, temp_col_na
     points_dff_values_df = pd.DataFrame(index=open_prices.index)
     for c, symbol in enumerate(symbols):
         digits = all_symbols_info[symbol].digits # (note 44b)
-        points_dff_values_df[symbol] = (open_prices.iloc[:,c] - open_prices.iloc[:,c].shift(periods=1)) * 10 ** (digits) * all_symbols_info[symbol].pt_value
+        points_dff_values_df[symbol] = (open_prices.iloc[:,c] - open_prices.iloc[:,c].shift(periods=1)) * (10 ** digits) * all_symbols_info[symbol].pt_value
     if temp_col_name != None:
         points_dff_values_df.columns = [temp_col_name] * len(symbols)
     return points_dff_values_df
+
+def get_points_dff_from_values(symbols, news, olds, all_symbols_info):
+    pt_values = np.zeros((len(symbols),))
+    for i, (symbol, new, old) in enumerate(zip(symbols, news, olds)):
+        digits = all_symbols_info[symbol].digits
+        pt_values[i] = (new - old) * (10 ** digits) * all_symbols_info[symbol].pt_value
+    return pt_values

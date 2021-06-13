@@ -1,5 +1,5 @@
-from production.codes.models.backtestModel import indexModel, signalModel
-from production.codes.models import coinModel, priceModel
+from production.codes.models.backtestModel import indexModel, pointsModel
+from production.codes.models import coinModel
 import pandas as pd
 import numpy as np
 
@@ -121,5 +121,32 @@ def modify_ret_earning_with_SLSP(ret_series, earning_series, sl, sp):
             sp_buffer -= e
     return ret_mask, earning_mask
 
+def get_value_of_ret_earning(symbols, new_values, old_values, q2d_at, coefficient_vector, all_symbols_info, long_mode, times):
+    """
+    This is calculate the return and earning from raw value (instead of from dataframe)
+    :param symbols: [str]
+    :param new_values: np.array (Not dataframe)
+    :param old_values: np.array (Not dataframe)
+    :param q2d_at: np.array, values at brought the assert
+    :param coefficient_vector: np.array
+    :param all_symbols_info: nametuple
+    :param long_mode: Boolean
+    :return: float, float: ret, earning
+    """
 
+    modified_coefficient_vector = coinModel.get_modify_coefficient_vector(coefficient_vector, long_mode, times)
+
+    # ret value
+    changes = (new_values - old_values) / old_values
+    olds = np.sum(np.abs(modified_coefficient_vector))
+    news = (np.abs(modified_coefficient_vector) + (changes * modified_coefficient_vector)).sum(axis=1)
+    ret = news / olds
+
+    # earning value
+    points_dff_values = pointsModel.get_points_dff_from_values(symbols, new_values, old_values, all_symbols_info)
+    weighted_pt_diff = points_dff_values * modified_coefficient_vector.reshape(-1, )
+    # calculate the price in required deposit dollar
+    earning = np.sum(q2d_at * weighted_pt_diff, axis=1)
+
+    return ret, earning
 

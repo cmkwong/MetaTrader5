@@ -1,4 +1,4 @@
-from production.codes.models import mt5Model, batchModel, coinNNModel, plotModel, priceModel
+from production.codes.models import mt5Model, batchModel, coinNNModel, plotModel, priceModel, timeModel
 from production.codes.views import printStat, plotView
 from production.codes import config
 from torch import optim
@@ -15,7 +15,7 @@ data_options = {
     'start': (2015,1,1,0,0),
     'end': (2021,5,5,0,0),    # None = get the most current price
     'symbols': ["AUDJPY", "AUDUSD", "CADJPY", "EURUSD", "NZDUSD", "USDCAD"], # last one is target
-    'timeframe': mt5Model.get_txt2timeframe('H1'),
+    'timeframe': timeModel.get_txt2timeframe('H1'),
     'timezone': "Hongkong",
     'deposit_currency': 'USD',
     'shuffle': True,
@@ -72,7 +72,7 @@ with mt5Model.Helper():
             train_plt_datas = plotModel.get_coin_NN_plt_datas(Train_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'], train_options['z_score_mean_window'], train_options['z_score_std_window'])
             test_plt_datas = plotModel.get_coin_NN_plt_datas(Test_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'], train_options['z_score_mean_window'], train_options['z_score_std_window'])
 
-            title = plotModel.get_plot_title(data_options['start'], data_options['end'], mt5Model.get_timeframe2txt(data_options['timeframe']))
+            title = plotModel.get_plot_title(data_options['start'], data_options['end'], timeModel.get_timeframe2txt(data_options['timeframe']))
             plotView.save_plot(train_plt_datas, test_plt_datas, data_options['symbols'], episode,
                                train_options['price_plt_save_path'], train_options['dt'], dpi=500, linewidth=0.2,
                                title=title, figure_size=(56, 24))

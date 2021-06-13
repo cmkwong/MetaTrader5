@@ -1,5 +1,5 @@
 from production.codes import config
-from production.codes.models import mt5Model, plotModel, coinModel, priceModel
+from production.codes.models import mt5Model, plotModel, coinModel, priceModel, timeModel
 from production.codes.views import plotView
 
 from datetime import datetime
@@ -15,7 +15,7 @@ data_options = {
     'start': (2015,1,1,0,0),
     'end': (2021,5,5,0,0),    # None = get the most current price
     'symbols': ["AUDJPY", 	"AUDUSD", 	"CADJPY", 	"EURUSD", 	"NZDUSD", 	"USDCAD"],
-    'timeframe': mt5Model.get_txt2timeframe('H1'),
+    'timeframe': timeModel.get_txt2timeframe('H1'),
     'timezone': "Hongkong",
     'deposit_currency': 'USD',
     'shuffle': True,
@@ -49,7 +49,7 @@ with mt5Model.Helper():
                                                      debug_file='{}_test.csv'.format(options['dt']), debug=options['debug'])
 
     # save the plot
-    title = plotModel.get_plot_title(data_options['start'], data_options['end'], mt5Model.get_timeframe2txt(data_options['timeframe']))
+    title = plotModel.get_plot_title(data_options['start'], data_options['end'], timeModel.get_timeframe2txt(data_options['timeframe']))
     setting = plotModel.get_setting_txt(train_options)
     plotView.save_plot(train_plt_datas, test_plt_datas, data_options['symbols'], 0, data_options['plt_save_path'],
                        options['dt'], dpi=500, linewidth=0.2, title=title, figure_size=(40, 56), fontsize=6, bins=500,
