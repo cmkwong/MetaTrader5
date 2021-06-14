@@ -3,6 +3,14 @@ import collections
 from production.codes.utils import tools
 
 def create_indexes(batch_size, seq_len, data_total, shuffle=True):
+    """
+    Note 68b
+    :param batch_size: int
+    :param seq_len: int
+    :param data_total: int
+    :param shuffle: Boolean
+    :return: np.array, indexes
+    """
     batch_indexes = np.empty((batch_size, data_total - seq_len), dtype=int)
     sequence = [i for i in range(seq_len, data_total)]  # start from seq_len
     # create batch indexes

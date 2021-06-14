@@ -9,7 +9,9 @@ now = datetime.now()
 DT_STRING = now.strftime("%y%m%d%H%M%S")
 
 options = {
-    'main_path': "C:/Users/Chris/projects/210215_mt5/production/docs/{}/".format(config.VERSION)
+    'main_path': "C:/Users/Chris/projects/210215_mt5/production/docs/{}/".format(config.VERSION),
+    'dt': DT_STRING,
+    'model_type': 0, # 0=FC, 1=LSTM
 }
 data_options = {
     'start': (2015,1,1,0,0),
@@ -20,22 +22,26 @@ data_options = {
     'deposit_currency': 'USD',
     'shuffle': True,
     'trainTestSplit': 0.7,
-    'seq_len': 20,
+    'seq_len': 1,                       # need to change when switch to another model
     'batch_size': 32,
+    'test_epiosdes': 5,
+    'check_price_plot': 5,
+    'price_plt_save_path': options['main_path'] + "coin_NN_plt/",
+    'tensorboard_save_path': options['main_path'] + "runs/",
 }
-model_options = {
-    'input_size': len(data_options['symbols']) - 1,
+Model_options = {
     'lr': 0.01,
+}
+FC_options = {
+    'input_size': len(data_options['symbols']) - 1
+}
+LSTM_options = {
+    'input_size': len(data_options['symbols']) - 1,
     'hidden_size': 64,
     'layer': 2,
     'batch_first': True,
 }
 train_options = {
-    'test_epiosdes': 5,
-    'check_price_plot': 5,
-    'price_plt_save_path': options['main_path'] + "coin_NN_plt/",
-    'tensorboard_save_path': options['main_path'] + "runs/",
-    'dt': DT_STRING,
     'upper_th': 0.3,
     'lower_th': -0.3,
     'z_score_mean_window': 3,
@@ -50,31 +56,35 @@ with mt5Model.Helper():
     # split into train set and test set
     Train_Prices, Test_Prices = priceModel.split_Prices(Prices, percentage=data_options['trainTestSplit'])
 
-    lstm = coinNNModel.LSTM(model_options['input_size'], model_options['hidden_size'], model_options['layer'], data_options['seq_len'], model_options['batch_first'])
-    optimizer = optim.Adam(lstm.parameters(), lr=model_options['lr'])
-    writer = SummaryWriter(log_dir=train_options['tensorboard_save_path']+train_options['dt'], comment="coin")
-    trainer = coinNNModel.Trainer(lstm, optimizer)
+    myModel = None
+    if options['model_type'] == 0:
+        myModel = coinNNModel.FC_NN(FC_options['input_size'])
+    elif options['model_type'] == 1:
+        myModel = coinNNModel.LSTM(LSTM_options['input_size'], LSTM_options['hidden_size'], LSTM_options['layer'], LSTM_options['batch_first'])
+    optimizer = optim.Adam(myModel.parameters(), lr=Model_options['lr'])
+    writer = SummaryWriter(log_dir=data_options['tensorboard_save_path'] + options['dt'], comment="coin")
+    trainer = coinNNModel.Trainer(myModel, optimizer)
 
     episode = 1
     while True:
         train_batch = batchModel.get_batches(Train_Prices.c.values, seq_len=data_options['seq_len'], batch_size=data_options['batch_size'], shuffle=data_options['shuffle'])
-        train_loss = trainer.run(train_batch.input, train_batch.target, data_options['batch_size'], train_mode=True)
+        train_loss = trainer.run(train_batch.input, train_batch.target, train_mode=True)
         printStat.loss_status(writer, train_loss, episode, mode='train')
 
-        if episode % train_options['test_epiosdes'] == -1:
+        if episode % data_options['test_epiosdes'] == -1:
             test_batch = batchModel.get_batches(Test_Prices.c.values, seq_len=data_options['seq_len'], batch_size=data_options['batch_size'], shuffle=data_options['shuffle'])
-            test_loss = trainer.run(test_batch.input, test_batch.target, data_options['batch_size'], train_mode=False)
+            test_loss = trainer.run(test_batch.input, test_batch.target, train_mode=False)
             printStat.loss_status(writer, test_loss, episode, mode='test')
 
-        if episode % train_options['check_price_plot'] == 0:
+        if episode % data_options['check_price_plot'] == 0:
 
-            coefficient_vector = lstm.get_coefficient_vector() # coefficient_vector got from neural network
+            coefficient_vector = coinNNModel.get_coefficient_vector(myModel) # coefficient_vector got from neural network
             train_plt_datas = plotModel.get_coin_NN_plt_datas(Train_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'], train_options['z_score_mean_window'], train_options['z_score_std_window'])
             test_plt_datas = plotModel.get_coin_NN_plt_datas(Test_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'], train_options['z_score_mean_window'], train_options['z_score_std_window'])
 
             title = plotModel.get_plot_title(data_options['start'], data_options['end'], timeModel.get_timeframe2txt(data_options['timeframe']))
             plotView.save_plot(train_plt_datas, test_plt_datas, data_options['symbols'], episode,
-                               train_options['price_plt_save_path'], train_options['dt'], dpi=500, linewidth=0.2,
+                               data_options['price_plt_save_path'], options['dt'], dpi=500, linewidth=0.2,
                                title=title, figure_size=(56, 24))
 
         episode += 1
