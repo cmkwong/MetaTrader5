@@ -115,8 +115,8 @@ class Trainer:
         mean_loss = total_loss / steps
         return mean_loss
 
-def get_modify_coefficient_vector(coefficient_vector, long_mode):
-    return coinModel.get_modify_coefficient_vector(coefficient_vector, long_mode) # note 57e
+def get_modify_coefficient_vector(coefficient_vector, long_mode, lot_times=1):
+    return coinModel.get_modify_coefficient_vector(coefficient_vector, long_mode, lot_times) # note 57e
 
 def get_coinNN_data(close_prices, model, mean_window, std_window):
     """

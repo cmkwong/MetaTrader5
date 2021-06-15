@@ -67,9 +67,9 @@ class Trader:
         self.dt_string = dt_string
         self.history, self.status, self.strategy_symbols, \
         self.order_ids, self.deviations, self.avg_spreads, \
-        self.open_postions, self.close_postions, \
+        self.open_postions, self.open_postions_time, self.close_postions, \
         self.rets, self.earnings, \
-        self.q2d_at, self.lot_times = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {} # see note 60b
+        self.q2d_at, self.lot_times = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {} # see note 60b
 
     def __enter__(self):
         connect_server()
@@ -132,12 +132,12 @@ class Trader:
             self.history[strategy_id].loc[dt, ('expected', 'close', symbol)] = self.close_postions[strategy_id]['expected'][i]
             self.history[strategy_id].loc[dt, ('real', 'open', symbol)] = self.open_postions[strategy_id]['real'][i]
             self.history[strategy_id].loc[dt, ('real', 'close', symbol)] = self.close_postions[strategy_id]['real'][i]
-        # ret
+        # expected
         self.history[strategy_id].loc[dt, ('expected', 'close', 'ret')] = self.rets[strategy_id]['expected']
-        self.history[strategy_id].loc[dt, ('expected', 'real', 'ret')] = self.rets[strategy_id]['real']
-        # earning
         self.history[strategy_id].loc[dt, ('expected', 'close', 'earning')] = self.earnings[strategy_id]['expected']
-        self.history[strategy_id].loc[dt, ('expected', 'real', 'earning')] = self.earnings[strategy_id]['real']
+        # real
+        self.history[strategy_id].loc[dt, ('real', 'close', 'ret')] = self.rets[strategy_id]['real']
+        self.history[strategy_id].loc[dt, ('real', 'close', 'earning')] = self.earnings[strategy_id]['real']
         return True
 
     def register_strategy(self, strategy_id, symbols, deviations, avg_spreads, lot_times):
@@ -153,11 +153,12 @@ class Trader:
         self.avg_spreads[strategy_id] = avg_spreads
         self.lot_times[strategy_id] = lot_times
         self.history[strategy_id] = self.history_format(self.strategy_symbols[strategy_id])
-        self.init_strategy_status(strategy_id)
+        self.init_strategy(strategy_id)
 
-    def init_strategy_status(self, strategy_id):
+    def init_strategy(self, strategy_id):
         self.order_ids[strategy_id] = self.order_id_format(self.strategy_symbols[strategy_id])
         self.open_postions[strategy_id], self.close_postions[strategy_id] = {}, {}
+        self.open_postions_time[strategy_id] = False
         self.rets[strategy_id], self.earnings[strategy_id] = {}, {}
         self.q2d_at[strategy_id] = np.zeros((len(self.strategy_symbols[strategy_id]),))
 
@@ -184,6 +185,25 @@ class Trader:
                     print("Sell {} have large deviation. {:.5f}(price_at) - {:.5f}(bid) = {:.3f}".format(symbol, price_at, cost_price, diff_pt))
                     return False
         return True
+
+    def get_strategy_available_code(self, strategy_id, signal):
+        """
+        note 69a: code meaning
+        :param strategy_id: string
+        :param signal: pd.Series
+        :return: int
+        """
+        different_open_position = (signal.index[-2] != self.open_postions[strategy_id]) # different position to the previous one
+        if signal[-2] == True and signal[-3] == False and self.status[strategy_id] == 0 and different_open_position:
+            # if open signal has available
+            return 0
+        elif self.status[strategy_id] == 1:
+            if signal[-2] == False and signal[-3]:
+                # if close signal has available
+                return 1
+            else:
+                # if close signal has not available, check the ret and earning
+                return 2
 
     def strategy_open_update(self, strategy_id, results, prices_at, q2d_at):
         """
@@ -221,9 +241,14 @@ class Trader:
 
         # update the close position: real
         real_close_prices = [result.price for result in results]
-        real_ret, real_earning = returnModel.get_value_of_ret_earning(self.strategy_symbols[strategy_id], np.array(real_close_prices),
-                                                            np.array(self.open_postions[strategy_id]['real']), self.q2d_at[strategy_id], coefficient_vector,
-                                                            self.all_symbol_info, long_mode, times=self.lot_times[strategy_id])
+        real_ret, real_earning = returnModel.get_value_of_ret_earning(symbols=self.strategy_symbols[strategy_id],
+                                                                      new_values=np.array(real_close_prices),
+                                                                      old_values=np.array(self.open_postions[strategy_id]['real']),
+                                                                      q2d_at=self.q2d_at[strategy_id],
+                                                                      coefficient_vector=coefficient_vector,
+                                                                      all_symbols_info=self.all_symbol_info,
+                                                                      long_mode=long_mode,
+                                                                      lot_times=self.lot_times[strategy_id])
         self.close_postions[strategy_id]['real'] = real_close_prices
         self.rets[strategy_id]['real'] = real_ret
         self.earnings[strategy_id]['real'] = real_earning
@@ -233,7 +258,7 @@ class Trader:
 
         # update history
         self.update_history(strategy_id)
-        self.init_strategy_status(strategy_id) # clear the record
+        self.init_strategy(strategy_id) # clear the record
         return True
 
     def strategy_open(self, strategy_id, lots):

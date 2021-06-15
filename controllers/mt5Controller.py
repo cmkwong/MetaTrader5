@@ -36,8 +36,8 @@ coin_option = {
 with mt5Model.Trader(dt_string=options['dt'], history_path=trader_options["history_path"], type_filling=trader_options['type_filling']) as trader:
 
     coefficient_vector = np.array([2.58766,0.01589,-1.76342,-0.01522,0.00351,0.01389]) # will be round to 2 decimal
-    long_lots = [round(i * trader_options['lot_times'], 2) for i in coinModel.get_modify_coefficient_vector(coefficient_vector, long_mode=True)]
-    short_lots = [round(i * trader_options['lot_times'], 2) for i in coinModel.get_modify_coefficient_vector(coefficient_vector, long_mode=False)]
+    long_lots = [round(i, 2) for i in coinModel.get_modify_coefficient_vector(coefficient_vector, long_mode=True, lot_times=trader_options['lot_times'])]
+    short_lots = [round(i, 2) for i in coinModel.get_modify_coefficient_vector(coefficient_vector, long_mode=False, lot_times=trader_options['lot_times'])]
 
     long_strategy_id, short_strategy_id = coinModel.get_strategy_id(coin_option)
     trader.register_strategy(long_strategy_id, trader_options['symbols'], trader_options['max_deviations'], trader_options['avg_spreads'], trader_options['lot_times'])
@@ -57,8 +57,8 @@ with mt5Model.Trader(dt_string=options['dt'], history_path=trader_options["histo
         long_signal, short_signal = signalModel.get_coin_NN_signal(coin_data, coin_option['upper_th'], coin_option['lower_th'], discard=False)
 
         coinModel.get_action(trader, long_strategy_id, Prices.l_o, Prices.l_quote_exchg, Prices.l_ptDv,
-                             coefficient_vector, long_signal, coin_option['slsp'], long_lots, long_mode=True)
+                             coefficient_vector, long_signal, coin_option['slsp'], long_lots, long_mode=True, lot_times=trader_options['lot_times'])
         coinModel.get_action(trader, short_strategy_id, Prices.l_o, Prices.l_quote_exchg, Prices.l_ptDv,
-                             coefficient_vector, short_signal, coin_option['slsp'], short_lots, long_mode=False)
+                             coefficient_vector, short_signal, coin_option['slsp'], short_lots, long_mode=False, lot_times=trader_options['lot_times'])
 
         time.sleep(5)

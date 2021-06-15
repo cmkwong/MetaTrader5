@@ -3,7 +3,7 @@ from production.codes.models import coinModel
 import pandas as pd
 import numpy as np
 
-def get_ret_earning_list(open_prices, exchg_q2d, points_dff_values_df, coefficient_vector, signal, long_mode, slsp=None):
+def get_ret_earning_list(open_prices, exchg_q2d, points_dff_values_df, coefficient_vector, signal, long_mode, slsp=None, lot_times=1):
     """
     :param open_prices: pd.DataFrame
     :param exchg_q2d: pd.DataFrame
@@ -12,10 +12,11 @@ def get_ret_earning_list(open_prices, exchg_q2d, points_dff_values_df, coefficie
     :param signal: pd.Series
     :param long_mode: Boolean
     :param slsp: tuple(stop loss (negative), stop profit (positive))
+    :param lot_times: lot lot_times
     :return: rets (list), earnings (list)
     """
     start_index, end_index = indexModel.get_action_start_end_index(signal.reset_index(drop=True))               # discard the DateTimeIndex
-    ret, earning = get_ret_earning(open_prices, exchg_q2d, points_dff_values_df, coefficient_vector, long_mode) # discard the DateTimeIndex
+    ret, earning = get_ret_earning(open_prices, exchg_q2d, points_dff_values_df, coefficient_vector, long_mode, lot_times) # discard the DateTimeIndex
     ret.reset_index(drop=True)
     earning.reset_index(drop=True)
     rets, earnings = [], []
@@ -27,16 +28,17 @@ def get_ret_earning_list(open_prices, exchg_q2d, points_dff_values_df, coefficie
         earnings.append(np.sum(earning_series))
     return rets, earnings
 
-def get_ret_earning(open_prices, exchg_q2d, points_dff_values_df, coefficient_vector, long_mode): # see note (45a)
+def get_ret_earning(open_prices, exchg_q2d, points_dff_values_df, coefficient_vector, long_mode, lot_times=1): # see note (45a)
     """
     :param open_prices: pd.DataFrame
     :param exchg_q2d: pd.Dataframe, that exchange the dollar into same deposit assert
     :param points_dff_values_df: points the change with respect to quote currency
     :param coefficient_vector: np.array
     :param long_mode: Boolean
+    :param lot_times: lot times
     :return: pd.Series, pd.Series
     """
-    modified_coefficient_vector = coinModel.get_modify_coefficient_vector(coefficient_vector, long_mode)
+    modified_coefficient_vector = coinModel.get_modify_coefficient_vector(coefficient_vector, long_mode, lot_times)
 
     # ret
     change = (open_prices - open_prices.shift(1)) / open_prices.shift(1)
@@ -121,7 +123,7 @@ def modify_ret_earning_with_SLSP(ret_series, earning_series, sl, sp):
             sp_buffer -= e
     return ret_mask, earning_mask
 
-def get_value_of_ret_earning(symbols, new_values, old_values, q2d_at, coefficient_vector, all_symbols_info, long_mode, times):
+def get_value_of_ret_earning(symbols, new_values, old_values, q2d_at, coefficient_vector, all_symbols_info, long_mode, lot_times):
     """
     This is calculate the return and earning from raw value (instead of from dataframe)
     :param symbols: [str]
@@ -134,19 +136,34 @@ def get_value_of_ret_earning(symbols, new_values, old_values, q2d_at, coefficien
     :return: float, float: ret, earning
     """
 
-    modified_coefficient_vector = coinModel.get_modify_coefficient_vector(coefficient_vector, long_mode, times)
+    modified_coefficient_vector = coinModel.get_modify_coefficient_vector(coefficient_vector, long_mode, lot_times)
 
     # ret value
     changes = (new_values - old_values) / old_values
     olds = np.sum(np.abs(modified_coefficient_vector))
-    news = (np.abs(modified_coefficient_vector) + (changes * modified_coefficient_vector)).sum(axis=1)
+    news = (np.abs(modified_coefficient_vector) + (changes * modified_coefficient_vector)).sum()
     ret = news / olds
 
     # earning value
     points_dff_values = pointsModel.get_points_dff_from_values(symbols, new_values, old_values, all_symbols_info)
     weighted_pt_diff = points_dff_values * modified_coefficient_vector.reshape(-1, )
     # calculate the price in required deposit dollar
-    earning = np.sum(q2d_at * weighted_pt_diff, axis=1)
+    earning = np.sum(q2d_at * weighted_pt_diff)
 
     return ret, earning
 
+def get_ret_earning_priceAt_after_close_position(open_prices, exchg_q2d, points_dff_values_df, coefficient_vector, signal, long_mode, lot_times):
+    """
+    :param open_prices: pd.DataFrame
+    :param exchg_q2d: pd.DataFrame
+    :param points_dff_values_df: pd.DataFrame
+    :param coefficient_vector: np.array
+    :param signal: pd.Series
+    :param long_mode: Boolean
+    :param lot_times: int
+    :return: ret, earning, prices_at (float, float, np.array)
+    """
+    ret_list, earning_list = get_ret_earning_list(open_prices, exchg_q2d, points_dff_values_df, coefficient_vector, signal, long_mode, lot_times=lot_times)
+    ret, earning = ret_list[-1], earning_list[-1]  # extract the last value in the series
+    prices_at = list(open_prices.iloc[-1, :])
+    return ret, earning, prices_at

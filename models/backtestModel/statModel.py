@@ -11,18 +11,18 @@ def get_action_total(signal):
 
     return len(start)
 
-def get_action_detail(open_price, signal):
-    """
-    :param signal: Series
-    :return: action_details: dictionary
-    """
-    action_details = {}
-    start_indexs, end_indexs = indexModel.get_action_start_end_index(signal)
-    rets = returnModel.get_ret_list(open_price, signal)
-    for s, e, r in zip(start_indexs, end_indexs, rets):
-        key = s + '-' + e
-        action_details[key] = r
-    return action_details
+# def get_action_detail(open_price, signal):
+#     """
+#     :param signal: Series
+#     :return: action_details: dictionary
+#     """
+#     action_details = {}
+#     start_indexs, end_indexs = indexModel.get_action_start_end_index(signal)
+#     rets = returnModel.get_ret_list(open_price, signal)
+#     for s, e, r in zip(start_indexs, end_indexs, rets):
+#         key = s + '-' + e
+#         action_details[key] = r
+#     return action_details
 
 def get_stat(Prices, signal, coefficient_vector, long_mode=True, slsp=None):
     """
