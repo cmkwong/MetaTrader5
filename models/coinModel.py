@@ -89,16 +89,30 @@ def get_action(trader, strategy_id, latest_open_prices, latest_quote_exchg, late
 
     # Buy signal occurred
     if available_code == 0:
-        prices_at = list(latest_open_prices.iloc[-2,:])
-        q2d_at = latest_quote_exchg.iloc[-2,:]
+        prices_at = latest_open_prices.iloc[-2,:].values
+        q2d_at = latest_quote_exchg.iloc[-2,:].values
         print("\n----------------------------------{} Spread: Open position----------------------------------".format(mode_txt))
         results = trader.strategy_open(strategy_id, lots)      # open position
         if results:
-            trader.strategy_open_update(strategy_id, results, prices_at, q2d_at)
+            trader.strategy_open_update(strategy_id, results, prices_at, q2d_at, signal.index[-1])
 
     elif available_code == 1:
         # Opposite Signal occurred
-        expected_ret, expected_earning, prices_at = returnModel.get_ret_earning_priceAt_after_close_position(latest_open_prices.iloc[:-1,:], latest_quote_exchg.iloc[:-1,:], latest_ptDv.iloc[:-1,:], coefficient_vector, signal, long_mode, lot_times)
+        # expected_ret, expected_earning, prices_at = returnModel.get_ret_earning_priceAt_after_close_position(latest_open_prices.iloc[:-1,:],
+        #                                                                                                      latest_quote_exchg.iloc[:-1,:],
+        #                                                                                                      latest_ptDv.iloc[:-1,:],
+        #                                                                                                      coefficient_vector,
+        #                                                                                                      signal,
+        #                                                                                                      long_mode,
+        #                                                                                                      lot_times)
+        expected_ret, expected_earning, prices_at = returnModel.get_value_of_ret_earning(symbols=trader.strategy_symbols[strategy_id],
+                                                                                        new_values=latest_open_prices.iloc[-2, :].values,
+                                                                                        old_values=trader.open_postions[strategy_id]['expected'],
+                                                                                        q2d_at=trader.q2d_at[strategy_id],
+                                                                                        coefficient_vector=coefficient_vector,
+                                                                                        all_symbols_info=trader.all_symbol_info,
+                                                                                        long_mode=long_mode,
+                                                                                        lot_times=trader.lot_times[strategy_id])
         print("ret: {}, earning: {}".format(expected_ret, expected_earning))
         print(str(prices_at))
         print("\n----------------------------------{} Spread: Close position----------------------------------".format(mode_txt))
@@ -106,16 +120,16 @@ def get_action(trader, strategy_id, latest_open_prices, latest_quote_exchg, late
         if results:
             trader.strategy_close_update(strategy_id, results, coefficient_vector, prices_at, expected_ret, expected_earning, long_mode)
     elif available_code == 2:
-        # test function --- 1
-        ret, earning = returnModel.get_ret_earning(latest_open_prices, latest_quote_exchg, latest_ptDv, coefficient_vector, long_mode, lot_times)
-        latest_signal = signalModel.get_latest_signal(signal, latest_open_prices.index)
-        accum_ret, accum_earning = returnModel.get_accum_ret_earning(ret, earning, latest_signal)
-        expected_ret, expected_earning = accum_ret[-1], accum_earning[-1]  # extract the last value in the series
-        prices_at = list(latest_open_prices.iloc[-1, :])
+        # # test function --- 1
+        # ret, earning = returnModel.get_ret_earning(latest_open_prices, latest_quote_exchg, latest_ptDv, coefficient_vector, long_mode, lot_times)
+        # latest_signal = signalModel.get_latest_signal(signal, latest_open_prices.index)
+        # accum_ret, accum_earning = returnModel.get_accum_ret_earning(ret, earning, latest_signal)
+        # expected_ret, expected_earning = accum_ret[-1], accum_earning[-1]  # extract the last value in the series
+        # prices_at = list(latest_open_prices.iloc[-1, :])
         # test function --- 2
-        test_expected_ret, test_expected_earning = returnModel.get_value_of_ret_earning(symbols=trader.strategy_symbols[strategy_id],
-                                                                                        new_values=latest_open_prices.iloc[-1,:],
-                                                                                        old_values=np.array(trader.open_postions[strategy_id]['expected']),
+        expected_ret, expected_earning, prices_at = returnModel.get_value_of_ret_earning(symbols=trader.strategy_symbols[strategy_id],
+                                                                                        new_values=latest_open_prices.iloc[-1,:].values,
+                                                                                        old_values=trader.open_postions[strategy_id]['expected'],
                                                                                         q2d_at=trader.q2d_at[strategy_id],
                                                                                         coefficient_vector=coefficient_vector,
                                                                                         all_symbols_info=trader.all_symbol_info,

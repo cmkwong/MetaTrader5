@@ -193,7 +193,7 @@ class Trader:
         :param signal: pd.Series
         :return: int
         """
-        different_open_position = (signal.index[-2] != self.open_postions[strategy_id]) # different position to the previous one
+        different_open_position = (signal.index[-1] != self.open_postions_time[strategy_id]) # different position to the previous one, note 69a
         if signal[-2] == True and signal[-3] == False and self.status[strategy_id] == 0 and different_open_position:
             # if open signal has available
             return 0
@@ -205,11 +205,11 @@ class Trader:
                 # if close signal has not available, check the ret and earning
                 return 2
 
-    def strategy_open_update(self, strategy_id, results, prices_at, q2d_at):
+    def strategy_open_update(self, strategy_id, results, prices_at, q2d_at, open_position_time):
         """
         :param strategy_id: str
         :param results: mt5 results
-        :param prices_at: [float]
+        :param prices_at: np.array, size = (len(symbols), )
         :param q2d_at: np.array
         :return: Boolean
         """
@@ -220,6 +220,7 @@ class Trader:
         # update the open position
         self.open_postions[strategy_id]['expected'] = prices_at
         self.open_postions[strategy_id]['real'] = [result.price for result in results]
+        self.open_postions_time[strategy_id] = open_position_time # update the open position time to avoid the buy again after stop loss or profit
         self.q2d_at[strategy_id] = q2d_at
         return True
 
@@ -228,7 +229,7 @@ class Trader:
         :param strategy_id: str
         :param results: mt5 results
         :param coefficient_vector: np.array
-        :param prices_at: [float]
+        :param prices_at: np.array, size = (len(symbols), )
         :param expected_ret: float
         :param expected_earning: float
         :param long_mode: Boolean
@@ -240,15 +241,15 @@ class Trader:
         self.earnings[strategy_id]['expected'] = expected_earning
 
         # update the close position: real
-        real_close_prices = [result.price for result in results]
-        real_ret, real_earning = returnModel.get_value_of_ret_earning(symbols=self.strategy_symbols[strategy_id],
-                                                                      new_values=np.array(real_close_prices),
-                                                                      old_values=np.array(self.open_postions[strategy_id]['real']),
-                                                                      q2d_at=self.q2d_at[strategy_id],
-                                                                      coefficient_vector=coefficient_vector,
-                                                                      all_symbols_info=self.all_symbol_info,
-                                                                      long_mode=long_mode,
-                                                                      lot_times=self.lot_times[strategy_id])
+        real_close_prices = np.array([result.price for result in results])
+        real_ret, real_earning, _ = returnModel.get_value_of_ret_earning(symbols=self.strategy_symbols[strategy_id],
+                                                                         new_values=real_close_prices,
+                                                                         old_values=self.open_postions[strategy_id]['real'],
+                                                                         q2d_at=self.q2d_at[strategy_id],
+                                                                         coefficient_vector=coefficient_vector,
+                                                                         all_symbols_info=self.all_symbol_info,
+                                                                         long_mode=long_mode,
+                                                                         lot_times=self.lot_times[strategy_id])
         self.close_postions[strategy_id]['real'] = real_close_prices
         self.rets[strategy_id]['real'] = real_ret
         self.earnings[strategy_id]['real'] = real_earning
@@ -295,7 +296,7 @@ class Trader:
         """
         :param strategy_id: str, belong to specific strategy
         :param lots: [float]
-        :param prices_at: [float], if prices_at == 0, that means trade on market price
+        :param prices_at: np.array, size = (len(symbols), )
         :return: requests, [dict], a list of request
         """
         # the target with respect to the strategy id

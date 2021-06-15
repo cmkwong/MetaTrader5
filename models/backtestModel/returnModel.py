@@ -150,20 +150,23 @@ def get_value_of_ret_earning(symbols, new_values, old_values, q2d_at, coefficien
     # calculate the price in required deposit dollar
     earning = np.sum(q2d_at * weighted_pt_diff)
 
-    return ret, earning
+    # prices_at
+    prices_at = old_values
 
-def get_ret_earning_priceAt_after_close_position(open_prices, exchg_q2d, points_dff_values_df, coefficient_vector, signal, long_mode, lot_times):
-    """
-    :param open_prices: pd.DataFrame
-    :param exchg_q2d: pd.DataFrame
-    :param points_dff_values_df: pd.DataFrame
-    :param coefficient_vector: np.array
-    :param signal: pd.Series
-    :param long_mode: Boolean
-    :param lot_times: int
-    :return: ret, earning, prices_at (float, float, np.array)
-    """
-    ret_list, earning_list = get_ret_earning_list(open_prices, exchg_q2d, points_dff_values_df, coefficient_vector, signal, long_mode, lot_times=lot_times)
-    ret, earning = ret_list[-1], earning_list[-1]  # extract the last value in the series
-    prices_at = list(open_prices.iloc[-1, :])
     return ret, earning, prices_at
+
+# def get_ret_earning_priceAt_after_close_position(open_prices, exchg_q2d, points_dff_values_df, coefficient_vector, signal, long_mode, lot_times):
+#     """
+#     :param open_prices: pd.DataFrame
+#     :param exchg_q2d: pd.DataFrame
+#     :param points_dff_values_df: pd.DataFrame
+#     :param coefficient_vector: np.array
+#     :param signal: pd.Series
+#     :param long_mode: Boolean
+#     :param lot_times: int
+#     :return: ret, earning, prices_at (float, float, np.array)
+#     """
+#     ret_list, earning_list = get_ret_earning_list(open_prices, exchg_q2d, points_dff_values_df, coefficient_vector, signal, long_mode, lot_times=lot_times)
+#     ret, earning = ret_list[-1], earning_list[-1]  # extract the last value in the series
+#     prices_at = list(open_prices.iloc[-1, :])
+#     return ret, earning, prices_at
