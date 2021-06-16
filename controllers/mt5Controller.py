@@ -30,7 +30,7 @@ coin_option = {
     'lower_th': -0.01,   # -0.3
     'z_score_mean_window': 5,
     'z_score_std_window': 20,
-    'slsp': (-10000, 5000),  # None means no constraint
+    'slsp': (-100, 5000),  # None means no constraint
 }
 
 with mt5Model.Trader(dt_string=options['dt'], history_path=trader_options["history_path"], type_filling=trader_options['type_filling']) as trader:
@@ -56,9 +56,9 @@ with mt5Model.Trader(dt_string=options['dt'], history_path=trader_options["histo
         # calculate for checking for stop-loss and stop-profit reached
         long_signal, short_signal = signalModel.get_coin_NN_signal(coin_data, coin_option['upper_th'], coin_option['lower_th'], discard=False)
 
-        coinModel.get_action(trader, long_strategy_id, Prices.l_o, Prices.l_quote_exchg, Prices.l_ptDv,
-                             coefficient_vector, long_signal, coin_option['slsp'], long_lots, long_mode=True, lot_times=trader_options['lot_times'])
-        coinModel.get_action(trader, short_strategy_id, Prices.l_o, Prices.l_quote_exchg, Prices.l_ptDv,
-                             coefficient_vector, short_signal, coin_option['slsp'], short_lots, long_mode=False, lot_times=trader_options['lot_times'])
+        coinModel.get_action(trader, long_strategy_id, Prices.l_o, Prices.l_quote_exchg,
+                             coefficient_vector, long_signal, coin_option['slsp'], long_lots, long_mode=True)
+        coinModel.get_action(trader, short_strategy_id, Prices.l_o, Prices.l_quote_exchg,
+                             coefficient_vector, short_signal, coin_option['slsp'], short_lots, long_mode=False)
 
         time.sleep(5)

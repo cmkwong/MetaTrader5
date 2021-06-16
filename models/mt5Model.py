@@ -66,10 +66,10 @@ class Trader:
         self.type_filling = type_filling
         self.dt_string = dt_string
         self.history, self.status, self.strategy_symbols, \
-        self.order_ids, self.deviations, self.avg_spreads, \
+        self.position_ids, self.deviations, self.avg_spreads, \
         self.open_postions, self.open_postions_time, self.close_postions, \
-        self.rets, self.earnings, \
-        self.q2d_at, self.lot_times = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {} # see note 60b
+        self.rets, self.earnings, self.mt5_deal_details, \
+        self.q2d_at, self.lot_times = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {} # see note 60b
 
     def __enter__(self):
         connect_server()
@@ -79,16 +79,14 @@ class Trader:
     def __exit__(self, *args):
         disconnect_server()
 
-    def write_history_csv(self):
-        for strategy_id, history_df in self.history.items():
-            if history_df != None:
-                full_path = os.path.join(self.history_path, "{}_{}.csv".format(self.dt_string, strategy_id))
-                history_df.to_csv(full_path)
-            else:
-                print("No histories being printed.")
-        print("The histories are wrote to {}".format(self.history_path))
+    def write_history_csv(self, strategy_id):
+        history_df = self.history[strategy_id]
+        full_path = os.path.join(self.history_path, "{}_{}.csv".format(self.dt_string, strategy_id))
+        with open(full_path, mode='a') as f:
+            history_df.to_csv(f, header=f.tell() == 0)
+        print("The histories are wrote to {}".format(full_path))
 
-    def order_id_format(self, symbols):
+    def position_id_format(self, symbols):
         """
         update the order_id and it has container which is dictionary, note 59b
         :param strategy_id: str
@@ -96,10 +94,30 @@ class Trader:
         """
         oid = {}
         for symbol in symbols:
-            oid[symbol] = 0
+            oid[symbol] = -1
         return oid
 
-    def update_order_id(self, strategy_id, results):
+    def history_format(self):
+        """
+        :return: pd.DataFrame
+        """
+        level_2_arr = np.array(['ret', 'earning'] * 2 + ['commission', 'swap', 'fee', 'earning', 'balanced'])  # Asterisk * unpacking the list, Programming/Python note 14
+        level_1_arr = np.array(['expected'] * 2 + ['real'] * 2 + ['mt5'] * 5)
+        column_index_arr = [
+            level_1_arr, level_2_arr
+        ]
+        return pd.DataFrame(columns=column_index_arr)
+
+    def mt5_deal_detail_format(self):
+        deal_details = {}
+        deal_details['commission'] = 0.0
+        deal_details['swap'] = 0.0
+        deal_details['fee'] = 0.0
+        deal_details['earning'] = 0.0
+        deal_details['balanced'] = 0.0
+        return deal_details
+
+    def update_position_id(self, strategy_id, results):
         """
         initialize the container dictionary, note 59b
         :param strategy_id: str
@@ -109,36 +127,40 @@ class Trader:
         """
         symbols = self.strategy_symbols[strategy_id]
         for i, result in enumerate(results):
-            self.order_ids[strategy_id][symbols[i]] = result.order
-
-    def history_format(self, symbols):
-        """
-        :param symbols: [str]
-        :return: pd.DataFrame
-        """
-        level_3_arr = np.array([*symbols, *symbols, 'ret', 'earning'] * 2)
-        level_2_arr = np.array((['open'] * len(symbols) + ['close'] * (len(symbols) + 2)) * 2)    # Asterisk * unpacking the list, Programming/Python note 14
-        level_1_arr = np.array(['expected'] * int(level_3_arr.shape[0]/2) + ['real'] * int(level_3_arr.shape[0]/2))
-        column_index_arr = [
-            level_1_arr, level_2_arr, level_3_arr
-        ]
-        return pd.DataFrame(columns=column_index_arr)
+            self.position_ids[strategy_id][symbols[i]] = result.order
 
     def update_history(self, strategy_id):
         dt_string = timeModel.get_current_time_string()
         dt = pd.to_datetime(dt_string, format='%Y-%m-%d-%H-%M', errors='ignore')
-        for i, symbol in enumerate(self.strategy_symbols[strategy_id]):
-            self.history[strategy_id].loc[dt, ('expected', 'open', symbol)] = self.open_postions[strategy_id]['expected'][i]
-            self.history[strategy_id].loc[dt, ('expected', 'close', symbol)] = self.close_postions[strategy_id]['expected'][i]
-            self.history[strategy_id].loc[dt, ('real', 'open', symbol)] = self.open_postions[strategy_id]['real'][i]
-            self.history[strategy_id].loc[dt, ('real', 'close', symbol)] = self.close_postions[strategy_id]['real'][i]
         # expected
-        self.history[strategy_id].loc[dt, ('expected', 'close', 'ret')] = self.rets[strategy_id]['expected']
-        self.history[strategy_id].loc[dt, ('expected', 'close', 'earning')] = self.earnings[strategy_id]['expected']
+        self.history[strategy_id].loc[dt, ('expected', 'ret')] = self.rets[strategy_id]['expected']
+        self.history[strategy_id].loc[dt, ('expected', 'earning')] = self.earnings[strategy_id]['expected']
         # real
-        self.history[strategy_id].loc[dt, ('real', 'close', 'ret')] = self.rets[strategy_id]['real']
-        self.history[strategy_id].loc[dt, ('real', 'close', 'earning')] = self.earnings[strategy_id]['real']
+        self.history[strategy_id].loc[dt, ('real', 'ret')] = self.rets[strategy_id]['real']
+        self.history[strategy_id].loc[dt, ('real', 'earning')] = self.earnings[strategy_id]['real']
+        # mt5 deal details
+        self.history[strategy_id].loc[dt, ('mt5', 'commission')] = self.mt5_deal_details[strategy_id]['commission']
+        self.history[strategy_id].loc[dt, ('mt5', 'swap')] = self.mt5_deal_details[strategy_id]['swap']
+        self.history[strategy_id].loc[dt, ('mt5', 'fee')] = self.mt5_deal_details[strategy_id]['fee']
+        self.history[strategy_id].loc[dt, ('mt5', 'earning')] = self.mt5_deal_details[strategy_id]['earning']
+        self.history[strategy_id].loc[dt, ('mt5', 'balanced')] = self.mt5_deal_details[strategy_id]['balanced']
+
+        # # test for deal records
+        # position_deals = mt5.history_deals_get(position=self.position_ids[strategy_id]['AUDUSD'])
+        # df = pd.DataFrame(list(position_deals), columns=position_deals[0]._asdict().keys())
+        # df['time'] = pd.to_datetime(df['time'], unit='s')
         return True
+    
+    def update_mt5_deal_details(self, strategy_id):
+        position_ids = self.position_ids[strategy_id]
+        for position_id in position_ids.values():
+            deals = mt5.history_deals_get(position=position_id)
+            for deal in deals:
+                self.mt5_deal_details[strategy_id]['commission'] += deal.commission
+                self.mt5_deal_details[strategy_id]['swap'] += deal.swap
+                self.mt5_deal_details[strategy_id]['fee'] += deal.fee
+                self.mt5_deal_details[strategy_id]['earning'] += deal.profit
+                self.mt5_deal_details[strategy_id]['balanced'] += deal.commission + deal.swap + deal.fee + deal.profit
 
     def register_strategy(self, strategy_id, symbols, deviations, avg_spreads, lot_times):
         """
@@ -152,14 +174,15 @@ class Trader:
         self.deviations[strategy_id] = deviations
         self.avg_spreads[strategy_id] = avg_spreads
         self.lot_times[strategy_id] = lot_times
-        self.history[strategy_id] = self.history_format(self.strategy_symbols[strategy_id])
+        self.history[strategy_id] = self.history_format()
+        self.open_postions_time[strategy_id] = False # see note 69a
         self.init_strategy(strategy_id)
 
     def init_strategy(self, strategy_id):
-        self.order_ids[strategy_id] = self.order_id_format(self.strategy_symbols[strategy_id])
+        self.position_ids[strategy_id] = self.position_id_format(self.strategy_symbols[strategy_id])
         self.open_postions[strategy_id], self.close_postions[strategy_id] = {}, {}
-        self.open_postions_time[strategy_id] = False
         self.rets[strategy_id], self.earnings[strategy_id] = {}, {}
+        self.mt5_deal_details[strategy_id] = self.mt5_deal_detail_format()
         self.q2d_at[strategy_id] = np.zeros((len(self.strategy_symbols[strategy_id]),))
 
     def check_allowed_with_avg_spread(self, requests, avg_spreads):
@@ -215,8 +238,6 @@ class Trader:
         """
         # update status
         self.status[strategy_id] = 1
-        # update order id
-        self.update_order_id(strategy_id, results)
         # update the open position
         self.open_postions[strategy_id]['expected'] = prices_at
         self.open_postions[strategy_id]['real'] = [result.price for result in results]
@@ -258,8 +279,12 @@ class Trader:
         self.status[strategy_id] = 0
 
         # update history
+        self.update_mt5_deal_details(strategy_id)
         self.update_history(strategy_id)
         self.init_strategy(strategy_id) # clear the record
+
+        # write csv file
+        self.write_history_csv(strategy_id)
         return True
 
     def strategy_open(self, strategy_id, lots):
@@ -273,11 +298,14 @@ class Trader:
         if not spread_allowed:
             return False
         results = self.requests_execute(requests)
-        self.update_order_id(strategy_id, results) # update the order id
+
+        # update the order id
+        self.update_position_id(strategy_id, results)
+
         # if results is not completed in all positions
         if len(results) < len(self.strategy_symbols[strategy_id]):
             self.strategy_close(strategy_id, lots)
-            print("{}: The open position is failed. The opened position are closed.".format(strategy_id))
+            print("{}: The open position is failed. The previous opened position are closed.".format(strategy_id))
             return False
         return results
 
@@ -333,9 +361,9 @@ class Trader:
                 "type_filling": tf,
             }
             if close_pos:
-                if self.order_ids[strategy_id][symbol] == 0:
+                if self.position_ids[strategy_id][symbol] == -1:
                     continue    # if there is no order id, do not append the request, note 63b (default = 0)
-                request['position'] = self.order_ids[strategy_id][symbol] # note 61b
+                request['position'] = self.position_ids[strategy_id][symbol] # note 61b
             requests.append(request)
         return requests
 
@@ -360,82 +388,6 @@ class Trader:
                 request['price'], result.price)
             )
         return results
-
-    # def update_strategy_cost(self, strategy_id, last_quote_exchgs, results, expected_positions, lots):
-    #     cost = 0.0
-    #     symbols = self.strategy_symbols[strategy_id]
-    #     for symbol, quote_exchg, result, expected_position, lot in zip(symbols, last_quote_exchgs, results, expected_positions, lots):
-    #         cost += (np.abs((result.price - expected_position) * lot) * (10 ** self.all_symbol_info[symbol].digits) * self.all_symbol_info[symbol].pt_value) * quote_exchg
-    #     self.costs[strategy_id] += cost
-    #
-    # def get_strategy_floating_cost(self, strategy_id, last_quote_exchgs, lots):
-    #     cost = 0
-    #     symbols = self.strategy_symbols[strategy_id]
-    #     for symbol, quote_exchg, lot in zip(symbols, last_quote_exchgs, lots):
-    #         if lot < 0:
-    #             cost += (mt5.symbol_info(symbol).spread * self.all_symbol_info[symbol].pt_value) * quote_exchg
-    #     floating_cost = self.costs[strategy_id] + cost
-    #     return floating_cost
-    #
-    # def update_curr_record(self, strategy_id, results, expected_positions, expected_ret, expected_earning, close_pos):
-    #     """
-    #     :param strategy_id: str
-    #     :param expected_positions: [float]
-    #     :param ret: float
-    #     :param earning: float
-    #     :param close_pos: Boolean
-    #     :return: None
-    #     """
-    #     # current time
-    #     dt_string = timeModel.get_current_time_string()
-    #
-    #     # judge if it is open position or close position
-    #     if close_pos:
-    #         type_position = 'close'
-    #         self.record[strategy_id].loc[0, ('expected', type_position, 'ret')] = expected_ret
-    #         self.record[strategy_id].loc[0, ('expected', type_position, 'earning')] = expected_earning
-    #         returnModel.get_value_of_ret_earning(self.strategy_symbols[strategy_id], )
-    #         self.record[strategy_id].loc[0, ('real', type_position, 'ret')] = real_ret
-    #         self.record[strategy_id].loc[0, ('real', type_position, 'earning')] = real_earning
-    #     else:
-    #         # if it is close position, it need to fill the return and earning
-    #         type_position = 'open'
-    #
-    #     # data need to fill in for both open and close position
-    #     self.record[strategy_id].loc[0, (type_position, 'time')] = dt_string
-    #     for symbol, order_id, result, expect in zip(self.strategy_symbols[strategy_id], self.order_ids[strategy_id].values(), results, expected_positions):
-    #         result_txt = ''
-    #         real = result.price
-    #         diff = expect - real
-    #         if diff >= 0: result_txt = "{:.5f}+{:.5f} ({})".format(expect, diff, order_id)
-    #         elif diff < 0: result_txt = "{:.5f}-{:.5f} ({})".format(expect, diff, order_id)
-    #         self.record[strategy_id].loc[0, (type_position, symbol)] = result_txt
-    #
-    # def update_strategy(self, strategy_id, results, requests, expected_positions, ret=0, earning=0):
-    #     """
-    #     :param strategy_id: str
-    #     :param results: mt5 results object
-    #     :param requests: [request], request = dictionary
-    #     :param expected_positions: [float]
-    #     :param ret: float
-    #     :param earning: float
-    #     :param open_pos: Boolean
-    #     :return: None
-    #     """
-    #     self.update_order_id(strategy_id, results)
-    #     if self.status[strategy_id] == 0:
-    #         self.update_curr_record(strategy_id, results, expected_positions, expected_ret=ret, expected_earning=earning, close_pos=False)
-    #         self.status[strategy_id] = 1
-    #     elif self.status[strategy_id] == 1:
-    #         self.update_curr_record(strategy_id, results, expected_positions, expected_ret=ret, expected_earning=earning, close_pos=True)
-    #         if self.history[strategy_id].empty:
-    #             self.history[strategy_id] = self.record[strategy_id].copy()
-    #         else:
-    #             self.history[strategy_id] = pd.concat([self.history[strategy_id], self.record[strategy_id]], axis=0)
-    #         self.record[strategy_id] = self.history_format(self.strategy_symbols[strategy_id]) # clear the current record after append the record
-    #         self.status[strategy_id] = 0
-    #         # clear order id dictionary after close position
-    #         self.order_ids[strategy_id] = self.order_id_format(self.strategy_symbols[strategy_id])
 
 def get_symbol_total():
     """
