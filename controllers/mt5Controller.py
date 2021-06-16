@@ -10,7 +10,7 @@ now = datetime.now()
 DT_STRING = now.strftime("%y%m%d%H%M%S")
 
 options = {
-    'main_path': "C:/Users/Chris/projects/210215_mt5/production/docs/{}/".format(config.VERSION),
+    'main_path': "{}/projects/210215_mt5/production/docs/{}/".format(config.COMP_PATH, config.VERSION),
     'dt': DT_STRING,
 }
 trader_options = {
@@ -26,8 +26,8 @@ trader_options = {
     'lot_times': 10
 }
 coin_option = {
-    'upper_th': 0.01,    # 0.3
-    'lower_th': -0.01,   # -0.3
+    'upper_th': 0.001,    # 0.3
+    'lower_th': -0.001,   # -0.3
     'z_score_mean_window': 5,
     'z_score_std_window': 20,
     'slsp': (-100, 5000),  # None means no constraint

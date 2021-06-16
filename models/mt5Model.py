@@ -79,11 +79,12 @@ class Trader:
     def __exit__(self, *args):
         disconnect_server()
 
-    def write_history_csv(self, strategy_id):
+    def append_history_csv(self, strategy_id):
         history_df = self.history[strategy_id]
         full_path = os.path.join(self.history_path, "{}_{}.csv".format(self.dt_string, strategy_id))
-        with open(full_path, mode='a') as f:
-            history_df.to_csv(f, header=f.tell() == 0)
+        header = False
+        if not os.path.isfile(full_path): header = True
+        history_df.to_csv(full_path, mode='a', header=header)
         print("The histories are wrote to {}".format(full_path))
 
     def position_id_format(self, symbols):
@@ -174,11 +175,11 @@ class Trader:
         self.deviations[strategy_id] = deviations
         self.avg_spreads[strategy_id] = avg_spreads
         self.lot_times[strategy_id] = lot_times
-        self.history[strategy_id] = self.history_format()
         self.open_postions_time[strategy_id] = False # see note 69a
         self.init_strategy(strategy_id)
 
     def init_strategy(self, strategy_id):
+        self.history[strategy_id] = self.history_format()
         self.position_ids[strategy_id] = self.position_id_format(self.strategy_symbols[strategy_id])
         self.open_postions[strategy_id], self.close_postions[strategy_id] = {}, {}
         self.rets[strategy_id], self.earnings[strategy_id] = {}, {}
@@ -281,10 +282,12 @@ class Trader:
         # update history
         self.update_mt5_deal_details(strategy_id)
         self.update_history(strategy_id)
-        self.init_strategy(strategy_id) # clear the record
 
         # write csv file
-        self.write_history_csv(strategy_id)
+        self.append_history_csv(strategy_id)
+
+        # clear the all record including history
+        self.init_strategy(strategy_id)  # clear the record
         return True
 
     def strategy_open(self, strategy_id, lots):

@@ -1,4 +1,6 @@
 import MetaTrader5 as mt5
+import os
+from pathlib import Path
 from datetime import datetime
 now = datetime.now()
 DT_STRING = now.strftime("%y%m%d%H%M%S")
@@ -41,3 +43,6 @@ CURRENCIES = {
 
     }
 }
+
+# relative path for different computer
+COMP_PATH = (Path(os.getcwd()).parent.parent.parent.parent.parent.absolute())
