@@ -92,7 +92,7 @@ def get_action(trader, strategy_id, latest_open_prices, latest_quote_exchg, coef
         prices_at = latest_open_prices.iloc[-2,:].values
         q2d_at = latest_quote_exchg.iloc[-2,:].values
         print("\n----------------------------------{} Spread: Open position----------------------------------".format(mode_txt))
-        results = trader.strategy_open(strategy_id, lots)      # open position
+        results = trader.strategy_open(strategy_id, prices_at, lots)      # open position
         if results:
             trader.strategy_open_update(strategy_id, results, prices_at, q2d_at, signal.index[-1])
 

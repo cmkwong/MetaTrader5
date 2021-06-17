@@ -186,7 +186,7 @@ class Trader:
         self.mt5_deal_details[strategy_id] = self.mt5_deal_detail_format()
         self.q2d_at[strategy_id] = np.zeros((len(self.strategy_symbols[strategy_id]),))
 
-    def check_allowed_with_avg_spread(self, requests, avg_spreads):
+    def check_allowed_with_avg_spread(self, requests, prices_at, avg_spreads):
         """
         check if the market is in very high spread, like hundred of point spread
         if condition cannot meet, return False
@@ -194,8 +194,8 @@ class Trader:
         :param deviations: list
         :return: Boolean
         """
-        for i, request in enumerate(requests):
-            symbol, price_at, deviation, action_type = request['symbol'], request['price'], avg_spreads[i], request['type']
+        for request, price_at, deviation in zip(requests, prices_at, avg_spreads):
+            symbol, action_type = request['symbol'], request['type']
             if action_type == mt5.ORDER_TYPE_BUY:
                 cost_price = mt5.symbol_info_tick(symbol).ask
                 diff_pt = (cost_price - price_at) * (10 ** self.all_symbol_info[symbol].digits)
@@ -290,14 +290,14 @@ class Trader:
         self.init_strategy(strategy_id)  # clear the record
         return True
 
-    def strategy_open(self, strategy_id, lots):
+    def strategy_open(self, strategy_id, prices_at, lots):
         """
         :param strategy_id: str
         :param lots: [float], that is open position that lots going to buy(+ve) / sell(-ve)
         :return: dict: requests, results
         """
         requests = self.requests_format(strategy_id, lots, close_pos=False)
-        spread_allowed = self.check_allowed_with_avg_spread(requests, self.avg_spreads[strategy_id]) # note 59a
+        spread_allowed = self.check_allowed_with_avg_spread(requests, prices_at, self.avg_spreads[strategy_id]) # note 59a
         if not spread_allowed:
             return False
         results = self.requests_execute(requests)
@@ -359,7 +359,7 @@ class Trader:
                 'volume': float(lot),
                 'type': action_type,
                 'price': price,
-                'deviation': deviation,
+                'deviation': deviation, # indeed, the deviation is useless when it is marketing order, note 73d
                 "type_time": mt5.ORDER_TIME_GTC,
                 "type_filling": tf,
             }
@@ -385,7 +385,7 @@ class Trader:
             results.append(result)
         # print the results
         for request, result in zip(requests, results):
-            print("Action: {}; by {} {:.2f} lots at {:.5f} (ptDiff={:.1f} ({:.5f}[expected] - {:.5f}[real]))".format(
+            print("Action: {}; by {} {:.2f} lots at {:.5f} ( ptDiff={:.1f} ({:.5f}(request.price) - {:.5f}(result.price) ))".format(
                 request['type'], request['symbol'], result.volume, result.price,
                 (request['price'] - result.price) * 10 ** mt5.symbol_info(request['symbol']).digits,
                 request['price'], result.price)
