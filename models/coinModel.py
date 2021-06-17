@@ -92,9 +92,9 @@ def get_action(trader, strategy_id, latest_open_prices, latest_quote_exchg, coef
         prices_at = latest_open_prices.iloc[-2,:].values
         q2d_at = latest_quote_exchg.iloc[-2,:].values
         print("\n----------------------------------{} Spread: Open position----------------------------------".format(mode_txt))
-        results = trader.strategy_open(strategy_id, prices_at, lots)      # open position
+        results, requests = trader.strategy_open(strategy_id, prices_at, lots)      # open position
         if results:
-            trader.strategy_open_update(strategy_id, results, prices_at, q2d_at, signal.index[-1])
+            trader.strategy_open_update(strategy_id, results, requests, prices_at, q2d_at, signal.index[-1])
 
     # Opposite Signal occurred
     elif available_code == 1:
@@ -109,9 +109,9 @@ def get_action(trader, strategy_id, latest_open_prices, latest_quote_exchg, coef
         print("ret: {}, earning: {}".format(expected_ret, expected_earning))
         print(str(prices_at))
         print("\n----------------------------------{} Spread: Close position----------------------------------".format(mode_txt))
-        results = trader.strategy_close(strategy_id, lots)  # close position
+        results, requests = trader.strategy_close(strategy_id, lots)  # close position
         if results:
-            trader.strategy_close_update(strategy_id, results, coefficient_vector, prices_at, expected_ret, expected_earning, long_mode)
+            trader.strategy_close_update(strategy_id, results, requests, coefficient_vector, prices_at, expected_ret, expected_earning, long_mode)
     # Checking if the stop-loss and stop-profit reached
     elif available_code == 2:
         expected_ret, expected_earning, prices_at = returnModel.get_value_of_ret_earning(symbols=trader.strategy_symbols[strategy_id],
@@ -126,11 +126,11 @@ def get_action(trader, strategy_id, latest_open_prices, latest_quote_exchg, coef
         print(str(prices_at))
         if expected_earning > slsp[1]: # Stop Profit
             print("\n----------------------------------{} Spread: Close position (Stop profit)----------------------------------".format(mode_txt))
-            results = trader.strategy_close(strategy_id, lots)   # close position
+            results, requests = trader.strategy_close(strategy_id, lots)   # close position
         elif expected_earning < slsp[0]: # Stop Loss
             print("\n----------------------------------{} Spread: Close position (Stop Loss)----------------------------------".format(mode_txt))
-            results = trader.strategy_close(strategy_id, lots)    # close position
+            results, requests = trader.strategy_close(strategy_id, lots)    # close position
         if results:
-            trader.strategy_close_update(strategy_id, results, coefficient_vector, prices_at, expected_ret, expected_earning, long_mode)
+            trader.strategy_close_update(strategy_id, results, requests, coefficient_vector, prices_at, expected_ret, expected_earning, long_mode)
 
 

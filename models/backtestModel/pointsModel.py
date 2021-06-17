@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import MetaTrader5 as mt5
 
 def get_points_dff_values_df(symbols, open_prices, all_symbols_info, temp_col_name=None):
     """
@@ -19,9 +20,33 @@ def get_points_dff_values_df(symbols, open_prices, all_symbols_info, temp_col_na
         points_dff_values_df.columns = [temp_col_name] * len(symbols)
     return points_dff_values_df
 
-def get_points_dff_from_values(symbols, news, olds, all_symbols_info):
+def get_points_dff_values(symbols, news, olds, all_symbols_info):
+    """
+    :param symbols: list
+    :param news: np.array
+    :param olds: np.array
+    :param all_symbols_info: nametuple object
+    :return: np.array
+    """
     pt_values = np.zeros((len(symbols),))
     for i, (symbol, new, old) in enumerate(zip(symbols, news, olds)):
         digits = all_symbols_info[symbol].digits
         pt_values[i] = (new - old) * (10 ** digits) * all_symbols_info[symbol].pt_value
     return pt_values
+
+def get_points_dff(symbols, news, olds, all_symbols_info):
+    pt_diffs = np.zeros((len(symbols),))
+    for i, (symbol, new, old) in enumerate(zip(symbols, news, olds)):
+        digits = all_symbols_info[symbol].digits
+        pt_diffs[i] = (new - old) * (10 ** digits)
+    return pt_diffs
+
+def get_pt_diff(results, requests, prices_at, all_symbol_info):
+    pt_diff_arr = []
+    for result, request, price_at in zip(results, requests, prices_at):
+        symbol = request['symbol']
+        if request['type'] == mt5.ORDER_TYPE_BUY:
+            pt_diff_arr.append((result.price - price_at) * (10 ** all_symbol_info[symbol].digits))
+        elif request['type'] == mt5.ORDER_TYPE_SELL:
+            pt_diff_arr.append((price_at - result.price) * (10 ** all_symbol_info[symbol].digits))
+    return np.array(pt_diff_arr)

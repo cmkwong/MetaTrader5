@@ -145,7 +145,7 @@ def get_value_of_ret_earning(symbols, new_values, old_values, q2d_at, coefficien
     ret = news / olds
 
     # earning value
-    points_dff_values = pointsModel.get_points_dff_from_values(symbols, new_values, old_values, all_symbols_info)
+    points_dff_values = pointsModel.get_points_dff_values(symbols, new_values, old_values, all_symbols_info)
     weighted_pt_diff = points_dff_values * modified_coefficient_vector.reshape(-1, )
     # calculate the price in required deposit dollar
     earning = np.sum(q2d_at * weighted_pt_diff)

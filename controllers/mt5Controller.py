@@ -21,7 +21,7 @@ trader_options = {
     'deposit_currency': 'USD',
     'history_path': os.path.join(options['main_path'], "history"),
     'max_deviations': [3,3,3,3,3,3],
-    'avg_spreads': [8,5,6,6,14,4],
+    'avg_spreads': [18,15,16,16,14,14],
     'type_filling': 'ioc', # ioc / fok / return
     'lot_times': 10
 }

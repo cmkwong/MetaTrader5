@@ -1,5 +1,5 @@
 from production.codes import config
-from production.codes.models.backtestModel import returnModel
+from production.codes.models.backtestModel import returnModel, pointsModel
 from production.codes.models import timeModel
 import MetaTrader5 as mt5
 import numpy as np
@@ -67,9 +67,9 @@ class Trader:
         self.dt_string = dt_string
         self.history, self.status, self.strategy_symbols, \
         self.position_ids, self.deviations, self.avg_spreads, \
-        self.open_postions, self.open_postions_time, self.close_postions, \
+        self.open_postions, self.open_postions_date, self.close_postions, \
         self.rets, self.earnings, self.mt5_deal_details, \
-        self.q2d_at, self.lot_times = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {} # see note 60b
+        self.q2d_at, self.open_pt_diff, self.close_pt_diff, self.lot_times = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {} # see note 60b
 
     def __enter__(self):
         connect_server()
@@ -98,12 +98,14 @@ class Trader:
             oid[symbol] = -1
         return oid
 
-    def history_format(self):
+    def history_format(self, strategy_id):
         """
         :return: pd.DataFrame
         """
-        level_2_arr = np.array(['ret', 'earning'] * 2 + ['commission', 'swap', 'fee', 'earning', 'balanced'])  # Asterisk * unpacking the list, Programming/Python note 14
-        level_1_arr = np.array(['expected'] * 2 + ['real'] * 2 + ['mt5'] * 5)
+        symbols = self.strategy_symbols[strategy_id]
+        level_2_arr = np.array(['ret', 'earning'] * 2 + ['commission', 'swap', 'fee', 'earning', 'balanced', 'diff']
+                               + symbols * 2)  # Asterisk * unpacking the list, Programming/Python note 14
+        level_1_arr = np.array(['expected'] * 2 + ['real'] * 2 + ['mt5'] * 6 + ['open']*len(symbols) + ['close']*len(symbols))
         column_index_arr = [
             level_1_arr, level_2_arr
         ]
@@ -145,11 +147,11 @@ class Trader:
         self.history[strategy_id].loc[dt, ('mt5', 'fee')] = self.mt5_deal_details[strategy_id]['fee']
         self.history[strategy_id].loc[dt, ('mt5', 'earning')] = self.mt5_deal_details[strategy_id]['earning']
         self.history[strategy_id].loc[dt, ('mt5', 'balanced')] = self.mt5_deal_details[strategy_id]['balanced']
-
-        # # test for deal records
-        # position_deals = mt5.history_deals_get(position=self.position_ids[strategy_id]['AUDUSD'])
-        # df = pd.DataFrame(list(position_deals), columns=position_deals[0]._asdict().keys())
-        # df['time'] = pd.to_datetime(df['time'], unit='s')
+        self.history[strategy_id].loc[dt, ('mt5', 'diff')] = self.mt5_deal_details[strategy_id]['balanced'] - self.earnings[strategy_id]['expected']
+        # update spreads, note 74a
+        for i, symbol in enumerate(self.strategy_symbols[strategy_id]):
+            self.history[strategy_id].loc[dt, ('open', symbol)] = self.open_pt_diff[strategy_id][i]
+            self.history[strategy_id].loc[dt, ('close', symbol)] = self.close_pt_diff[strategy_id][i]
         return True
     
     def update_mt5_deal_details(self, strategy_id):
@@ -175,16 +177,18 @@ class Trader:
         self.deviations[strategy_id] = deviations
         self.avg_spreads[strategy_id] = avg_spreads
         self.lot_times[strategy_id] = lot_times
-        self.open_postions_time[strategy_id] = False # see note 69a
+        self.open_postions_date[strategy_id] = False # see note 69a
         self.init_strategy(strategy_id)
 
     def init_strategy(self, strategy_id):
-        self.history[strategy_id] = self.history_format()
+        self.history[strategy_id] = self.history_format(strategy_id)
         self.position_ids[strategy_id] = self.position_id_format(self.strategy_symbols[strategy_id])
         self.open_postions[strategy_id], self.close_postions[strategy_id] = {}, {}
         self.rets[strategy_id], self.earnings[strategy_id] = {}, {}
         self.mt5_deal_details[strategy_id] = self.mt5_deal_detail_format()
         self.q2d_at[strategy_id] = np.zeros((len(self.strategy_symbols[strategy_id]),))
+        self.open_pt_diff[strategy_id] = np.zeros((len(self.strategy_symbols[strategy_id]),))
+        self.close_pt_diff[strategy_id] = np.zeros((len(self.strategy_symbols[strategy_id]),))
 
     def check_allowed_with_avg_spread(self, requests, prices_at, avg_spreads):
         """
@@ -217,7 +221,7 @@ class Trader:
         :param signal: pd.Series
         :return: int
         """
-        different_open_position = (signal.index[-1] != self.open_postions_time[strategy_id]) # different position to the previous one, note 69a
+        different_open_position = (signal.index[-1] != self.open_postions_date[strategy_id]) # different position to the previous one, note 69a
         if signal[-2] == True and signal[-3] == False and self.status[strategy_id] == 0 and different_open_position:
             # if open signal has available
             return 0
@@ -229,24 +233,29 @@ class Trader:
                 # if close signal has not available, check the ret and earning
                 return 2
 
-    def strategy_open_update(self, strategy_id, results, prices_at, q2d_at, open_position_time):
+    def strategy_open_update(self, strategy_id, results, requests, prices_at, q2d_at, open_position_date):
         """
         :param strategy_id: str
         :param results: mt5 results
+        :param requests: request dict
         :param prices_at: np.array, size = (len(symbols), )
         :param q2d_at: np.array
+        :param open_position_date: the date that open position
         :return: Boolean
         """
         # update status
         self.status[strategy_id] = 1
-        # update the open position
+        # update the open position: expected
         self.open_postions[strategy_id]['expected'] = prices_at
+        # update the open position: real
         self.open_postions[strategy_id]['real'] = [result.price for result in results]
-        self.open_postions_time[strategy_id] = open_position_time # update the open position time to avoid the buy again after stop loss or profit
+        # update open pt diff
+        self.open_pt_diff[strategy_id] = pointsModel.get_pt_diff(results, requests, prices_at, self.all_symbol_info)
+        self.open_postions_date[strategy_id] = open_position_date # update the open position time to avoid the buy again after stop loss or profit
         self.q2d_at[strategy_id] = q2d_at
         return True
 
-    def strategy_close_update(self, strategy_id, results, coefficient_vector, prices_at, expected_ret, expected_earning, long_mode):
+    def strategy_close_update(self, strategy_id, results, requests, coefficient_vector, prices_at, expected_ret, expected_earning, long_mode):
         """
         :param strategy_id: str
         :param results: mt5 results
@@ -275,6 +284,9 @@ class Trader:
         self.close_postions[strategy_id]['real'] = real_close_prices
         self.rets[strategy_id]['real'] = real_ret
         self.earnings[strategy_id]['real'] = real_earning
+
+        # update close pt diff
+        self.close_pt_diff[strategy_id] = pointsModel.get_pt_diff(results, requests, prices_at, self.all_symbol_info)
 
         # update status
         self.status[strategy_id] = 0
@@ -310,7 +322,7 @@ class Trader:
             self.strategy_close(strategy_id, lots)
             print("{}: The open position is failed. The previous opened position are closed.".format(strategy_id))
             return False
-        return results
+        return results, requests
 
     def strategy_close(self, strategy_id, lots):
         """
@@ -321,7 +333,7 @@ class Trader:
         lots = [-l for l in lots]
         requests = self.requests_format(strategy_id, lots, close_pos=True)
         results = self.requests_execute(requests)
-        return results
+        return results, requests
 
     def requests_format(self, strategy_id, lots, close_pos=False):
         """
