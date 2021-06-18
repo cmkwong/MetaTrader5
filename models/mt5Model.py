@@ -273,7 +273,7 @@ class Trader:
 
         # update the close position: real
         real_close_prices = np.array([result.price for result in results])
-        real_ret, real_earning, _ = returnModel.get_value_of_ret_earning(symbols=self.strategy_symbols[strategy_id],
+        real_ret, real_earning = returnModel.get_value_of_ret_earning(symbols=self.strategy_symbols[strategy_id],
                                                                          new_values=real_close_prices,
                                                                          old_values=self.open_postions[strategy_id]['real'],
                                                                          q2d_at=self.q2d_at[strategy_id],
@@ -311,7 +311,7 @@ class Trader:
         requests = self.requests_format(strategy_id, lots, close_pos=False)
         spread_allowed = self.check_allowed_with_avg_spread(requests, prices_at, self.avg_spreads[strategy_id]) # note 59a
         if not spread_allowed:
-            return False
+            return False, False
         results = self.requests_execute(requests)
 
         # update the order id
@@ -321,7 +321,7 @@ class Trader:
         if len(results) < len(self.strategy_symbols[strategy_id]):
             self.strategy_close(strategy_id, lots)
             print("{}: The open position is failed. The previous opened position are closed.".format(strategy_id))
-            return False
+            return False, False
         return results, requests
 
     def strategy_close(self, strategy_id, lots):

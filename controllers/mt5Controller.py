@@ -30,7 +30,7 @@ coin_option = {
     'lower_th': -0.001,   # -0.3
     'z_score_mean_window': 5,
     'z_score_std_window': 20,
-    'slsp': (-100, 5000),  # None means no constraint
+    'slsp': (-100, 500),  # None means no constraint
 }
 
 with mt5Model.Trader(dt_string=options['dt'], history_path=trader_options["history_path"], type_filling=trader_options['type_filling']) as trader:

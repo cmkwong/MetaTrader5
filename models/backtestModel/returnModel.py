@@ -150,10 +150,7 @@ def get_value_of_ret_earning(symbols, new_values, old_values, q2d_at, coefficien
     # calculate the price in required deposit dollar
     earning = np.sum(q2d_at * weighted_pt_diff)
 
-    # prices_at
-    prices_at = old_values
-
-    return ret, earning, prices_at
+    return ret, earning
 
 # def get_ret_earning_priceAt_after_close_position(open_prices, exchg_q2d, points_dff_values_df, coefficient_vector, signal, long_mode, lot_times):
 #     """

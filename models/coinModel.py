@@ -98,14 +98,15 @@ def get_action(trader, strategy_id, latest_open_prices, latest_quote_exchg, coef
 
     # Opposite Signal occurred
     elif available_code == 1:
-        expected_ret, expected_earning, prices_at = returnModel.get_value_of_ret_earning(symbols=trader.strategy_symbols[strategy_id],
-                                                                                        new_values=latest_open_prices.iloc[-2, :].values,
-                                                                                        old_values=trader.open_postions[strategy_id]['expected'],
-                                                                                        q2d_at=trader.q2d_at[strategy_id],
-                                                                                        coefficient_vector=coefficient_vector,
-                                                                                        all_symbols_info=trader.all_symbol_info,
-                                                                                        long_mode=long_mode,
-                                                                                        lot_times=trader.lot_times[strategy_id])
+        prices_at = latest_open_prices.iloc[-2, :].values
+        expected_ret, expected_earning = returnModel.get_value_of_ret_earning(symbols=trader.strategy_symbols[strategy_id],
+                                                                              new_values=prices_at,
+                                                                              old_values=trader.open_postions[strategy_id]['expected'],
+                                                                              q2d_at=trader.q2d_at[strategy_id],
+                                                                              coefficient_vector=coefficient_vector,
+                                                                              all_symbols_info=trader.all_symbol_info,
+                                                                              long_mode=long_mode,
+                                                                              lot_times=trader.lot_times[strategy_id])
         print("ret: {}, earning: {}".format(expected_ret, expected_earning))
         print(str(prices_at))
         print("\n----------------------------------{} Spread: Close position----------------------------------".format(mode_txt))
@@ -114,14 +115,15 @@ def get_action(trader, strategy_id, latest_open_prices, latest_quote_exchg, coef
             trader.strategy_close_update(strategy_id, results, requests, coefficient_vector, prices_at, expected_ret, expected_earning, long_mode)
     # Checking if the stop-loss and stop-profit reached
     elif available_code == 2:
-        expected_ret, expected_earning, prices_at = returnModel.get_value_of_ret_earning(symbols=trader.strategy_symbols[strategy_id],
-                                                                                        new_values=latest_open_prices.iloc[-1,:].values,
-                                                                                        old_values=trader.open_postions[strategy_id]['expected'],
-                                                                                        q2d_at=trader.q2d_at[strategy_id],
-                                                                                        coefficient_vector=coefficient_vector,
-                                                                                        all_symbols_info=trader.all_symbol_info,
-                                                                                        long_mode=long_mode,
-                                                                                        lot_times=trader.lot_times[strategy_id])
+        prices_at = latest_open_prices.iloc[-1,:].values
+        expected_ret, expected_earning = returnModel.get_value_of_ret_earning(symbols=trader.strategy_symbols[strategy_id],
+                                                                              new_values=prices_at,
+                                                                              old_values=trader.open_postions[strategy_id]['expected'],
+                                                                              q2d_at=trader.q2d_at[strategy_id],
+                                                                              coefficient_vector=coefficient_vector,
+                                                                              all_symbols_info=trader.all_symbol_info,
+                                                                              long_mode=long_mode,
+                                                                             lot_times=trader.lot_times[strategy_id])
         print("ret: {}, earning: {}".format(expected_ret, expected_earning))
         print(str(prices_at))
         if expected_earning > slsp[1]: # Stop Profit
