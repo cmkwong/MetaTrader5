@@ -69,7 +69,8 @@ class Trader:
         self.position_ids, self.deviations, self.avg_spreads, \
         self.open_postions, self.open_postions_date, self.close_postions, \
         self.rets, self.earnings, self.mt5_deal_details, \
-        self.q2d_at, self.open_pt_diff, self.close_pt_diff, self.lot_times = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {} # see note 60b
+        self.q2d_at, self.open_pt_diff, self.close_pt_diff, self.lot_times, \
+        self.long_modes = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {} # see note 60b
 
     def __enter__(self):
         connect_server()
@@ -165,7 +166,7 @@ class Trader:
                 self.mt5_deal_details[strategy_id]['earning'] += deal.profit
                 self.mt5_deal_details[strategy_id]['balanced'] += deal.commission + deal.swap + deal.fee + deal.profit
 
-    def register_strategy(self, strategy_id, symbols, deviations, avg_spreads, lot_times):
+    def register_strategy(self, strategy_id, symbols, deviations, avg_spreads, lot_times, long_mode):
         """
         :param strategy_id: str
         :param symbols: [str]
@@ -178,6 +179,7 @@ class Trader:
         self.avg_spreads[strategy_id] = avg_spreads
         self.lot_times[strategy_id] = lot_times
         self.open_postions_date[strategy_id] = False # see note 69a
+        self.long_modes[strategy_id] = long_mode # Boolean
         self.init_strategy(strategy_id)
 
     def init_strategy(self, strategy_id):
@@ -214,24 +216,85 @@ class Trader:
                     return False
         return True
 
-    def get_strategy_available_code(self, strategy_id, signal):
+    # def get_strategy_available_code(self, strategy_id, signal):
+    #     """
+    #     note 69a: code meaning
+    #     :param strategy_id: string
+    #     :param signal: pd.Series
+    #     :return: int
+    #     """
+    #     different_open_position = (signal.index[-1] != self.open_postions_date[strategy_id]) # different position to the previous one, note 69a
+    #     if signal[-2] == True and signal[-3] == False and self.status[strategy_id] == 0 and different_open_position:
+    #         # if open signal has available
+    #         return 0
+    #     elif self.status[strategy_id] == 1:
+    #         if signal[-2] == False and signal[-3]:
+    #             # if close signal has available
+    #             return 1
+    #         else:
+    #             # if close signal has not available, check the ret and earning
+    #             return 2
+
+    def strategy_controller(self, strategy_id, latest_open_prices, latest_quote_exchg, coefficient_vector, signal, slsp, lots):
         """
-        note 69a: code meaning
-        :param strategy_id: string
+        :param strategy_id: str, each strategy has unique id for identity
+        :param latest_open_prices: pd.DataFrame, open price with latest prices
+        :param latest_quote_exchg: pd.DataFrame, quote exchange rate with latest rate
+        :param coefficient_vector: np.array (raw vector: [y-intercepy, coefficients])
         :param signal: pd.Series
-        :return: int
+        :param slsp: tuple, (stop-loss, stop-profit)
+        :param lots: [float], that is lots of open position. If close the position, product with negative 1
+        :return: None
+        :param masked_open_prices: open price with last price masked by current price
         """
-        different_open_position = (signal.index[-1] != self.open_postions_date[strategy_id]) # different position to the previous one, note 69a
+        # init
+        results, requests = False, False
+
+        different_open_position = (signal.index[-1] != self.open_postions_date[strategy_id])  # different position to the previous one, note 69a
         if signal[-2] == True and signal[-3] == False and self.status[strategy_id] == 0 and different_open_position:
             # if open signal has available
-            return 0
+            prices_at = latest_open_prices.iloc[-2, :].values
+            q2d_at = latest_quote_exchg.iloc[-2, :].values
+            print("\n----------------------------------{}: Open position----------------------------------".format(strategy_id))
+            results, requests = self.strategy_open(strategy_id, prices_at, lots)  # open position
+            if results:
+                self.strategy_open_update(strategy_id, results, requests, prices_at, q2d_at, signal.index[-1])
+
         elif self.status[strategy_id] == 1:
-            if signal[-2] == False and signal[-3]:
-                # if close signal has available
-                return 1
+            if signal[-2] == False and signal[-3] == True:
+                prices_at = latest_open_prices.iloc[-2, :].values
+                expected_ret, expected_earning = returnModel.get_value_of_ret_earning(symbols=self.strategy_symbols[strategy_id],
+                                                                                      new_values=prices_at,
+                                                                                      old_values=self.open_postions[strategy_id]['expected'],
+                                                                                      q2d_at=self.q2d_at[strategy_id],
+                                                                                      all_symbols_info=self.all_symbol_info,
+                                                                                      lot_times=self.lot_times[strategy_id],
+                                                                                      coefficient_vector=coefficient_vector,
+                                                                                      long_mode=self.long_modes[strategy_id])
+                print("\n----------------------------------{}: Close position----------------------------------".format(strategy_id))
+                results, requests = self.strategy_close(strategy_id, lots)  # close position
+                if results:
+                    self.strategy_close_update(strategy_id, results, requests, coefficient_vector, prices_at, expected_ret, expected_earning)
             else:
-                # if close signal has not available, check the ret and earning
-                return 2
+                prices_at = latest_open_prices.iloc[-1, :].values
+                expected_ret, expected_earning = returnModel.get_value_of_ret_earning(symbols=self.strategy_symbols[strategy_id],
+                                                                                      new_values=prices_at,
+                                                                                      old_values=self.open_postions[strategy_id]['expected'],
+                                                                                      q2d_at=self.q2d_at[strategy_id],
+                                                                                      all_symbols_info=self.all_symbol_info,
+                                                                                      lot_times=self.lot_times[strategy_id],
+                                                                                      coefficient_vector=coefficient_vector,
+                                                                                      long_mode=self.long_modes[strategy_id])
+                print("ret: {}, earning: {}".format(expected_ret, expected_earning))
+                print(str(prices_at))
+                if expected_earning > slsp[1]:  # Stop Profit
+                    print("\n----------------------------------{}: Close position (Stop profit)----------------------------------".format(strategy_id))
+                    results, requests = self.strategy_close(strategy_id, lots)  # close position
+                elif expected_earning < slsp[0]:  # Stop Loss
+                    print("\n----------------------------------{}: Close position (Stop Loss)----------------------------------".format(strategy_id))
+                    results, requests = self.strategy_close(strategy_id, lots)  # close position
+                if results:
+                    self.strategy_close_update(strategy_id, results, requests, coefficient_vector, prices_at, expected_ret, expected_earning)
 
     def strategy_open_update(self, strategy_id, results, requests, prices_at, q2d_at, open_position_date):
         """
@@ -255,7 +318,7 @@ class Trader:
         self.q2d_at[strategy_id] = q2d_at
         return True
 
-    def strategy_close_update(self, strategy_id, results, requests, coefficient_vector, prices_at, expected_ret, expected_earning, long_mode):
+    def strategy_close_update(self, strategy_id, results, requests, coefficient_vector, prices_at, expected_ret, expected_earning):
         """
         :param strategy_id: str
         :param results: mt5 results
@@ -274,13 +337,13 @@ class Trader:
         # update the close position: real
         real_close_prices = np.array([result.price for result in results])
         real_ret, real_earning = returnModel.get_value_of_ret_earning(symbols=self.strategy_symbols[strategy_id],
-                                                                         new_values=real_close_prices,
-                                                                         old_values=self.open_postions[strategy_id]['real'],
-                                                                         q2d_at=self.q2d_at[strategy_id],
-                                                                         coefficient_vector=coefficient_vector,
-                                                                         all_symbols_info=self.all_symbol_info,
-                                                                         long_mode=long_mode,
-                                                                         lot_times=self.lot_times[strategy_id])
+                                                                      new_values=real_close_prices,
+                                                                      old_values=self.open_postions[strategy_id]['real'],
+                                                                      q2d_at=self.q2d_at[strategy_id],
+                                                                      all_symbols_info=self.all_symbol_info,
+                                                                      lot_times=self.lot_times[strategy_id],
+                                                                      coefficient_vector=coefficient_vector,
+                                                                      long_mode=self.long_modes[strategy_id])
         self.close_postions[strategy_id]['real'] = real_close_prices
         self.rets[strategy_id]['real'] = real_ret
         self.earnings[strategy_id]['real'] = real_earning

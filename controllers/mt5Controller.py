@@ -36,16 +36,16 @@ coin_option = {
 with mt5Model.Trader(dt_string=options['dt'], history_path=trader_options["history_path"], type_filling=trader_options['type_filling']) as trader:
 
     coefficient_vector = np.array([2.58766,0.01589,-1.76342,-0.01522,0.00351,0.01389]) # will be round to 2 decimal
-    long_lots = [round(i, 2) for i in coinModel.get_modify_coefficient_vector(coefficient_vector, long_mode=True, lot_times=trader_options['lot_times'])]
-    short_lots = [round(i, 2) for i in coinModel.get_modify_coefficient_vector(coefficient_vector, long_mode=False, lot_times=trader_options['lot_times'])]
+    long_lots = [round(i, 2) for i in coinModel.get_modified_coefficient_vector(coefficient_vector, long_mode=True, lot_times=trader_options['lot_times'])]
+    short_lots = [round(i, 2) for i in coinModel.get_modified_coefficient_vector(coefficient_vector, long_mode=False, lot_times=trader_options['lot_times'])]
 
     long_strategy_id, short_strategy_id = coinModel.get_strategy_id(coin_option)
-    trader.register_strategy(long_strategy_id, trader_options['symbols'], trader_options['max_deviations'], trader_options['avg_spreads'], trader_options['lot_times'])
-    trader.register_strategy(short_strategy_id, trader_options['symbols'], trader_options['max_deviations'], trader_options['avg_spreads'], trader_options['lot_times'])
+    trader.register_strategy(long_strategy_id, trader_options['symbols'], trader_options['max_deviations'], trader_options['avg_spreads'], trader_options['lot_times'], long_mode=True)
+    trader.register_strategy(short_strategy_id, trader_options['symbols'], trader_options['max_deviations'], trader_options['avg_spreads'], trader_options['lot_times'], long_mode=False)
 
     while True:
         Prices = priceModel.get_latest_Prices(trader.all_symbol_info, trader_options['symbols'], trader_options['timeframe'], trader_options['timezone'],
-                                       count=trader_options['count'], deposit_currency=trader_options['deposit_currency'])
+                                              count=trader_options['count'], deposit_currency=trader_options['deposit_currency'])
         if not Prices:
             time.sleep(2)
             continue
@@ -56,9 +56,7 @@ with mt5Model.Trader(dt_string=options['dt'], history_path=trader_options["histo
         # calculate for checking for stop-loss and stop-profit reached
         long_signal, short_signal = signalModel.get_coin_NN_signal(coin_data, coin_option['upper_th'], coin_option['lower_th'], discard=False)
 
-        coinModel.get_action(trader, long_strategy_id, Prices.l_o, Prices.l_quote_exchg,
-                             coefficient_vector, long_signal, coin_option['slsp'], long_lots, long_mode=True)
-        coinModel.get_action(trader, short_strategy_id, Prices.l_o, Prices.l_quote_exchg,
-                             coefficient_vector, short_signal, coin_option['slsp'], short_lots, long_mode=False)
+        trader.strategy_controller(long_strategy_id, Prices.l_o, Prices.l_quote_exchg, coefficient_vector, long_signal, coin_option['slsp'], long_lots)
+        trader.strategy_controller(short_strategy_id, Prices.l_o, Prices.l_quote_exchg, coefficient_vector, short_signal, coin_option['slsp'], short_lots)
 
         time.sleep(5)

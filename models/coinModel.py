@@ -1,9 +1,9 @@
 import numpy as np
 import pandas as pd
 from production.codes.utils import maths
-from production.codes.models.backtestModel import returnModel, signalModel
+from production.codes.models.backtestModel import returnModel
 
-def get_modify_coefficient_vector(coefficient_vector, long_mode, lot_times=1):
+def get_modified_coefficient_vector(coefficient_vector, long_mode, lot_times=1):
     """
     :param coefficient_vector: np.array, if empty array, it has no coefficient vector -> 1 or -1
     :param long_mode: Boolean, True = long spread, False = short spread
@@ -99,14 +99,15 @@ def get_action(trader, strategy_id, latest_open_prices, latest_quote_exchg, coef
     # Opposite Signal occurred
     elif available_code == 1:
         prices_at = latest_open_prices.iloc[-2, :].values
+        # calculate the expected return and earning
         expected_ret, expected_earning = returnModel.get_value_of_ret_earning(symbols=trader.strategy_symbols[strategy_id],
                                                                               new_values=prices_at,
                                                                               old_values=trader.open_postions[strategy_id]['expected'],
                                                                               q2d_at=trader.q2d_at[strategy_id],
-                                                                              coefficient_vector=coefficient_vector,
                                                                               all_symbols_info=trader.all_symbol_info,
-                                                                              long_mode=long_mode,
-                                                                              lot_times=trader.lot_times[strategy_id])
+                                                                              lot_times=trader.lot_times[strategy_id],
+                                                                              coefficient_vector=coefficient_vector,
+                                                                              long_mode=long_mode)
         print("ret: {}, earning: {}".format(expected_ret, expected_earning))
         print(str(prices_at))
         print("\n----------------------------------{} Spread: Close position----------------------------------".format(mode_txt))
@@ -116,14 +117,15 @@ def get_action(trader, strategy_id, latest_open_prices, latest_quote_exchg, coef
     # Checking if the stop-loss and stop-profit reached
     elif available_code == 2:
         prices_at = latest_open_prices.iloc[-1,:].values
+        # calculate the expected return and earning
         expected_ret, expected_earning = returnModel.get_value_of_ret_earning(symbols=trader.strategy_symbols[strategy_id],
                                                                               new_values=prices_at,
                                                                               old_values=trader.open_postions[strategy_id]['expected'],
                                                                               q2d_at=trader.q2d_at[strategy_id],
-                                                                              coefficient_vector=coefficient_vector,
                                                                               all_symbols_info=trader.all_symbol_info,
-                                                                              long_mode=long_mode,
-                                                                             lot_times=trader.lot_times[strategy_id])
+                                                                              lot_times=trader.lot_times[strategy_id],
+                                                                              coefficient_vector=coefficient_vector,
+                                                                              long_mode=long_mode)
         print("ret: {}, earning: {}".format(expected_ret, expected_earning))
         print(str(prices_at))
         if expected_earning > slsp[1]: # Stop Profit

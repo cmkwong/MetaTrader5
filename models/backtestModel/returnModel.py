@@ -38,7 +38,7 @@ def get_ret_earning(open_prices, exchg_q2d, points_dff_values_df, coefficient_ve
     :param lot_times: lot times
     :return: pd.Series, pd.Series
     """
-    modified_coefficient_vector = coinModel.get_modify_coefficient_vector(coefficient_vector, long_mode, lot_times)
+    modified_coefficient_vector = coinModel.get_modified_coefficient_vector(coefficient_vector, long_mode, lot_times)
 
     # ret
     change = (open_prices - open_prices.shift(1)) / open_prices.shift(1)
@@ -123,7 +123,7 @@ def modify_ret_earning_with_SLSP(ret_series, earning_series, sl, sp):
             sp_buffer -= e
     return ret_mask, earning_mask
 
-def get_value_of_ret_earning(symbols, new_values, old_values, q2d_at, coefficient_vector, all_symbols_info, long_mode, lot_times):
+def get_value_of_ret_earning(symbols, new_values, old_values, q2d_at, all_symbols_info, lot_times, coefficient_vector, long_mode):
     """
     This is calculate the return and earning from raw value (instead of from dataframe)
     :param symbols: [str]
@@ -136,7 +136,7 @@ def get_value_of_ret_earning(symbols, new_values, old_values, q2d_at, coefficien
     :return: float, float: ret, earning
     """
 
-    modified_coefficient_vector = coinModel.get_modify_coefficient_vector(coefficient_vector, long_mode, lot_times)
+    modified_coefficient_vector = coinModel.get_modified_coefficient_vector(coefficient_vector, long_mode, lot_times)
 
     # ret value
     changes = (new_values - old_values) / old_values
