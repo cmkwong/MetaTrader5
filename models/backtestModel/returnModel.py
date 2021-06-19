@@ -95,6 +95,26 @@ def get_accum_ret_earning(ret, earning, signal, slsp=None):
     accum_earning = pd.Series(earning_by_signal.cumsum(), index=signal.index, name="accum_earning")  # Simplify the function note 47a
     return accum_ret, accum_earning
 
+def modify_ret_earning_with_SLSP_late(ret_series, earning_series, sl, sp):
+    """
+    equation see 77ab
+    :param ret_series: pd.Series with numeric index
+    :param earning_series: pd.Series with numeric index
+    :param sl: stop-loss (negative value)
+    :param sp: stop-profit (positive value)
+    :return: ret (np.array), earning (np.array)
+    """
+    total = 0
+    ret_mask, earning_mask = np.ones((len(ret_series),)), np.zeros((len(ret_series),))
+    for i, (r, e) in enumerate(zip(ret_series, earning_series)):
+        total += e
+        ret_mask[i], earning_mask[i] = ret_series[i], earning_series[i]
+        if total >= sp:
+            break
+        elif total <= sl:
+            break
+    return ret_mask, earning_mask
+
 def modify_ret_earning_with_SLSP(ret_series, earning_series, sl, sp):
     """
     equation see 49b

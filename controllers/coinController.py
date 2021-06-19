@@ -15,7 +15,7 @@ data_options = {
     'start': (2015,1,1,0,0),
     'end': (2021,5,5,0,0),    # None = get the most current price
     'symbols': ["AUDJPY", 	"AUDUSD", 	"CADJPY", 	"EURUSD", 	"NZDUSD", 	"USDCAD"],
-    'timeframe': timeModel.get_txt2timeframe('H1'),
+    'timeframe': timeModel.get_txt2timeframe('M5'),
     'timezone': "Hongkong",
     'deposit_currency': 'USD',
     'shuffle': True,
@@ -23,11 +23,11 @@ data_options = {
     'plt_save_path': options['main_path'] + "coin_plt/",
 }
 train_options = {
-    'upper_th': 0.3,
-    'lower_th': -0.3,
+    'upper_th': 0.7,
+    'lower_th': -0.7,
     'z_score_mean_window': 5,
     'z_score_std_window': 20,
-    'slsp': (-100,5000), # None means no constraint
+    'slsp': (-100,2000), # None means no constraint
 }
 
 with mt5Model.Helper():
