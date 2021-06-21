@@ -2,22 +2,22 @@ import pandas as pd
 import numpy as np
 import MetaTrader5 as mt5
 
-def get_points_dff_values_df(symbols, open_prices, all_symbols_info, temp_col_name=None):
+def get_points_dff_values_df(symbols, new_prices, old_prices, all_symbols_info, col_names=None):
     """
     :param symbols: [str]
-    :param open_prices: pd.Dataframe with open price
+    :param new_prices: pd.Dataframe with open price
     :param all_symbols_info: tuple, mt5.symbols_get(). The info including the digits.
-    :param temp_col_name: set None to use the symbols as column names. Otherwise, rename as fake column name
+    :param col_names: list, set None to use the symbols as column names. Otherwise, rename as fake column name
     :return: points_dff_values_df, new pd.Dataframe
     take the difference from open price
     """
-    if type(open_prices) == pd.Series: open_prices = pd.DataFrame(open_prices, index=open_prices.index) # avoid the error of "too many index" if len(symbols) = 1
-    points_dff_values_df = pd.DataFrame(index=open_prices.index)
+    if type(new_prices) == pd.Series: new_prices = pd.DataFrame(new_prices, index=new_prices.index) # avoid the error of "too many index" if len(symbols) = 1
+    points_dff_values_df = pd.DataFrame(index=new_prices.index)
     for c, symbol in enumerate(symbols):
         digits = all_symbols_info[symbol].digits # (note 44b)
-        points_dff_values_df[symbol] = (open_prices.iloc[:,c] - open_prices.iloc[:,c].shift(periods=1)) * (10 ** digits) * all_symbols_info[symbol].pt_value
-    if temp_col_name != None:
-        points_dff_values_df.columns = [temp_col_name] * len(symbols)
+        points_dff_values_df[symbol] = (new_prices.iloc[:, c] - old_prices.iloc[:, c]) * (10 ** digits) * all_symbols_info[symbol].pt_value
+    if col_names != None:
+        points_dff_values_df.columns = col_names
     return points_dff_values_df
 
 def get_points_dff_values(symbols, news, olds, all_symbols_info):

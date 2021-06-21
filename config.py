@@ -13,7 +13,8 @@ TIMEFRAME_DICT = {"M1": mt5.TIMEFRAME_M1, "M2": mt5.TIMEFRAME_M2, "M3": mt5.TIME
 
 # Moving Average
 VERSION = 1
-BROKER_TIME_BETWEEN_UTC = 3 # utc_diff: difference between broker (UTC+3) and UTC = 3 (see note 23a) and (note 56b)
+BROKER_TIME_BETWEEN_UTC = 2 # utc_diff: difference between broker (UTC+3) and UTC = 3 (see note 23a) and (note 56b)
+DOWNLOADED_MIN_DATA_TIME_BETWEEN_UTC = 5 # that is without daylight shift time (UTC+5)
 MAIN_PATH = "/production/docs"
 
 TIMEZONE = "Etc/UTC"
@@ -36,13 +37,6 @@ CSV_FILE_NAME = "T{}_{}_Frame-{}_Long-{}_Limit-{}_From-{}-to-{}_result.csv".form
     str(LIMIT_UNIT),
     START_STRING,
     END_STRING)
-
-CURRENCIES = {
-    'AUDJPY': {
-        'ppt_pos': 100,
-
-    }
-}
 
 # relative path for different computer
 COMP_PATH = (Path(os.getcwd()).parent.parent.parent.parent.parent.absolute())

@@ -79,8 +79,8 @@ def get_coin_NN_plt_datas(Prices, coefficient_vector, upper_th, lower_th, z_scor
     plt_datas[2] = _get_format_plot_data(df=z_df)
 
     # prepare data for graph 4 and 5
-    long_ret, long_earning = returnModel.get_ret_earning(Prices.o, Prices.quote_exchg, Prices.ptDv, coefficient_vector, long_mode=True)
-    short_ret, short_earning = returnModel.get_ret_earning(Prices.o, Prices.quote_exchg, Prices.ptDv, coefficient_vector, long_mode=False)
+    long_ret, long_earning = returnModel.get_ret_earning(Prices.o, Prices.o.shift(1), Prices.quote_exchg, Prices.ptDv, coefficient_vector, long_mode=True)
+    short_ret, short_earning = returnModel.get_ret_earning(Prices.o, Prices.o.shift(1), Prices.quote_exchg, Prices.ptDv, coefficient_vector, long_mode=False)
     long_accum_ret, long_accum_earning = returnModel.get_accum_ret_earning(long_ret, long_earning, long_signal)
     short_accum_ret, short_accum_earning = returnModel.get_accum_ret_earning(short_ret, short_earning, short_signal)
 
@@ -99,8 +99,8 @@ def get_coin_NN_plt_datas(Prices, coefficient_vector, upper_th, lower_th, z_scor
     plt_datas[4] = _get_format_plot_data(df=accum_earning_df, text=text)
 
     # prepare data for graph 6 and 7
-    _, long_earning_list = returnModel.get_ret_earning_list(Prices.o, Prices.quote_exchg, Prices.ptDv,coefficient_vector=coefficient_vector, signal=long_signal, long_mode=True)
-    _, short_earning_list = returnModel.get_ret_earning_list(Prices.o, Prices.quote_exchg, Prices.ptDv,coefficient_vector=coefficient_vector, signal=short_signal, long_mode=False)
+    _, long_earning_list = returnModel.get_ret_earning_list(Prices.o, Prices.o.shift(1), Prices.quote_exchg, Prices.ptDv,coefficient_vector=coefficient_vector, signal=long_signal, long_mode=True)
+    _, short_earning_list = returnModel.get_ret_earning_list(Prices.o, Prices.o.shift(1), Prices.quote_exchg, Prices.ptDv,coefficient_vector=coefficient_vector, signal=short_signal, long_mode=False)
 
     # 6 graph: earning histogram for long
     plt_datas[5] = _get_format_plot_data(hist=pd.Series(long_earning_list, name='long earning'))
@@ -127,8 +127,8 @@ def get_coin_NN_plt_datas(Prices, coefficient_vector, upper_th, lower_th, z_scor
     plt_datas[8] = _get_format_plot_data(df=accum_earning_slsp, text=text)
 
     # prepare data for graph 10 and 11
-    _, long_earning_list = returnModel.get_ret_earning_list(Prices.o, Prices.quote_exchg, Prices.ptDv, coefficient_vector=coefficient_vector, signal=long_signal, long_mode=True, slsp=slsp)
-    _, short_earning_list = returnModel.get_ret_earning_list(Prices.o, Prices.quote_exchg, Prices.ptDv, coefficient_vector=coefficient_vector, signal=short_signal, long_mode=False, slsp=slsp)
+    _, long_earning_list = returnModel.get_ret_earning_list(Prices.o, Prices.o.shift(1), Prices.quote_exchg, Prices.ptDv, coefficient_vector=coefficient_vector, signal=long_signal, long_mode=True, slsp=slsp)
+    _, short_earning_list = returnModel.get_ret_earning_list(Prices.o, Prices.o.shift(1), Prices.quote_exchg, Prices.ptDv, coefficient_vector=coefficient_vector, signal=short_signal, long_mode=False, slsp=slsp)
 
     # 10 graph: earning histogram for long
     plt_datas[9] = _get_format_plot_data(hist=pd.Series(long_earning_list, name='long earning slsp'))

@@ -31,7 +31,7 @@ def get_utc_time_from_broker(time, timezone):
     :param timezone: Check: set(pytz.all_timezones_set) - (Etc/UTC)
     :return: datetime format
     """
-    dt = datetime(time[0], time[1], time[2], hour=time[3], minute=time[4]) + timedelta(hours=2, minutes=0)
+    dt = datetime(time[0], time[1], time[2], hour=time[3], minute=time[4]) + timedelta(hours=config.BROKER_TIME_BETWEEN_UTC, minutes=0)
     utc_time = pytz.timezone(timezone).localize(dt)
     return utc_time
 

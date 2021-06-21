@@ -3,7 +3,7 @@ from production.codes.models import coinModel
 import pandas as pd
 import numpy as np
 
-def get_ret_earning_list(open_prices, exchg_q2d, points_dff_values_df, coefficient_vector, signal, long_mode, slsp=None, lot_times=1):
+def get_ret_earning_list(new_prices, old_prices, exchg_q2d, points_dff_values_df, coefficient_vector, signal, long_mode, slsp=None, lot_times=1):
     """
     :param open_prices: pd.DataFrame
     :param exchg_q2d: pd.DataFrame
@@ -16,7 +16,7 @@ def get_ret_earning_list(open_prices, exchg_q2d, points_dff_values_df, coefficie
     :return: rets (list), earnings (list)
     """
     start_index, end_index = indexModel.get_action_start_end_index(signal.reset_index(drop=True))               # discard the DateTimeIndex
-    ret, earning = get_ret_earning(open_prices, exchg_q2d, points_dff_values_df, coefficient_vector, long_mode, lot_times) # discard the DateTimeIndex
+    ret, earning = get_ret_earning(new_prices, old_prices, exchg_q2d, points_dff_values_df, coefficient_vector, long_mode, lot_times) # discard the DateTimeIndex
     ret.reset_index(drop=True)
     earning.reset_index(drop=True)
     rets, earnings = [], []
@@ -28,7 +28,7 @@ def get_ret_earning_list(open_prices, exchg_q2d, points_dff_values_df, coefficie
         earnings.append(np.sum(earning_series))
     return rets, earnings
 
-def get_ret_earning(open_prices, exchg_q2d, points_dff_values_df, coefficient_vector, long_mode, lot_times=1): # see note (45a)
+def get_ret_earning(new_prices, old_prices, exchg_q2d, points_dff_values_df, coefficient_vector, long_mode, lot_times=1): # see note (45a)
     """
     :param open_prices: pd.DataFrame
     :param exchg_q2d: pd.Dataframe, that exchange the dollar into same deposit assert
@@ -40,11 +40,11 @@ def get_ret_earning(open_prices, exchg_q2d, points_dff_values_df, coefficient_ve
     """
     modified_coefficient_vector = coinModel.get_modified_coefficient_vector(coefficient_vector, long_mode, lot_times)
 
-    # ret
-    change = (open_prices - open_prices.shift(1)) / open_prices.shift(1)
+    # ret:
+    change = (new_prices - old_prices) / old_prices
     olds = np.sum(np.abs(modified_coefficient_vector))
     news = (np.abs(modified_coefficient_vector) + (change * modified_coefficient_vector)).sum(axis=1)
-    ret = pd.Series(news / olds, index=open_prices.index, name="return")
+    ret = pd.Series(news / olds, index=new_prices.index, name="return")
 
     # earning
     weighted_pt_diff = points_dff_values_df.values * modified_coefficient_vector.reshape(-1, )
@@ -95,7 +95,7 @@ def get_accum_ret_earning(ret, earning, signal, slsp=None):
     accum_earning = pd.Series(earning_by_signal.cumsum(), index=signal.index, name="accum_earning")  # Simplify the function note 47a
     return accum_ret, accum_earning
 
-def modify_ret_earning_with_SLSP_late(ret_series, earning_series, sl, sp):
+def modify_ret_earning_with_SLSP_late__disable(ret_series, earning_series, sl, sp):
     """
     equation see 77ab
     :param ret_series: pd.Series with numeric index
@@ -172,18 +172,5 @@ def get_value_of_ret_earning(symbols, new_values, old_values, q2d_at, all_symbol
 
     return ret, earning
 
-# def get_ret_earning_priceAt_after_close_position(open_prices, exchg_q2d, points_dff_values_df, coefficient_vector, signal, long_mode, lot_times):
-#     """
-#     :param open_prices: pd.DataFrame
-#     :param exchg_q2d: pd.DataFrame
-#     :param points_dff_values_df: pd.DataFrame
-#     :param coefficient_vector: np.array
-#     :param signal: pd.Series
-#     :param long_mode: Boolean
-#     :param lot_times: int
-#     :return: ret, earning, prices_at (float, float, np.array)
-#     """
-#     ret_list, earning_list = get_ret_earning_list(open_prices, exchg_q2d, points_dff_values_df, coefficient_vector, signal, long_mode, lot_times=lot_times)
-#     ret, earning = ret_list[-1], earning_list[-1]  # extract the last value in the series
-#     prices_at = list(open_prices.iloc[-1, :])
-#     return ret, earning, prices_at
+def get_ret_earning_OHLC():
+    pass
