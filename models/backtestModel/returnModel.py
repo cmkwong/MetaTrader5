@@ -3,10 +3,23 @@ from production.codes.models import coinModel
 import pandas as pd
 import numpy as np
 
-def get_ret_earning_list(new_prices, old_prices, exchg_q2d, points_dff_values_df, coefficient_vector, signal, long_mode, slsp=None, lot_times=1):
+def modify_exchg_q2d(exchg_q2d, signal):
+    """
+    note 79a
+    :param exchg_q2d: pd.DataFrame
+    :param signal: pd.Series
+    :return:
+    """
+    exchg_q2d_copy = exchg_q2d.copy()
+    start_index, end_index = indexModel.get_action_start_end_index(signal.reset_index(drop=True))
+    for s, e in zip(start_index, end_index):
+        exchg_q2d_copy.iloc[s:e,:] = exchg_q2d.iloc[s,:].values
+    return exchg_q2d_copy
+
+def get_ret_earning_list(new_prices, old_prices, modify_exchg_q2d, points_dff_values_df, coefficient_vector, signal, long_mode, slsp=None, lot_times=1):
     """
     :param open_prices: pd.DataFrame
-    :param exchg_q2d: pd.DataFrame
+    :param modify_exchg_q2d: pd.DataFrame
     :param points_dff_values_df: pd.DataFrame
     :param coefficient_vector: np.array, raw vector with interception(constant value)
     :param signal: pd.Series
@@ -16,7 +29,7 @@ def get_ret_earning_list(new_prices, old_prices, exchg_q2d, points_dff_values_df
     :return: rets (list), earnings (list)
     """
     start_index, end_index = indexModel.get_action_start_end_index(signal.reset_index(drop=True))               # discard the DateTimeIndex
-    ret, earning = get_ret_earning(new_prices, old_prices, exchg_q2d, points_dff_values_df, coefficient_vector, long_mode, lot_times) # discard the DateTimeIndex
+    ret, earning = get_ret_earning(new_prices, old_prices, modify_exchg_q2d, points_dff_values_df, coefficient_vector, long_mode, lot_times) # discard the DateTimeIndex
     ret.reset_index(drop=True)
     earning.reset_index(drop=True)
     rets, earnings = [], []
@@ -28,10 +41,10 @@ def get_ret_earning_list(new_prices, old_prices, exchg_q2d, points_dff_values_df
         earnings.append(np.sum(earning_series))
     return rets, earnings
 
-def get_ret_earning(new_prices, old_prices, exchg_q2d, points_dff_values_df, coefficient_vector, long_mode, lot_times=1): # see note (45a)
+def get_ret_earning(new_prices, old_prices, modify_exchg_q2d, points_dff_values_df, coefficient_vector, long_mode, lot_times=1): # see note (45a)
     """
     :param open_prices: pd.DataFrame
-    :param exchg_q2d: pd.Dataframe, that exchange the dollar into same deposit assert
+    :param modify_exchg_q2d: pd.Dataframe, that exchange the dollar into same deposit assert
     :param points_dff_values_df: points the change with respect to quote currency
     :param coefficient_vector: np.array
     :param long_mode: Boolean
@@ -40,7 +53,7 @@ def get_ret_earning(new_prices, old_prices, exchg_q2d, points_dff_values_df, coe
     """
     modified_coefficient_vector = coinModel.get_modified_coefficient_vector(coefficient_vector, long_mode, lot_times)
 
-    # ret:
+    # ret
     change = (new_prices - old_prices) / old_prices
     olds = np.sum(np.abs(modified_coefficient_vector))
     news = (np.abs(modified_coefficient_vector) + (change * modified_coefficient_vector)).sum(axis=1)
@@ -49,7 +62,7 @@ def get_ret_earning(new_prices, old_prices, exchg_q2d, points_dff_values_df, coe
     # earning
     weighted_pt_diff = points_dff_values_df.values * modified_coefficient_vector.reshape(-1, )
     # calculate the price in required deposit dollar
-    earning = pd.Series(np.sum(exchg_q2d.shift(1).values * weighted_pt_diff, axis=1), index=exchg_q2d.index, name="earning")  # see note 34b and 35 why shift(1)
+    earning = pd.Series(np.sum(modify_exchg_q2d.shift(1).values * weighted_pt_diff, axis=1), index=modify_exchg_q2d.index, name="earning")  # see note 34b and 35 why shift(1)
 
     return ret, earning
 
@@ -70,14 +83,14 @@ def get_ret_earning_by_signal(ret, earning, signal, slsp=None):
             ret_by_signal.iloc[s:e], earning_by_signal.iloc[s:e] = modify_ret_earning_with_SLSP(ret.iloc[s:e], earning.iloc[s:e], slsp[0], slsp[1])
     return ret_by_signal, earning_by_signal
 
-def get_total_ret_earning(rets, earnings):
+def get_total_ret_earning(ret_list, earning_list):
     """
-    :param rets: return list
-    :param earnings: earning list
+    :param ret_list: return list
+    :param earning_list: earning list
     :return: float, float
     """
     total_ret, total_earning = 1, 0
-    for ret, earning in zip(rets, earnings):
+    for ret, earning in zip(ret_list, earning_list):
         total_ret *= ret
         total_earning += earning
     return total_ret, total_earning
