@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from production.codes.models import coinModel, maModel, timeModel
 from production.codes.utils import maths
-from production.codes.models.backtestModel import returnModel, signalModel, statModel
+from production.codes.models.backtestModel import returnModel, signalModel, statModel, exchgModel
 
 def _get_format_plot_data(df=None, hist=None, text=None, equation=None, height=2):
     """
@@ -62,8 +62,8 @@ def get_coin_NN_plt_datas(Prices, coefficient_vector, upper_th, lower_th, z_scor
     long_signal, short_signal = signalModel.get_coin_NN_signal(coin_data, upper_th, lower_th)
     stats = statModel.get_stats(Prices, long_signal, short_signal, coefficient_vector)
     stats_slsp = statModel.get_stats(Prices, long_signal, short_signal, coefficient_vector, slsp)
-    long_modify_exchg_q2d = returnModel.modify_exchg_q2d(Prices.quote_exchg, long_signal)
-    short_modify_exchg_q2d = returnModel.modify_exchg_q2d(Prices.quote_exchg, short_signal)
+    long_modify_exchg_q2d = exchgModel.modify_exchg_q2d(Prices.quote_exchg, long_signal)
+    short_modify_exchg_q2d = exchgModel.modify_exchg_q2d(Prices.quote_exchg, short_signal)
     plt_datas = {}
 
     # 1 graph: real and predict
@@ -162,8 +162,8 @@ def get_ma_plt_datas(Prices, long_param, short_param, limit_unit):
     short_ma_data = maModel.get_ma_data(Prices.c, short_param['fast'], short_param['slow'])
     long_signal, short_signal = signalModel.get_movingAverage_signal(long_ma_data, short_ma_data, limit_unit=limit_unit)
     stats = statModel.get_stats(Prices, long_signal, short_signal, coefficient_vector=np.array([]))
-    long_modify_exchg_q2d = returnModel.modify_exchg_q2d(Prices.quote_exchg, long_signal)
-    short_modify_exchg_q2d = returnModel.modify_exchg_q2d(Prices.quote_exchg, short_signal)
+    long_modify_exchg_q2d = exchgModel.modify_exchg_q2d(Prices.quote_exchg, long_signal)
+    short_modify_exchg_q2d = exchgModel.modify_exchg_q2d(Prices.quote_exchg, short_signal)
     plt_datas = {}
 
     # 1 graph: close price, fast ma,  slow ma (long)

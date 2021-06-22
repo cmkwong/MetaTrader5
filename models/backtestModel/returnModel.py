@@ -3,19 +3,6 @@ from production.codes.models import coinModel
 import pandas as pd
 import numpy as np
 
-def modify_exchg_q2d(exchg_q2d, signal):
-    """
-    note 79a
-    :param exchg_q2d: pd.DataFrame
-    :param signal: pd.Series
-    :return:
-    """
-    exchg_q2d_copy = exchg_q2d.copy()
-    start_index, end_index = indexModel.get_action_start_end_index(signal.reset_index(drop=True))
-    for s, e in zip(start_index, end_index):
-        exchg_q2d_copy.iloc[s:e,:] = exchg_q2d.iloc[s,:].values
-    return exchg_q2d_copy
-
 def get_ret_earning_list(new_prices, old_prices, modify_exchg_q2d, points_dff_values_df, coefficient_vector, signal, long_mode, slsp=None, lot_times=1):
     """
     :param open_prices: pd.DataFrame

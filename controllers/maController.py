@@ -1,5 +1,6 @@
 from production.codes import config
-from production.codes.models import mt5Model, plotModel, priceModel, timeModel
+from production.codes.models import mt5Model, plotModel, timeModel
+from production.codes.models.backtestModel import priceModel
 from production.codes.views import plotView
 from datetime import datetime
 now = datetime.now()

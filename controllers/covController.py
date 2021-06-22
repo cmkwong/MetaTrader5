@@ -1,4 +1,5 @@
-from production.codes.models import mt5Model, priceModel, timeModel
+from production.codes.models import mt5Model, timeModel
+from production.codes.models.backtestModel import priceModel
 from production.codes.models import covModel
 
 data_options = {
