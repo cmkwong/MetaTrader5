@@ -1,7 +1,8 @@
 from production.codes import config
-from production.codes.models import mt5Model, plotModel, coinModel, timeModel
+from production.codes.models import mt5Model, plotModel, coinModel, timeModel, fileModel
 from production.codes.models.backtestModel import priceModel
 from production.codes.views import plotView
+import os
 
 from datetime import datetime
 now = datetime.now()
@@ -21,7 +22,9 @@ data_options = {
     'deposit_currency': 'USD',
     'shuffle': True,
     'trainTestSplit': 0.7,
-    'plt_save_path': options['main_path'] + "coin_plt/",
+    'plt_save_path': os.path.join(options['main_path'], "coin_plt"),
+    'debug_path': os.path.join(options['main_path'], "debug"),
+    'extra_path': os.path.join(options['main_path'], "min_data//extra_data"),
 }
 train_options = {
     'upper_th': 0.3,
@@ -42,12 +45,15 @@ with mt5Model.Helper():
     # get Linear Regression coefficients
     coefficient_vector = coinModel.get_coefficient_vector(Train_Prices.c.values[:, :-1], Train_Prices.c.values[:, -1])
 
+    fileModel.clear_files(data_options['extra_path']) # clear the files
     train_plt_datas = plotModel.get_coin_NN_plt_datas(Train_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'],
-                                                      train_options['z_score_mean_window'], train_options['z_score_std_window'],
-                                                      train_options['slsp'], debug_file='{}_train.csv'.format(options['dt']), debug=options['debug'])
+                                                      train_options['z_score_mean_window'], train_options['z_score_std_window'], train_options['slsp'],
+                                                      extra_path=data_options['extra_path'], extra_file='{}_train.csv'.format(options['dt']),
+                                                      debug_path=data_options['debug_path'], debug_file='{}_train.csv'.format(options['dt']), debug=options['debug'])
     test_plt_datas = plotModel.get_coin_NN_plt_datas(Test_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'],
                                                      train_options['z_score_mean_window'], train_options['z_score_std_window'], train_options['slsp'],
-                                                     debug_file='{}_test.csv'.format(options['dt']), debug=options['debug'])
+                                                     extra_path=data_options['extra_path'], extra_file='{}_test.csv'.format(options['dt']),
+                                                     debug_path=data_options['debug_path'], debug_file='{}_test.csv'.format(options['dt']), debug=options['debug'])
 
     # save the plot
     title = plotModel.get_plot_title(data_options['start'], data_options['end'], timeModel.get_timeframe2txt(data_options['timeframe']))

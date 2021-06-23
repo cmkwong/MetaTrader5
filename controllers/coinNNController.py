@@ -1,9 +1,10 @@
-from production.codes.models import mt5Model, batchModel, coinNNModel, plotModel, timeModel
+from production.codes.models import mt5Model, batchModel, coinNNModel, plotModel, timeModel, fileModel
 from production.codes.models.backtestModel import priceModel
 from production.codes.views import printStat, plotView
 from production.codes import config
 from torch import optim
 from torch.utils.tensorboard import SummaryWriter
+import os
 
 from datetime import datetime
 now = datetime.now()
@@ -27,7 +28,8 @@ data_options = {
     'batch_size': 32,
     'test_epiosdes': 5,
     'check_price_plot': 5,
-    'price_plt_save_path': options['main_path'] + "coin_NN_plt/",
+    'plt_save_path': os.path.join(options['main_path'], "coin_NN_plt"),
+    'extra_path': os.path.join(options['main_path'], "min_data//extra_data"),
     'tensorboard_save_path': options['main_path'] + "runs/",
 }
 Model_options = {
@@ -46,7 +48,8 @@ train_options = {
     'upper_th': 0.3,
     'lower_th': -0.3,
     'z_score_mean_window': 3,
-    'z_score_std_window': 6
+    'z_score_std_window': 6,
+    'slsp': (-100,2000), # None means no constraint
 }
 # tensorboard --logdir C:\Users\Chris\projects\210215_mt5\production\docs\1\runs --host localhost
 
@@ -80,12 +83,18 @@ with mt5Model.Helper():
         if episode % data_options['check_price_plot'] == 0:
 
             coefficient_vector = coinNNModel.get_coefficient_vector(myModel) # coefficient_vector got from neural network
-            train_plt_datas = plotModel.get_coin_NN_plt_datas(Train_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'], train_options['z_score_mean_window'], train_options['z_score_std_window'])
-            test_plt_datas = plotModel.get_coin_NN_plt_datas(Test_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'], train_options['z_score_mean_window'], train_options['z_score_std_window'])
+
+            fileModel.clear_files(data_options['extra_path'])  # clear the files
+            train_plt_datas = plotModel.get_coin_NN_plt_datas(Train_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'],
+                                                              train_options['z_score_mean_window'], train_options['z_score_std_window'], train_options['slsp'],
+                                                              extra_path=data_options['extra_path'], extra_file='{}_train.csv'.format(options['dt']))
+            test_plt_datas = plotModel.get_coin_NN_plt_datas(Test_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'],
+                                                             train_options['z_score_mean_window'], train_options['z_score_std_window'], train_options['slsp'],
+                                                             extra_path=data_options['extra_path'], extra_file='{}_test.csv'.format(options['dt']))
 
             title = plotModel.get_plot_title(data_options['start'], data_options['end'], timeModel.get_timeframe2txt(data_options['timeframe']))
             plotView.save_plot(train_plt_datas, test_plt_datas, data_options['symbols'], episode,
-                               data_options['price_plt_save_path'], options['dt'], dpi=500, linewidth=0.2,
+                               data_options['plt_save_path'], options['dt'], dpi=500, linewidth=0.2,
                                title=title, figure_size=(56, 24))
 
         episode += 1

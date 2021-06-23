@@ -1,6 +1,9 @@
 import pandas as pd
 import numpy as np
-from production.codes.models import coinModel, maModel, timeModel
+import collections
+import os
+
+from production.codes.models import coinModel, maModel, timeModel, fileModel
 from production.codes.utils import maths
 from production.codes.models.backtestModel import returnModel, signalModel, statModel, exchgModel
 
@@ -44,7 +47,9 @@ def get_coin_NN_plot_image_name(dt_str, symbols, episode):
     name = "{}-{}-episode-{}.jpg".format(dt_str, episode, symbols_str)
     return name
 
-def get_coin_NN_plt_datas(Prices, coefficient_vector, upper_th, lower_th, z_score_mean_window, z_score_std_window, slsp=(0,0), debug_file='debug.csv', debug=False):
+def get_coin_NN_plt_datas(Prices, coefficient_vector, upper_th, lower_th, z_score_mean_window, z_score_std_window, slsp=(0,0),
+                          extra_path='', extra_file='extra.csv',
+                          debug_path='', debug_file='debug.csv', debug=False):
     """
     :param Prices: collections.nametuple object
     :param coefficient_vector: np.array
@@ -58,6 +63,7 @@ def get_coin_NN_plt_datas(Prices, coefficient_vector, upper_th, lower_th, z_scor
     :return: nested dictionary
     """
     # prepare
+    symbols = list(Prices.c.columns)
     coin_data = coinModel.get_coin_data(Prices.c, coefficient_vector, z_score_mean_window, z_score_std_window) # get_coin_data() can work for coinNN and coin
     long_signal, short_signal = signalModel.get_coin_NN_signal(coin_data, upper_th, lower_th)
     stats = statModel.get_stats(Prices, long_signal, short_signal, coefficient_vector)
@@ -138,6 +144,9 @@ def get_coin_NN_plt_datas(Prices, coefficient_vector, upper_th, lower_th, z_scor
     # 11 graph: earning histogram for short
     plt_datas[10] = _get_format_plot_data(hist=pd.Series(short_earning_list, name='short earning slsp'))
 
+    # write out useful data as CSV (used for higher resolution data)
+    fileModel.write_min_extra_info(extra_path, extra_file, symbols, long_signal, short_signal, long_modify_exchg_q2d, short_modify_exchg_q2d)
+
     # ------------ DEBUG -------------
     if debug:
         df_debug = pd.DataFrame(index=Prices.c.index)
@@ -146,7 +155,7 @@ def get_coin_NN_plt_datas(Prices, coefficient_vector, upper_th, lower_th, z_scor
                               long_earning, short_earning, accum_earning_df,
                               long_accum_ret_slsp, short_accum_ret_slsp,
                               long_accum_earning_slsp, short_accum_earning_slsp], axis=1)
-        df_debug.to_csv('C://Users//Chris//projects//210215_mt5//production//docs//1//debug//{}'.format(debug_file))
+        df_debug.to_csv(os.path.join(debug_path, debug_file))
 
     return plt_datas
 

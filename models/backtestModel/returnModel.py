@@ -95,7 +95,7 @@ def get_accum_ret_earning(ret, earning, signal, slsp=None):
     accum_earning = pd.Series(earning_by_signal.cumsum(), index=signal.index, name="accum_earning")  # Simplify the function note 47a
     return accum_ret, accum_earning
 
-def modify_ret_earning_with_SLSP_late__disable(ret_series, earning_series, sl, sp):
+def modify_ret_earning_with_SLSP_late(ret_series, earning_series, sl, sp):
     """
     equation see 77ab
     :param ret_series: pd.Series with numeric index
@@ -171,6 +171,3 @@ def get_value_of_ret_earning(symbols, new_values, old_values, q2d_at, all_symbol
     earning = np.sum(q2d_at * weighted_pt_diff)
 
     return ret, earning
-
-def get_ret_earning_OHLC():
-    pass
