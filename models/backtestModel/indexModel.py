@@ -20,7 +20,7 @@ def get_close_index(int_signal):
 
 def get_signal_start_index(int_signal):
     """
-    :param int_signal: pd.Series, index cannot be Timestamp
+    :param int_signal: pd.Series, index can be Timestamp
     :return: list
     """
     start_index = []
@@ -29,7 +29,7 @@ def get_signal_start_index(int_signal):
 
 def get_signal_end_index(int_signal):
     """
-    :param int_signal: pd.Series, index cannot be Timestamp
+    :param int_signal: pd.Series, index can be Timestamp
     :return: list
     """
     start_index = []

@@ -18,6 +18,8 @@ def get_points_dff_values_df(symbols, new_prices, old_prices, all_symbols_info, 
         points_dff_values_df[symbol] = (new_prices.iloc[:, c] - old_prices.iloc[:, c]) * (10 ** digits) * all_symbols_info[symbol].pt_value
     if col_names != None:
         points_dff_values_df.columns = col_names
+    elif col_names == None:
+        points_dff_values_df.columns = symbols
     return points_dff_values_df
 
 def get_points_dff_values(symbols, news, olds, all_symbols_info):

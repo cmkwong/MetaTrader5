@@ -5,7 +5,8 @@ import numpy as np
 
 def get_ret_earning_list(new_prices, old_prices, modify_exchg_q2d, points_dff_values_df, coefficient_vector, signal, long_mode, slsp=None, lot_times=1):
     """
-    :param open_prices: pd.DataFrame
+    :param new_prices: pd.DataFrame
+    :param old_prices: pd.DataFrame
     :param modify_exchg_q2d: pd.DataFrame
     :param points_dff_values_df: pd.DataFrame
     :param coefficient_vector: np.array, raw vector with interception(constant value)
@@ -28,9 +29,10 @@ def get_ret_earning_list(new_prices, old_prices, modify_exchg_q2d, points_dff_va
         earnings.append(np.sum(earning_series))
     return rets, earnings
 
-def get_ret_earning(new_prices, old_prices, modify_exchg_q2d, points_dff_values_df, coefficient_vector, long_mode, lot_times=1): # see note (45a)
+def get_ret_earning(new_prices, old_prices, modify_exchg_q2d, points_dff_values_df, coefficient_vector, long_mode, lot_times=1, shift_offset=(1, 'H')): # see note (45a)
     """
-    :param open_prices: pd.DataFrame
+    :param new_prices: pd.DataFrame
+    :param old_prices: pd.DataFrame
     :param modify_exchg_q2d: pd.Dataframe, that exchange the dollar into same deposit assert
     :param points_dff_values_df: points the change with respect to quote currency
     :param coefficient_vector: np.array
@@ -49,7 +51,7 @@ def get_ret_earning(new_prices, old_prices, modify_exchg_q2d, points_dff_values_
     # earning
     weighted_pt_diff = points_dff_values_df.values * modified_coefficient_vector.reshape(-1, )
     # calculate the price in required deposit dollar
-    earning = pd.Series(np.sum(modify_exchg_q2d.shift(1).values * weighted_pt_diff, axis=1), index=modify_exchg_q2d.index, name="earning")  # see note 34b and 35 why shift(1)
+    earning = pd.Series(np.sum(modify_exchg_q2d.shift(shift_offset[0], freq=shift_offset[1]).values * weighted_pt_diff, axis=1), index=modify_exchg_q2d.index, name="earning")  # see note 34b and 35 why shift(1)
 
     return ret, earning
 

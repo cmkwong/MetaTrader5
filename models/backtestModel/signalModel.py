@@ -1,5 +1,6 @@
 from production.codes.models.backtestModel import techModel, indexModel
 import pandas as pd
+from datetime import timedelta
 
 def get_latest_signal(signal, latest_index):
     """
@@ -124,3 +125,28 @@ def get_coin_NN_signal(coin_NN_data, upper_th, lower_th, discard=True):
         long_signal = discard_head_tail_signal(long_signal) # see 40c
         short_signal = discard_head_tail_signal(short_signal)
     return long_signal, short_signal
+
+def get_resoluted_signal(signal, index):
+    """
+    :param signal: pd.Series
+    :param index: pd.DateTimeIndex / str in time format
+    :param freq_step: the time step in hour
+    :return:
+    """
+    # resume to datetime index
+    signal.index = pd.to_datetime(signal.index)
+    index = pd.to_datetime(index)
+
+    # get int signal and its start_indexes and end_indexes
+    int_signal = get_int_signal(signal)
+    start_indexes = indexModel.get_signal_start_index(int_signal)
+    end_indexes = indexModel.get_signal_end_index(int_signal)
+    # start_indexes = pd.to_datetime(signal[signal==True].index)
+    # end_indexes = pd.to_datetime(signal[signal==True].index).shift(freq_step, freq='H').shift(-1, freq='min') # note 82e
+
+    # init the empty signal series
+    resoluted_signal = pd.Series(False, index=index)
+    for s, e in zip(start_indexes, end_indexes):
+        e = e + timedelta(minutes=-1) # note 82e, use the timedelta to reduce 1 minute instead of shift()
+        resoluted_signal.loc[s:e] = True
+    return resoluted_signal

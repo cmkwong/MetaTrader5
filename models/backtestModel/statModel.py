@@ -35,7 +35,7 @@ def get_stat(Prices, signal, coefficient_vector, long_mode=True, slsp=None):
     """
     stat = {}
     if signal.sum() != 0:
-        modify_exchg_q2d = exchgModel.modify_exchg_q2d(Prices.quote_exchg, signal)
+        modify_exchg_q2d = exchgModel.modify_exchg(Prices.quote_exchg, signal)
         ret_list, earning_list = returnModel.get_ret_earning_list(Prices.o, Prices.o.shift(1), modify_exchg_q2d, Prices.ptDv, coefficient_vector, signal, long_mode, slsp)
         total_ret, total_earning = returnModel.get_total_ret_earning(ret_list, earning_list)
         # earning

@@ -1,17 +1,43 @@
-from production.codes.models.backtestModel import indexModel, priceModel
+from production.codes.models.backtestModel import indexModel, priceModel, signalModel
+import pandas as pd
+from datetime import timedelta
 
-def modify_exchg_q2d(exchg_q2d, signal):
+def get_resoluted_exchg(exchg, signal, index):
+    """
+    :param exchg: pd.DataFrame
+    :param signal: pd.Series
+    :param index: pd.DateTimeIndex / str in time format
+    :return:
+    """
+    # resume to datetime index
+    signal.index = pd.to_datetime(signal.index)
+    exchg.index = pd.to_datetime(exchg.index)
+    index = pd.to_datetime(index)
+
+    # get int signal and its start_indexes and end_indexes
+    int_signal = signalModel.get_int_signal(signal)
+    start_indexes = indexModel.get_signal_start_index(int_signal)
+    end_indexes = indexModel.get_signal_end_index(int_signal)
+
+    # init the empty signal series
+    resoluted_exchg = pd.DataFrame(1.0, columns=exchg.columns, index=index)
+    for s, e in zip(start_indexes, end_indexes):
+        e = e + timedelta(minutes=-1) # note 82e, use the timedelta instead of shift()
+        resoluted_exchg.loc[s:e,:] = exchg.loc[s,:].values
+    return resoluted_exchg
+
+def modify_exchg(exchg, signal):
     """
     note 79a
-    :param exchg_q2d: pd.DataFrame
+    :param exchg: pd.DataFrame
     :param signal: pd.Series
     :return:
     """
-    exchg_q2d_copy = exchg_q2d.copy()
+    exchg_copy = exchg.copy()
     start_index, end_index = indexModel.get_action_start_end_index(signal.reset_index(drop=True))
     for s, e in zip(start_index, end_index):
-        exchg_q2d_copy.iloc[s:e,:] = exchg_q2d.iloc[s,:].values
-    return exchg_q2d_copy
+        exchg_copy.iloc[s:e,:] = exchg.iloc[s,:].values
+    return exchg_copy
 
 def get_exchange_symbols(symbols, all_symbols_info, deposit_currency='USD', exchg_type='q2d'):
     """
@@ -96,8 +122,6 @@ def get_exchange_df(symbols, all_symbols_info, deposit_currency, timeframe, time
     """
     exchange_symbols = get_exchange_symbols(symbols, all_symbols_info, deposit_currency, exchg_type=exchg_type)
     exchange_rate_df = priceModel._get_prices_df(exchange_symbols, timeframe, timezone, start, end, ohlc=ohlc, count=count)  # just need the open price
-    exchange_rate_df, modified_names = modify_exchange_rate(symbols, exchange_symbols, exchange_rate_df,
-                                                                    deposit_currency, exchg_type=exchg_type)
+    exchange_rate_df, modified_names = modify_exchange_rate(symbols, exchange_symbols, exchange_rate_df, deposit_currency, exchg_type=exchg_type)
     exchange_rate_df.columns = col_names  # assign temp name
     return exchange_rate_df, modified_names
-
