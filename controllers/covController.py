@@ -6,7 +6,7 @@ data_options = {
     'start': (2010, 1, 1, 0, 0),
     'end': (2020, 12, 30, 0, 0),
     'symbols': ["EURUSD", "GBPUSD", "USDCHF", "USDJPY", "EURCAD","USDCAD", "AUDUSD", "EURGBP", "NZDUSD",
-               "EURNOK", "EURSEK", "AUDJPY", "EURSGD", "GBPSGD", "GBPAUD", "CADJPY"],
+                "AUDJPY", "GBPAUD", "CADJPY"],
     'timeframe': timeModel.get_txt2timeframe('H1'),
     'timezone': "Hongkong",
     'deposit_currency': 'USD',
@@ -14,9 +14,17 @@ data_options = {
 # config.START, config.END, symbols, config.TIMEFRAME, config.TIMEZONE
 def get_cor_matrix(symbols, start, end, timeframe, timezone, deposit_currency):
     symbols = sorted(symbols, reverse=False)# sorting the symbols
-    print(symbols)
-    Prices = priceModel.get_Prices(symbols, timeframe, timezone, start, end=end, ohlc='1111', deposit_currency=deposit_currency)
-    price_matrix = Prices.c.values
+
+    # check if symbols exist, note 83h
+    all_symbols_info = mt5Model.get_all_symbols_info()
+    for symbol in data_options['symbols']:
+        try:
+            _ = all_symbols_info[symbol]
+        except KeyError:
+            raise Exception("The {} is not provided in this broker.".format(symbol))
+
+    Prices = priceModel.get_Prices(symbols, timeframe, timezone, start, end=end, deposit_currency=deposit_currency)
+    price_matrix = Prices.cc.values # note 83i
     cor_matrix = covModel.corela_matrix(price_matrix)
     cor_table = covModel.corela_table(cor_matrix, symbols)
     return cor_matrix, cor_table

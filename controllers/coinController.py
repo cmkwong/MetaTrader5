@@ -16,7 +16,7 @@ options = {
 data_options = {
     'start': (2015,1,1,0,0),
     'end': (2021,5,5,0,0),    # None = get the most current price
-    'symbols': ["AUDJPY", 	"AUDUSD", 	"CADJPY", 	"EURUSD", 	"NZDUSD", 	"USDCAD"],
+    'symbols': ["CADJPY", "USDCAD","AUDJPY", "AUDUSD"],
     'timeframe': timeModel.get_txt2timeframe('H1'),
     'timezone': "Hongkong",
     'deposit_currency': 'USD',
@@ -27,8 +27,8 @@ data_options = {
     'extra_path': os.path.join(options['main_path'], "min_data//extra_data"),
 }
 train_options = {
-    'upper_th': 0.3,
-    'lower_th': -0.3,
+    'upper_th': -1.5,
+    'lower_th': -2.5,
     'z_score_mean_window': 5,
     'z_score_std_window': 20,
     'slsp': (-100,2000), # None means no constraint
@@ -36,14 +36,13 @@ train_options = {
 
 with mt5Model.Helper():
 
-    Prices = priceModel.get_Prices(data_options['symbols'], data_options['timeframe'], data_options['timezone'],
-                                   data_options['start'], data_options['end'], '1111', deposit_currency=data_options['deposit_currency'])
+    Prices = priceModel.get_Prices(data_options['symbols'], data_options['timeframe'], data_options['timezone'], data_options['start'], data_options['end'], deposit_currency=data_options['deposit_currency'])
 
     # split into train set and test set
     Train_Prices, Test_Prices = priceModel.split_Prices(Prices, percentage=data_options['trainTestSplit'])
 
-    # get Linear Regression coefficients
-    coefficient_vector = coinModel.get_coefficient_vector(Train_Prices.c.values[:, :-1], Train_Prices.c.values[:, -1])
+    # get Linear Regression coefficients (independent variable and dependent variable)
+    coefficient_vector = coinModel.get_coefficient_vector(Train_Prices.cc.values[:, :-1], Train_Prices.cc.values[:, -1])
 
     fileModel.clear_files(data_options['extra_path']) # clear the files
     train_plt_datas = plotModel.get_coin_NN_plt_datas(Train_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'],

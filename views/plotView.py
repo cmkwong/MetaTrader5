@@ -1,3 +1,4 @@
+import os
 import seaborn as sns
 import pandas as pd
 from matplotlib import pyplot as plt
@@ -75,7 +76,7 @@ def save_plot(train_plt_data, test_plt_data, symbols, episode, saved_path, dt_st
 
         plt.legend()
 
-    full_path = saved_path + plotModel.get_coin_NN_plot_image_name(dt_str, symbols, episode)
+    full_path = os.path.join(saved_path, plotModel.get_coin_NN_plot_image_name(dt_str, symbols, episode))
     plt.savefig(full_path)  # save in higher resolution image
     plt.clf()                                                                              # clear the plot data
 

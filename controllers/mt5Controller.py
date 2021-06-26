@@ -51,7 +51,7 @@ with mt5Model.Trader(dt_string=options['dt'], history_path=trader_options["histo
             continue
 
         # calculate for checking if signal occur
-        coin_data = coinModel.get_coin_data(Prices.c, coin_option['coefficient_vector'], coin_option['z_score_mean_window'], coin_option['z_score_std_window'])
+        coin_data = coinModel.get_coin_data(Prices.cc, coin_option['coefficient_vector'], coin_option['z_score_mean_window'], coin_option['z_score_std_window'])
 
         # calculate for checking for stop-loss and stop-profit reached
         long_signal, short_signal = signalModel.get_coin_NN_signal(coin_data, coin_option['upper_th'], coin_option['lower_th'], discard=False)

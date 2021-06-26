@@ -80,7 +80,7 @@ def _get_prices_df(symbols, timeframe, timezone, start=None, end=None, ohlc='111
             prices_df = pd.concat([prices_df, price], axis=1, join='inner')
     return prices_df
 
-def get_Prices(symbols, timeframe, timezone, start=None, end=None, ohlc='1111', count=10, deposit_currency='USD'):
+def get_Prices(symbols, timeframe, timezone, start=None, end=None, count=10, deposit_currency='USD'):
     """
     :param count:
     :param symbols: [str]
@@ -88,12 +88,15 @@ def get_Prices(symbols, timeframe, timezone, start=None, end=None, ohlc='1111', 
     :param timezone: str "Hongkong"
     :param start: (2010,1,1,0,0)
     :param end:  (2020,1,1,0,0)
-    :return: collection.nametuple - ohlc. They are pd.Dataframe
+    :return: collection.nametuple. They are pd.Dataframe
     """
     all_symbols_info = mt5Model.get_all_symbols_info()
 
-    Prices_collection = collections.namedtuple("Prices_collection", ['o','h','l','c','ptDv','quote_exchg','base_exchg'])
-    prices_df = _get_prices_df(symbols, timeframe, timezone, start, end, ohlc, count)
+    Prices_collection = collections.namedtuple("Prices_collection", ['o','c', 'cc', 'ptDv','quote_exchg','base_exchg'])
+    prices_df = _get_prices_df(symbols, timeframe, timezone, start, end, '1001', count)
+
+    # get the change of close price
+    changes = ((prices_df['close'] - prices_df['close'].shift(1)) / prices_df['close'].shift(1)).fillna(0.0)
 
     # get point diff values
     diff_name = "ptDv"
@@ -112,9 +115,8 @@ def get_Prices(symbols, timeframe, timezone, start=None, end=None, ohlc='1111', 
 
     # assign the column into each collection tuple
     Prices = Prices_collection(o=pd.DataFrame(prices_df.loc[:,'open'], index=prices_df.index),
-                               h=pd.DataFrame(prices_df.loc[:,'high'], index=prices_df.index),
-                               l=pd.DataFrame(prices_df.loc[:,'low'], index=prices_df.index),
                                c=pd.DataFrame(prices_df.loc[:,'close'], index=prices_df.index),
+                               cc=pd.DataFrame(changes, index=prices_df.index),
                                ptDv=pd.DataFrame(prices_df.loc[:,diff_name], index=prices_df.index),
                                quote_exchg=pd.DataFrame(prices_df.loc[:,q2d_name], index=prices_df.index),
                                base_exchg=pd.DataFrame(prices_df.loc[:,b2d_name], index=prices_df.index))
@@ -132,18 +134,22 @@ def get_Prices(symbols, timeframe, timezone, start=None, end=None, ohlc='1111', 
 
 def get_latest_Prices(all_symbols_info, symbols, timeframe, timezone, count=10, deposit_currency='USD'):
 
-    Prices_collection = collections.namedtuple("Prices_collection", ['c', 'l_o', 'l_ptDv', 'l_quote_exchg'])
+    Prices_collection = collections.namedtuple("Prices_collection", ['c', 'cc', 'l_o', 'l_ptDv', 'l_quote_exchg'])
 
     # get latest open prices and close prices
     prices_df = _get_prices_df(symbols, timeframe, timezone, ohlc='1001', count=count)
     if len(prices_df) != count:  # note 63a
         print("prices_df length of Data is not equal to count")
         return False
+    # concat the latest open prices and close prices
     new_index = prices_df.loc[:, 'open'].index.union([timeModel.get_current_utc_time_from_broker(timezone)]) # plus 1 length of data
     latest_open_price_arr = np.concatenate((prices_df['open'].values, prices_df['close'].values[-1,:].reshape(1,-1)), axis=0)
     latest_open_prices_df = pd.DataFrame(latest_open_price_arr, columns=['open'] * len(symbols), index=new_index)
     latest_close_price_arr = np.concatenate((prices_df['close'].values, prices_df['close'].values[-1, :].reshape(1, -1)), axis=0)
     latest_close_prices_df = pd.DataFrame(latest_close_price_arr, columns=['close'] * len(symbols), index=new_index)
+    # calculate the change of close price (with latest close prices)
+    latest_change_close_prices = ((latest_close_prices_df - latest_close_prices_df.shift(1)) / latest_close_prices_df.shift(1)).fillna(0.0)
+    latest_change_close_prices_df = pd.DataFrame(latest_change_close_prices, columns=['change'] * len(symbols), index=new_index)
 
     # get point diff values with latest value
     diff_name = "ptDv"
@@ -160,9 +166,11 @@ def get_latest_Prices(all_symbols_info, symbols, timeframe, timezone, count=10, 
     q2d_exchange_rate_arr = np.concatenate((q2d_exchange_rate_df_o.values, q2d_exchange_rate_df_c.values[-1, :].reshape(1, -1)), axis=0)
     q2d_exchange_rate_df = pd.DataFrame(q2d_exchange_rate_arr, columns=[q2d_name] * len(symbols), index=new_index)
 
-    joined_prices_df = pd.concat([latest_open_prices_df, latest_close_prices_df, points_dff_values_df, q2d_exchange_rate_df], axis=1, join='inner')
+    # joined all the df into one
+    joined_prices_df = pd.concat([latest_open_prices_df, latest_close_prices_df, latest_change_close_prices_df, points_dff_values_df, q2d_exchange_rate_df], axis=1, join='inner')
 
     Prices = Prices_collection(c=joined_prices_df.loc[:,'close'].iloc[:-1,:], # discard the last row
+                               cc=joined_prices_df.loc[:,'change'].iloc[:-1,:], # discard the last row
                                l_o=pd.DataFrame(joined_prices_df.loc[:, 'open'], index=joined_prices_df.index),
                                l_ptDv=pd.DataFrame(points_dff_values_df.loc[:, diff_name], index=joined_prices_df.index),
                                l_quote_exchg=pd.DataFrame(q2d_exchange_rate_df.loc[:, q2d_name], index=joined_prices_df.index))

@@ -39,15 +39,15 @@ def get_predicted_arr(input, coefficient_vector):
     b = np.dot(A, coefficient_vector.reshape(-1,1)).reshape(-1,)
     return b
 
-def get_coin_data(close_prices, coefficient_vector, mean_window, std_window):
+def get_coin_data(inputs, coefficient_vector, mean_window, std_window):
     """
-    :param close_prices: accept the train and test prices in pd.dataframe format
+    :param inputs: accept the train and test prices in pd.dataframe format
     :param coefficient_vector:
     :return:
     """
-    coin_data = pd.DataFrame(index=close_prices.index)
-    coin_data['real'] = close_prices.iloc[:,-1]
-    coin_data['predict'] = get_predicted_arr(close_prices.iloc[:,:-1].values, coefficient_vector)
+    coin_data = pd.DataFrame(index=inputs.index)
+    coin_data['real'] = inputs.iloc[:, -1]
+    coin_data['predict'] = get_predicted_arr(inputs.iloc[:, :-1].values, coefficient_vector)
     spread = coin_data['real'] - coin_data['predict']
     coin_data['spread'] = spread
     coin_data['z_score'] = maths.z_score_with_rolling_mean(spread.values, mean_window, std_window)

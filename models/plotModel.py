@@ -62,8 +62,8 @@ def get_coin_NN_plt_datas(Prices, coefficient_vector, upper_th, lower_th, z_scor
     :return: nested dictionary
     """
     # prepare
-    symbols = list(Prices.c.columns)
-    coin_data = coinModel.get_coin_data(Prices.c, coefficient_vector, z_score_mean_window, z_score_std_window) # get_coin_data() can work for coinNN and coin
+    symbols = list(Prices.cc.columns)
+    coin_data = coinModel.get_coin_data(Prices.cc, coefficient_vector, z_score_mean_window, z_score_std_window)  # get_coin_data() can work for coinNN and coin
     long_signal, short_signal = signalModel.get_coin_NN_signal(coin_data, upper_th, lower_th)
     stats = statModel.get_stats(Prices, long_signal, short_signal, coefficient_vector)
     stats_slsp = statModel.get_stats(Prices, long_signal, short_signal, coefficient_vector, slsp)
@@ -74,15 +74,15 @@ def get_coin_NN_plt_datas(Prices, coefficient_vector, upper_th, lower_th, z_scor
     # 1 graph: real and predict
     real_predict_df = pd.concat([coin_data['real'], coin_data['predict']], axis=1)
     adf_result_text = get_ADF_text_result(coin_data['spread'].values)
-    equation = get_coin_NN_equation_text(Prices.c.columns, coefficient_vector)
+    equation = get_coin_NN_equation_text(Prices.cc.columns, coefficient_vector)
     plt_datas[0] = _get_format_plot_data(df=real_predict_df, text=adf_result_text, equation=equation)
 
     # 2 graph: spread
-    spread_df = pd.DataFrame(coin_data['spread'], index=Prices.c.index)
+    spread_df = pd.DataFrame(coin_data['spread'], index=Prices.cc.index)
     plt_datas[1] = _get_format_plot_data(df=spread_df)
 
     # 3 graph: z-score
-    z_df = pd.DataFrame(coin_data['z_score'], index=Prices.c.index)
+    z_df = pd.DataFrame(coin_data['z_score'], index=Prices.cc.index)
     plt_datas[2] = _get_format_plot_data(df=z_df)
 
     # prepare data for graph 4 and 5
@@ -92,14 +92,14 @@ def get_coin_NN_plt_datas(Prices, coefficient_vector, upper_th, lower_th, z_scor
     short_accum_ret, short_accum_earning = returnModel.get_accum_ret_earning(short_ret, short_earning, short_signal)
 
     # 4 graph: return for long and short
-    accum_ret_df = pd.DataFrame(index=Prices.c.index)
+    accum_ret_df = pd.DataFrame(index=Prices.cc.index)
     accum_ret_df["long_accum_ret"] = long_accum_ret
     accum_ret_df["short_accum_ret"] = short_accum_ret
     text = get_stat_text_condition(stats, 'ret')
     plt_datas[3] = _get_format_plot_data(df=accum_ret_df, text=text)
 
     # 5 graph: earning for long and short
-    accum_earning_df = pd.DataFrame(index=Prices.c.index)
+    accum_earning_df = pd.DataFrame(index=Prices.cc.index)
     accum_earning_df["long_accum_earning"] = long_accum_earning
     accum_earning_df["short_accum_earning"] = short_accum_earning
     text = get_stat_text_condition(stats, 'earning')
@@ -120,14 +120,14 @@ def get_coin_NN_plt_datas(Prices, coefficient_vector, upper_th, lower_th, z_scor
     short_accum_ret_slsp, short_accum_earning_slsp = returnModel.get_accum_ret_earning(short_ret, short_earning, short_signal, slsp)
 
     # 8 graph: ret with stop loss and stop profit for long and short
-    accum_ret_slsp = pd.DataFrame(index=Prices.c.index)
+    accum_ret_slsp = pd.DataFrame(index=Prices.cc.index)
     accum_ret_slsp['long_accum_ret_slsp'] = long_accum_ret_slsp
     accum_ret_slsp['short_accum_ret_slsp'] = short_accum_ret_slsp
     text = get_stat_text_condition(stats_slsp, 'ret')
     plt_datas[7] = _get_format_plot_data(df=accum_ret_slsp, text=text)
 
     # 9 graph: earning with stop loss and stop profit for long and short
-    accum_earning_slsp = pd.DataFrame(index=Prices.c.index)
+    accum_earning_slsp = pd.DataFrame(index=Prices.cc.index)
     accum_earning_slsp['long_accum_earning_slsp'] = long_accum_earning_slsp
     accum_earning_slsp['short_accum_earning_slsp'] = short_accum_earning_slsp
     text = get_stat_text_condition(stats_slsp, 'earning')
@@ -148,7 +148,7 @@ def get_coin_NN_plt_datas(Prices, coefficient_vector, upper_th, lower_th, z_scor
 
     # ------------ DEBUG -------------
     if debug:
-        df_debug = pd.DataFrame(index=Prices.c.index)
+        df_debug = pd.DataFrame(index=Prices.o.index)
         df_debug = pd.concat([df_debug, Prices.o, long_modify_exchg_q2d, short_modify_exchg_q2d, Prices.base_exchg, Prices.ptDv, coin_data, long_signal, short_signal,
                               long_ret, short_ret, accum_ret_df,
                               long_earning, short_earning, accum_earning_df,
