@@ -55,7 +55,7 @@ train_options = {
 
 with mt5Model.Helper():
 
-    Prices = priceModel.get_Prices(data_options['symbols'], data_options['timeframe'], data_options['timezone'], data_options['start'], data_options['end'], deposit_currency=data_options['deposit_currency'])
+    Prices = priceModel.get_mt5_Prices(data_options['symbols'], data_options['timeframe'], data_options['timezone'], data_options['start'], data_options['end'], deposit_currency=data_options['deposit_currency'])
 
     # split into train set and test set
     Train_Prices, Test_Prices = priceModel.split_Prices(Prices, percentage=data_options['trainTestSplit'])

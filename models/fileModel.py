@@ -3,20 +3,59 @@ import numpy as np
 import os
 from production.codes import config
 
-def read_min_history_excel(main_path, file_name, data_time_difference_to_UTC):
+def _get_names_and_usecols(ohlc):
+    """
+    note 84e
+    :param ohlc: str, eg: '1001'
+    :return:    names, [str], names assigned to columns
+                usecols, int that column will be used
+    """
+    type_names = ['open', 'high', 'low', 'close']
+    names = ['time']
+    usecols = [0]
+    for i, code in enumerate(ohlc):
+        if code == '1':
+           names.append(type_names[i])
+           usecols.append(i+1)
+    return names, usecols
+
+def read_MyCSV(symbol_path, file_name, data_time_difference_to_UTC, names, usecols):
     """
     the timezone is Eastern Standard Time (EST) time-zone WITHOUT Day Light Savings adjustments
-    :param main_path: str
+    :param symbol_path: str
     :param file_name: str
     :param time_difference_in_hr: time difference between current broker
+    :param ohlc: str, eg: '1001'
     :return: pd.DataFrame
     """
-    time_difference_in_hr = config.BROKER_TIME_BETWEEN_UTC + data_time_difference_to_UTC
-    full_path = os.path.join(main_path, file_name)
-    df = pd.read_excel(io=full_path, hearer=None, names=['time', 'open'], usecols='A:B')
+    shifted_hr = config.BROKER_TIME_BETWEEN_UTC + data_time_difference_to_UTC
+    full_path = os.path.join(symbol_path, file_name)
+    df = pd.read_csv(full_path, header=None, names=names, usecols=usecols)
     df.set_index('time', inplace=True)
-    df.index = df.index.shift(time_difference_in_hr, freq='H')
+    df.index = pd.to_datetime(df.index).shift(shifted_hr, freq='H')
     return df
+
+def read_all_MyCSV(data_path, symbol, data_time_difference_to_UTC, ohlc='1001'):
+    """
+    :param main_path: str, file path that contains several minute excel data
+    :param data_time_difference_to_UTC: int, the time difference between downloaded data and broker
+    :param names: [str], names assigned to columns
+    :return: pd.DataFrame, symbol_prices
+    """
+    symbol_prices = None
+    names, usecols = _get_names_and_usecols(ohlc)
+    symbol_path = os.path.join(data_path, symbol)
+    min_data_names = get_file_list(symbol_path)
+    # concat a symbol in a dataframe (axis = 0)
+    for file_count, file_name in enumerate(min_data_names):
+        df = read_MyCSV(symbol_path, file_name, data_time_difference_to_UTC, names, usecols)
+        if file_count == 0:
+            symbol_prices = df.copy()
+        else:
+            symbol_prices = pd.concat([symbol_prices, df], axis=0)
+    # drop the duplicated index row
+    symbol_prices = symbol_prices[~symbol_prices.index.duplicated(keep='first')]  # note 80b and note 81c
+    return symbol_prices
 
 def get_file_list(files_path, reverse=False):
     """
@@ -66,7 +105,7 @@ def read_min_extra_info(main_path):
     for i, file_name in enumerate(file_names):
         full_path = os.path.join(main_path, file_name)
         df = pd.read_csv(full_path, header=[0, 1], index_col=0)
-        if i == 0 :
+        if i == 0:
             dfs = df.copy()
         else:
             dfs = pd.concat([dfs, df], axis=0)
@@ -76,3 +115,27 @@ def read_min_extra_info(main_path):
     long_q2d = dfs.loc[:, ('long_q2d')]
     short_q2d = dfs.loc[:, ('short_q2d')]
     return long_signal, short_signal, long_q2d, short_q2d
+
+def transfer_all_xlsx_to_csv(main_path):
+    """
+    note 84d
+    :param main_path: str, the xlsx files directory
+    :return:
+    """
+    files = get_file_list(main_path, reverse=False)
+    for file in files:
+
+        # read excel file
+        excel_full_path = os.path.join(main_path, file)
+        print("Reading the {}".format(file))
+        df = pd.read_excel(excel_full_path, header=None)
+
+        # csv file name
+        csv_file = file.split('.')[0] + '.csv'
+        csv_full_path = os.path.join(main_path, csv_file)
+        print("Writing the {}".format(csv_file))
+        df.to_csv(csv_full_path, encoding='utf-8', index=False, header=False)
+
+    return True
+# main_path = 'C:\\Users\\Chris\\projects\\210215_mt5\\production\\docs\\1\\min_data\\GBPUSD'
+# transfer_all_xlsx_to_csv(main_path)

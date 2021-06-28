@@ -23,7 +23,7 @@ def get_cor_matrix(symbols, start, end, timeframe, timezone, deposit_currency):
         except KeyError:
             raise Exception("The {} is not provided in this broker.".format(symbol))
 
-    Prices = priceModel.get_Prices(symbols, timeframe, timezone, start, end=end, deposit_currency=deposit_currency)
+    Prices = priceModel.get_mt5_Prices(symbols, timeframe, timezone, start, end=end, deposit_currency=deposit_currency)
     price_matrix = Prices.cc.values # note 83i
     cor_matrix = covModel.corela_matrix(price_matrix)
     cor_table = covModel.corela_table(cor_matrix, symbols)

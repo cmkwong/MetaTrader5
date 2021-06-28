@@ -11,7 +11,8 @@ DT_STRING = now.strftime("%y%m%d%H%M%S")
 options = {
     'main_path': "{}/projects/210215_mt5/production/docs/{}/".format(config.COMP_PATH, config.VERSION),
     'dt': DT_STRING,
-    'debug': True
+    'debug': True,
+    'local': True
 }
 data_options = {
     'start': (2015,1,1,0,0),
@@ -25,6 +26,8 @@ data_options = {
     'plt_save_path': os.path.join(options['main_path'], "coin_plt"),
     'debug_path': os.path.join(options['main_path'], "debug"),
     'extra_path': os.path.join(options['main_path'], "min_data//extra_data"),
+    'local_min_path': os.path.join(options['main_path'], "min_data"),
+    'data_time_difference_to_UTC': 5, # that is without daylight shift time (UTC+5)
 }
 train_options = {
     'upper_th': -1.5,
@@ -36,7 +39,10 @@ train_options = {
 
 with mt5Model.Helper():
 
-    Prices = priceModel.get_Prices(data_options['symbols'], data_options['timeframe'], data_options['timezone'], data_options['start'], data_options['end'], deposit_currency=data_options['deposit_currency'])
+    if options['local']:
+        Prices = priceModel.get_local_Prices(data_options['symbols'], data_options['local_min_path'], data_options['data_time_difference_to_UTC'], data_options['deposit_currency'])
+    else:
+        Prices = priceModel.get_mt5_Prices(data_options['symbols'], data_options['timeframe'], data_options['timezone'], data_options['start'], data_options['end'], data_options['deposit_currency'])
 
     # split into train set and test set
     Train_Prices, Test_Prices = priceModel.split_Prices(Prices, percentage=data_options['trainTestSplit'])

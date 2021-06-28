@@ -16,7 +16,7 @@ options = {
 file_options = {
     'symbols': ["AUDJPY", 	"AUDUSD", 	"CADJPY", 	"EURUSD", 	"NZDUSD", 	"USDCAD"],
     'timeframe': 'H1',
-    'data_time_between_UTC': 5, # that is without daylight shift time (UTC+5)
+    'data_time_difference_to_UTC': 5, # that is without daylight shift time (UTC+5)
     'deposit_currency': 'USD',
     'data_path': os.path.join(options['main_path'], "min_data"),
     'extra_data_path': os.path.join(options['main_path'], 'min_data\extra_data'),
@@ -32,23 +32,13 @@ with mt5Model.Helper():
     # read extra data
     long_signal, short_signal, long_modified_q2d, short_modified_q2d = fileModel.read_min_extra_info(file_options['extra_data_path'])
 
-    for symbol_count, symbol in enumerate(file_options['symbols']):
-        print("Processing: {}".format(symbol))
-        files_path = os.path.join(file_options['data_path'], symbol)
-        min_data_names = fileModel.get_file_list(files_path)
+    for si, symbol in enumerate(file_options['symbols']):
 
-        # concat a symbol in a dataframe (axis = 0)
-        for file_count, file_name in enumerate(min_data_names):
-            df = fileModel.read_min_history_excel(files_path, file_name, file_options['data_time_between_UTC'])
-            if file_count == 0:
-                symbol_prices = df.copy()
-            else:
-                symbol_prices = pd.concat([symbol_prices, df], axis=0)
-        # drop the duplicated index row
-        symbol_prices = symbol_prices[~symbol_prices.index.duplicated(keep='first')] # note 80b and note 81c
+        print("Processing: {}".format(symbol))
+        symbol_prices = fileModel.read_all_MyCSV(file_options['data_path'], symbol, file_options['data_time_difference_to_UTC'], ohlc='1001')
 
         # join='outer' method with all symbols in a bigger dataframe (axis = 1)
-        if symbol_count == 0:
+        if si == 0:
             symbols_prices = symbol_prices.copy()
         else:
             symbols_prices = pd.concat([symbols_prices, symbol_prices], axis=1, join='outer')
@@ -57,8 +47,8 @@ with mt5Model.Helper():
     symbols_prices.fillna(method='ffill', inplace=True)
 
     # rename columns of the symbols_prices
-    level_2_arr = np.array(['open'] * len(file_options['symbols']))
-    level_1_arr = np.array(file_options['symbols'])
+    level_2_arr = np.array(['open', 'high', 'low', 'close'] * len(file_options['symbols']))
+    level_1_arr = np.array([symbol for symbol in file_options['symbols'] for i in range(4)])
     symbols_prices.columns = [level_1_arr, level_2_arr]
 
     # make the extra data in higher resolution
