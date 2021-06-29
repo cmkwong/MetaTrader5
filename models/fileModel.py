@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import os
 from production.codes import config
+from production.codes.models.backtestModel import priceModel
 
 def _get_names_and_usecols(ohlc):
     """
@@ -35,11 +36,12 @@ def read_MyCSV(symbol_path, file_name, data_time_difference_to_UTC, names, useco
     df.index = pd.to_datetime(df.index).shift(shifted_hr, freq='H')
     return df
 
-def read_all_MyCSV(data_path, symbol, data_time_difference_to_UTC, ohlc='1001'):
+def read_all_MyCSV(data_path, symbol, data_time_difference_to_UTC, timeframe, ohlc='1001'):
     """
     :param main_path: str, file path that contains several minute excel data
     :param data_time_difference_to_UTC: int, the time difference between downloaded data and broker
-    :param names: [str], names assigned to columns
+    :param timeframe: str, '1H'
+    :param ohlc: str, '1001'
     :return: pd.DataFrame, symbol_prices
     """
     symbol_prices = None
@@ -55,6 +57,10 @@ def read_all_MyCSV(data_path, symbol, data_time_difference_to_UTC, ohlc='1001'):
             symbol_prices = pd.concat([symbol_prices, df], axis=0)
     # drop the duplicated index row
     symbol_prices = symbol_prices[~symbol_prices.index.duplicated(keep='first')]  # note 80b and note 81c
+
+    # change the timeframe
+    if timeframe != '1min': # 1 minute data should not modify, saving the computation cost
+        symbol_prices = priceModel.change_timeframe(symbol_prices, timeframe)
     return symbol_prices
 
 def get_file_list(files_path, reverse=False):

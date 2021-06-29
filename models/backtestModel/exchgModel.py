@@ -117,7 +117,7 @@ def get_mt5_exchange_df(symbols, all_symbols_info, deposit_currency, timeframe, 
     :param count: int
     :param exchg_type: q2d = quote exchange to deposit, b2d = base exchange to deposit
     :param col_names: list, the name assigned to column names
-    :return: pd.DataFrame
+    :return: pd.DataFrame, [str]
     """
     exchange_symbols = get_exchange_symbols(symbols, all_symbols_info, deposit_currency, exchg_type=exchg_type)
     exchange_rate_df = priceModel._get_mt5_prices_df(exchange_symbols, timeframe, timezone, start, end, ohlc=ohlc, count=count)  # just need the open price
@@ -125,20 +125,22 @@ def get_mt5_exchange_df(symbols, all_symbols_info, deposit_currency, timeframe, 
     exchange_rate_df.columns = col_names  # assign temp name
     return exchange_rate_df, modified_names
 
-def get_local_exchange_df(symbols, all_symbols_info, deposit_currency, ohlc, exchg_type, col_names, data_path, data_time_difference_to_UTC):
+def get_local_exchange_df(symbols, all_symbols_info, deposit_currency, timeframe, ohlc, exchg_type, col_names, data_path, data_time_difference_to_UTC):
     """
+    note 84h and 85c
     :param symbols: [str]
     :param all_symbols_info: mt5.symbols_info object
     :param deposit_currency: str, USD / GBP / EUR
+    :param timeframe: str, '1min' / '1H' / '2H'
     :param ohlc: 'str', eg: '1000'
     :param exchg_type: q2d = quote exchange to deposit, b2d = base exchange to deposit
     :param col_names: list, the name assigned to column names
     :param data_path: str, the path store the minute data
     :param data_time_difference_to_UTC: int, the time difference between data and UTC
-    :return:
+    :return: pd.DataFrame, [str]
     """
     exchange_symbols = get_exchange_symbols(symbols, all_symbols_info, deposit_currency, exchg_type=exchg_type)
-    exchange_rate_df = priceModel._get_local_prices_df(data_path, exchange_symbols, data_time_difference_to_UTC, ohlc)  # just need the open price
+    exchange_rate_df = priceModel._get_local_prices_df(data_path, exchange_symbols, data_time_difference_to_UTC, timeframe, ohlc)  # just need the open price
     exchange_rate_df, modified_names = modify_exchange_rate(symbols, exchange_symbols, exchange_rate_df, deposit_currency, exchg_type=exchg_type)
     exchange_rate_df.columns = col_names  # assign temp name
     return exchange_rate_df, modified_names

@@ -1,5 +1,5 @@
 from production.codes.models import mt5Model, fileModel
-from production.codes.models.backtestModel import signalModel, exchgModel, pointsModel, returnModel
+from production.codes.models.backtestModel import signalModel, exchgModel, pointsModel, returnModel, priceModel
 from production.codes import config
 import os
 import numpy as np
@@ -32,28 +32,11 @@ with mt5Model.Helper():
     # read extra data
     long_signal, short_signal, long_modified_q2d, short_modified_q2d = fileModel.read_min_extra_info(file_options['extra_data_path'])
 
-    for si, symbol in enumerate(file_options['symbols']):
-
-        print("Processing: {}".format(symbol))
-        symbol_prices = fileModel.read_all_MyCSV(file_options['data_path'], symbol, file_options['data_time_difference_to_UTC'], ohlc='1001')
-
-        # join='outer' method with all symbols in a bigger dataframe (axis = 1)
-        if si == 0:
-            symbols_prices = symbol_prices.copy()
-        else:
-            symbols_prices = pd.concat([symbols_prices, symbol_prices], axis=1, join='outer')
-
-    # replace NaN values with preceding values
-    symbols_prices.fillna(method='ffill', inplace=True)
-
-    # rename columns of the symbols_prices
-    level_2_arr = np.array(['open', 'high', 'low', 'close'] * len(file_options['symbols']))
-    level_1_arr = np.array([symbol for symbol in file_options['symbols'] for i in range(4)])
-    symbols_prices.columns = [level_1_arr, level_2_arr]
+    symbols_min_prices = priceModel._get_local_prices_df(file_options['data_path'], file_options['symbols'], file_options['data_time_difference_to_UTC'], file_options['timeframe'], '1001')
 
     # make the extra data in higher resolution
     print("Processing: Resolution of the extra data")
-    resoluted_index = symbols_prices.index
+    resoluted_index = symbols_min_prices.index
     resoluted_long_signal = signalModel.get_resoluted_signal(long_signal, resoluted_index)
     resoluted_short_signal = signalModel.get_resoluted_signal(short_signal, resoluted_index)
     resoluted_modified_long_q2d = exchgModel.get_resoluted_exchg(long_modified_q2d, long_signal, resoluted_index)
@@ -61,13 +44,13 @@ with mt5Model.Helper():
     
     # get points_dff_values_df
     all_symbols_info = mt5Model.get_all_symbols_info()
-    points_dff_values_df = pointsModel.get_points_dff_values_df(file_options['symbols'], symbols_prices, symbols_prices.shift(1), all_symbols_info)
+    points_dff_values_df = pointsModel.get_points_dff_values_df(file_options['symbols'], symbols_min_prices, symbols_min_prices.shift(1), all_symbols_info)
     
     # get ret and earning
-    long_ret, long_earning = returnModel.get_ret_earning(symbols_prices, symbols_prices.shift(1), resoluted_modified_long_q2d, points_dff_values_df,
+    long_ret, long_earning = returnModel.get_ret_earning(symbols_min_prices, symbols_min_prices.shift(1), resoluted_modified_long_q2d, points_dff_values_df,
                                                          specific_option['coefficient_vector'], long_mode=True, lot_times=specific_option['lot_times'],
                                                          shift_offset=(60, 'min'))
-    short_ret, short_earning = returnModel.get_ret_earning(symbols_prices, symbols_prices.shift(1), resoluted_modified_short_q2d, points_dff_values_df,
+    short_ret, short_earning = returnModel.get_ret_earning(symbols_min_prices, symbols_min_prices.shift(1), resoluted_modified_short_q2d, points_dff_values_df,
                                                            specific_option['coefficient_vector'], long_mode=False, lot_times=specific_option['lot_times'],
                                                            shift_offset=(60, 'min'))
 
@@ -79,7 +62,7 @@ with mt5Model.Helper():
     # ret_earning.to_csv(os.path.join(file_options['output_path'], csv_name))
 
     # debug
-    debug_df = pd.concat([symbols_prices, resoluted_long_signal, resoluted_short_signal,
+    debug_df = pd.concat([symbols_min_prices, resoluted_long_signal, resoluted_short_signal,
                           resoluted_modified_long_q2d, resoluted_modified_short_q2d,
                           points_dff_values_df,
                           long_ret, short_ret, long_earning, short_earning], axis=1)

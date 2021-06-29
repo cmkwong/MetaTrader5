@@ -18,7 +18,7 @@ data_options = {
     'start': (2015,1,1,0,0),
     'end': (2021,5,5,0,0),    # None = get the most current price
     'symbols': ["CADJPY", "USDCAD","AUDJPY", "AUDUSD"],
-    'timeframe': timeModel.get_txt2timeframe('H1'),
+    'timeframe': '1min',
     'timezone': "Hongkong",
     'deposit_currency': 'USD',
     'shuffle': True,
@@ -40,7 +40,7 @@ train_options = {
 with mt5Model.Helper():
 
     if options['local']:
-        Prices = priceModel.get_local_Prices(data_options['symbols'], data_options['local_min_path'], data_options['data_time_difference_to_UTC'], data_options['deposit_currency'])
+        Prices = priceModel.get_local_Prices(data_options['symbols'], data_options['local_min_path'], data_options['data_time_difference_to_UTC'], data_options['timeframe'], data_options['deposit_currency'])
     else:
         Prices = priceModel.get_mt5_Prices(data_options['symbols'], data_options['timeframe'], data_options['timezone'], data_options['start'], data_options['end'], data_options['deposit_currency'])
 
@@ -50,7 +50,7 @@ with mt5Model.Helper():
     # get Linear Regression coefficients (independent variable and dependent variable)
     coefficient_vector = coinModel.get_coefficient_vector(Train_Prices.cc.values[:, :-1], Train_Prices.cc.values[:, -1])
 
-    fileModel.clear_files(data_options['extra_path']) # clear the files
+    fileModel.clear_files(data_options['extra_path']) # clear the files-
     train_plt_datas = plotModel.get_coin_NN_plt_datas(Train_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'],
                                                       train_options['z_score_mean_window'], train_options['z_score_std_window'], train_options['slsp'],
                                                       extra_path=data_options['extra_path'], extra_file='{}_train.csv'.format(options['dt']),

@@ -19,7 +19,7 @@ data_options = {
     'start': (2015,1,1,0,0),
     'end': (2021,5,5,0,0),    # None = get the most current price
     'symbols': ["AUDJPY", "AUDUSD", "CADJPY", "EURUSD", "NZDUSD", "USDCAD"], # last one is target
-    'timeframe': timeModel.get_txt2timeframe('H1'),
+    'timeframe': '1H',
     'timezone': "Hongkong",
     'deposit_currency': 'USD',
     'shuffle': True,

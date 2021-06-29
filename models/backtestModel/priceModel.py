@@ -10,12 +10,13 @@ from datetime import datetime
 def get_historical_data(symbol, timeframe, timezone, start, end=None):
     """
     :param symbol: str
-    :param timeframe: mt5.timeframe
+    :param timeframe: str, '1H'
     :param timezone: Check: set(pytz.all_timezones_set) - (Etc/UTC)
     :param start (local time): tuple (year, month, day, hour, mins) eg: (2010, 10, 30, 0, 0)
     :param end (local time): tuple (year, month, day, hour, mins), if None, then take data until present
     :return: dataframe
     """
+    timeframe = timeModel.get_txt2timeframe(timeframe)
     utc_from = timeModel.get_utc_time_from_broker(start, timezone)
     if end == None: # if end is None, get the data at current time
         now = datetime.today()
@@ -31,11 +32,12 @@ def get_historical_data(symbol, timeframe, timezone, start, end=None):
 
 def get_current_bars(symbol, timeframe, count):
     """
-    :param symbols:
-    :param timeframe:
-    :param count:
-    :return:
+    :param symbols: str
+    :param timeframe: str, '1H'
+    :param count: int
+    :return: df
     """
+    timeframe = timeModel.get_txt2timeframe(timeframe)
     rates = mt5.copy_rates_from_pos(symbol, timeframe, 0, count) # 0 means the current bar
     rates_frame = pd.DataFrame(rates, dtype=float)
     rates_frame['time'] = pd.to_datetime(rates_frame['time'], unit='s')
@@ -57,7 +59,7 @@ def _price_type_from_code(ohlc):
 def _get_mt5_prices_df(symbols, timeframe, timezone, start=None, end=None, ohlc='1111', count=10):
     """
     :param symbols: [str]
-    :param timeframe: mt5.timeFrame
+    :param timeframe: str, '1H'
     :param timezone: str "Hongkong"
     :param start: (2010,1,1,0,0), if both start and end is None, use function get_current_bars()
     :param end: (2020,1,1,0,0), if just end is None, get the historical data from date to current
@@ -80,27 +82,58 @@ def _get_mt5_prices_df(symbols, timeframe, timezone, start=None, end=None, ohlc=
             prices_df = pd.concat([prices_df, price], axis=1, join='inner')
     return prices_df
 
-def _get_local_prices_df(data_path, symbols, data_time_difference_to_UTC, ohlc):
+# def _get_local_prices_df(data_path, symbols, data_time_difference_to_UTC, ohlc):
+#     """
+#     :param data_path: str, directory that minute data stored
+#     :param symbols: [str]
+#     :param data_time_difference_to_UTC: int
+#     :param ohlc: '1001'
+#     :return: pd.DataFrame
+#     """
+#     prices_df = None
+#     for i, symbol in enumerate(symbols):
+#         price = fileModel.read_all_MyCSV(data_path, symbol, data_time_difference_to_UTC, ohlc)
+#         if i == 0:
+#             prices_df = price.copy()
+#         else:
+#             prices_df = pd.concat([prices_df, price], axis=1, join='inner')
+#
+#     return prices_df
+
+def _get_local_prices_df(data_path, symbols, data_time_difference_to_UTC, timeframe, ohlc):
     """
-    :param data_path: str, directory that minute data stored
+    :param data_path: str
     :param symbols: [str]
     :param data_time_difference_to_UTC: int
-    :param ohlc: '1001'
+    :param timeframe: str, eg: '1H', '1min'
+    :param ohlc: str, eg: '1001'
     :return: pd.DataFrame
     """
     prices_df = None
+    join = 'inner'
+    if timeframe == '1min': # if timeframe is 1 minute data, concat in join='outer' method
+        join = 'outer'
     for i, symbol in enumerate(symbols):
-        price = fileModel.read_all_MyCSV(data_path, symbol, data_time_difference_to_UTC, ohlc)
+        print("Processing: {}".format(symbol))
+        price_df = fileModel.read_all_MyCSV(data_path, symbol, data_time_difference_to_UTC, timeframe, ohlc=ohlc)
+        # join='outer' method with all symbols in a bigger dataframe (axis = 1)
         if i == 0:
-            prices_df = price.copy()
+            prices_df = price_df.copy()
         else:
-            prices_df = pd.concat([prices_df, price], axis=1, join='inner')
+            prices_df = pd.concat([prices_df, price_df], axis=1, join=join)
+
+    # replace NaN values with preceding values
+    prices_df.fillna(method='ffill', inplace=True)
+    # rename columns of the prices_df
+    col_names = _price_type_from_code(ohlc) * len(symbols)
+    # level_1_arr = np.array([symbol for symbol in symbols for _ in range(4)])
+    prices_df.columns = col_names
     return prices_df
 
 def get_mt5_Prices(symbols, timeframe, timezone="Hongkong", start=None, end=None, count=10, deposit_currency='USD'):
     """
     :param symbols: [str]
-    :param timeframe: mt5.timeFrame
+    :param timeframe: str, '1H'
     :param timezone: str "Hongkong"
     :param start: (2010,1,1,0,0)
     :param end:  (2020,1,1,0,0)
@@ -149,20 +182,27 @@ def get_mt5_Prices(symbols, timeframe, timezone="Hongkong", start=None, end=None
 
     return Prices
 
-def get_local_Prices(symbols, data_path, data_time_difference_to_UTC, deposit_currency='USD'):
+def get_local_Prices(symbols, data_path, data_time_difference_to_UTC, timeframe, deposit_currency='USD'):
     """
+    note 85d
     :param symbols: [str]
-    :param timeframe: mt5.timeFrame
-    :param timezone: str "Hongkong"
-    :param start: (2010,1,1,0,0)
-    :param end:  (2020,1,1,0,0)
-    :param count: int
-    :return: collection.nametuple. They are pd.Dataframe
+    :param data_path: str, that symbol data stored
+    :param data_time_difference_to_UTC: int
+    :param timeframe: str, '2H'
+    :param deposit_currency: str
+    :return: pd.DataFrame
     """
     all_symbols_info = mt5Model.get_all_symbols_info()
 
     Prices_collection = collections.namedtuple("Prices_collection", ['o', 'c', 'cc', 'ptDv','quote_exchg','base_exchg'])
-    prices_df = _get_local_prices_df(data_path, symbols, data_time_difference_to_UTC, '1001')
+    prices_df = _get_local_prices_df(data_path, symbols, data_time_difference_to_UTC, timeframe, ohlc='1111')
+    # min_prices_df = _get_local_prices_df(data_path, symbols, data_time_difference_to_UTC, '1001')
+    # prices_df = pd.DataFrame()
+    # for i, symbol in enumerate(symbols):
+    #     if i == 0:
+    #         prices_df = change_timeframe(symbols_min_prices[symbol]).copy()
+    #     else:
+    #         prices_df = pd.concat([prices_df, change_timeframe(symbols_min_prices[symbol])], axis=1)
 
     # get the change of close price
     changes = ((prices_df['close'] - prices_df['close'].shift(1)) / prices_df['close'].shift(1)).fillna(0.0)
@@ -173,11 +213,11 @@ def get_local_Prices(symbols, data_path, data_time_difference_to_UTC, deposit_cu
 
     # get the quote to deposit exchange rate
     q2d_name = "q2d"
-    q2d_exchange_rate_df, q2d_modified_names = exchgModel.get_local_exchange_df(symbols, all_symbols_info, deposit_currency, '1000', q2d_name, [q2d_name] * len(symbols), data_path, data_time_difference_to_UTC)
+    q2d_exchange_rate_df, q2d_modified_names = exchgModel.get_local_exchange_df(symbols, all_symbols_info, deposit_currency, timeframe, '1000', q2d_name, [q2d_name] * len(symbols), data_path, data_time_difference_to_UTC)
 
     # get the base to deposit exchange rate
     b2d_name = "b2d"
-    b2d_exchange_rate_df, b2d_modified_names = exchgModel.get_local_exchange_df(symbols, all_symbols_info, deposit_currency, '1000', b2d_name, [b2d_name] * len(symbols), data_path, data_time_difference_to_UTC)
+    b2d_exchange_rate_df, b2d_modified_names = exchgModel.get_local_exchange_df(symbols, all_symbols_info, deposit_currency, timeframe, '1000', b2d_name, [b2d_name] * len(symbols), data_path, data_time_difference_to_UTC)
 
     # inner joining two dataframe to get the consistent index
     prices_df = pd.concat([prices_df, points_dff_values_df, q2d_exchange_rate_df, b2d_exchange_rate_df], axis=1, join='inner')
@@ -253,21 +293,46 @@ def get_latest_Prices(all_symbols_info, symbols, timeframe, timezone, count=10, 
 
     return Prices
 
-def change_timeframe(df, rule='H'):
+def _get_ohlc_rule(df):
+    """
+    note 85e
+    Only for usage on change_timeframe()
+    :param check_code: list
+    :return: raise exception
+    """
+    check_code = [0, 0, 0, 0]
+    ohlc_rule = {}
+    for key in df.columns:
+        if key == 'open':
+            check_code[0] = 1
+            ohlc_rule['open'] = 'first'
+        elif key == 'high':
+            check_code[1] = 1
+            ohlc_rule['high'] = 'max'
+        elif key == 'low':
+            check_code[2] = 1
+            ohlc_rule['low'] = 'min'
+        elif key == 'close':
+            check_code[3] = 1
+            ohlc_rule['close'] = 'last'
+    # first exception
+    if check_code[1] == 1 or check_code[2] == 1:
+        if check_code[0] == 0 or check_code[3] == 0:
+            raise Exception("When high/low needed, there must be open/close data included. \nThere is not open/close data.")
+    # Second exception
+    if len(df.columns) > 4:
+        raise Exception("The DataFrame columns is exceeding 4")
+    return ohlc_rule
+
+def change_timeframe(df, timeframe='1H'):
     """
     note 84f
-    :param df: pd.DataFrame
-    :param rule: https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#resampling
+    :param df: pd.DataFrame, having header: open high low close
+    :param rule: can '2H', https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#resampling
     :return:
     """
-    ohlc = {
-        'open': 'first',
-        'high': 'max',
-        'low': 'min',
-        'close': 'last',
-        'volume': 'sum'
-    }
-    df = df.resample(rule).apply(ohlc)
+    ohlc_rule = _get_ohlc_rule(df)
+    df = df.resample(timeframe).apply(ohlc_rule)
     df.dropna(inplace=True)
     return df
 
