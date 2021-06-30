@@ -12,13 +12,13 @@ options = {
     'main_path': "{}/projects/210215_mt5/production/docs/{}/".format(config.COMP_PATH, config.VERSION),
     'dt': DT_STRING,
     'debug': True,
-    'local': True
+    'local': False
 }
 data_options = {
     'start': (2015,1,1,0,0),
     'end': (2021,5,5,0,0),    # None = get the most current price
     'symbols': ["CADJPY", "USDCAD","AUDJPY", "AUDUSD"],
-    'timeframe': '1min',
+    'timeframe': '1H',
     'timezone': "Hongkong",
     'deposit_currency': 'USD',
     'shuffle': True,
@@ -27,7 +27,6 @@ data_options = {
     'debug_path': os.path.join(options['main_path'], "debug"),
     'extra_path': os.path.join(options['main_path'], "min_data//extra_data"),
     'local_min_path': os.path.join(options['main_path'], "min_data"),
-    'data_time_difference_to_UTC': 5, # that is without daylight shift time (UTC+5)
 }
 train_options = {
     'upper_th': -1.5,
@@ -39,10 +38,14 @@ train_options = {
 
 with mt5Model.Helper():
 
-    if options['local']:
-        Prices = priceModel.get_local_Prices(data_options['symbols'], data_options['local_min_path'], data_options['data_time_difference_to_UTC'], data_options['timeframe'], data_options['deposit_currency'])
-    else:
-        Prices = priceModel.get_mt5_Prices(data_options['symbols'], data_options['timeframe'], data_options['timezone'], data_options['start'], data_options['end'], data_options['deposit_currency'])
+    prices_loader = priceModel.Prices_Loader(symbols=data_options['symbols'],
+                                             timeframe=data_options['timeframe'],
+                                             data_path=data_options['local_min_path'],
+                                             start=data_options['start'],
+                                             end=data_options['end'],
+                                             timezone=data_options['timezone'],
+                                             deposit_currency=data_options['deposit_currency'])
+    Prices = prices_loader.get_Prices(options['local'])
 
     # split into train set and test set
     Train_Prices, Test_Prices = priceModel.split_Prices(Prices, percentage=data_options['trainTestSplit'])

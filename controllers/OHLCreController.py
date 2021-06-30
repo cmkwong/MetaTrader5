@@ -16,7 +16,6 @@ options = {
 file_options = {
     'symbols': ["AUDJPY", 	"AUDUSD", 	"CADJPY", 	"EURUSD", 	"NZDUSD", 	"USDCAD"],
     'timeframe': 'H1',
-    'data_time_difference_to_UTC': 5, # that is without daylight shift time (UTC+5)
     'deposit_currency': 'USD',
     'data_path': os.path.join(options['main_path'], "min_data"),
     'extra_data_path': os.path.join(options['main_path'], 'min_data\extra_data'),
@@ -32,7 +31,7 @@ with mt5Model.Helper():
     # read extra data
     long_signal, short_signal, long_modified_q2d, short_modified_q2d = fileModel.read_min_extra_info(file_options['extra_data_path'])
 
-    symbols_min_prices = priceModel._get_local_prices_df(file_options['data_path'], file_options['symbols'], file_options['data_time_difference_to_UTC'], file_options['timeframe'], '1001')
+    symbols_min_prices = priceModel._get_local_prices(file_options['data_path'], file_options['symbols'], file_options['data_time_difference_to_UTC'], file_options['timeframe'], '1001')
 
     # make the extra data in higher resolution
     print("Processing: Resolution of the extra data")

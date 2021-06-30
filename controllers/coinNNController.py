@@ -14,6 +14,7 @@ options = {
     'main_path': "{}/projects/210215_mt5/production/docs/{}/".format(config.COMP_PATH, config.VERSION),
     'dt': DT_STRING,
     'model_type': 0, # 0=FC, 1=LSTM
+    'local': True,
 }
 data_options = {
     'start': (2015,1,1,0,0),
@@ -54,8 +55,14 @@ train_options = {
 # tensorboard --logdir C:\Users\Chris\projects\210215_mt5\production\docs\1\runs --host localhost
 
 with mt5Model.Helper():
-
-    Prices = priceModel.get_mt5_Prices(data_options['symbols'], data_options['timeframe'], data_options['timezone'], data_options['start'], data_options['end'], deposit_currency=data_options['deposit_currency'])
+    prices_loader = priceModel.Prices_Loader(symbols=data_options['symbols'],
+                                             timeframe=data_options['timeframe'],
+                                             start=data_options['start'],
+                                             end=data_options['end'],
+                                             timezone=data_options['timezone'],
+                                             data_path=data_options['local_min_path'],
+                                             deposit_currency=data_options['deposit_currency'])
+    Prices = prices_loader.get_Prices(options['local'])
 
     # split into train set and test set
     Train_Prices, Test_Prices = priceModel.split_Prices(Prices, percentage=data_options['trainTestSplit'])

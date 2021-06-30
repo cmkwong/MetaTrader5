@@ -15,7 +15,7 @@ options = {
 }
 trader_options = {
     'symbols': ["AUDJPY", 	"AUDUSD", 	"CADJPY", 	"EURUSD", 	"NZDUSD", 	"USDCAD"],
-    'timeframe': timeModel.get_txt2timeframe('M5'), # H1
+    'timeframe': '5min', # 1H
     'timezone': "Hongkong",
     'count': 40,
     'deposit_currency': 'USD',
@@ -36,6 +36,12 @@ coin_option = {
 
 with mt5Model.Trader(dt_string=options['dt'], history_path=trader_options["history_path"], type_filling=trader_options['type_filling']) as trader:
 
+    prices_loader = priceModel.Prices_Loader(symbols=trader_options['symbols'],
+                                             timeframe=trader_options['timeframe'],
+                                             count=trader_options['count'],
+                                             timezone=trader_options['timezone'],
+                                             deposit_currency=trader_options['deposit_currency'])
+
     long_lots = [round(i, 2) for i in coinModel.get_modified_coefficient_vector(coin_option['coefficient_vector'], long_mode=True, lot_times=trader_options['lot_times'])]
     short_lots = [round(i, 2) for i in coinModel.get_modified_coefficient_vector(coin_option['coefficient_vector'], long_mode=False, lot_times=trader_options['lot_times'])]
 
@@ -44,8 +50,7 @@ with mt5Model.Trader(dt_string=options['dt'], history_path=trader_options["histo
     trader.register_strategy(short_strategy_id, trader_options['symbols'], trader_options['max_deviations'], trader_options['avg_spreads'], trader_options['lot_times'], long_mode=False)
 
     while True:
-        Prices = priceModel.get_latest_Prices(trader.all_symbol_info, trader_options['symbols'], trader_options['timeframe'], trader_options['timezone'],
-                                              count=trader_options['count'], deposit_currency=trader_options['deposit_currency'])
+        Prices = prices_loader.get_latest_Prices()
         if not Prices:
             time.sleep(2)
             continue

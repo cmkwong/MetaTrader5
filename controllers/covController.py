@@ -1,35 +1,47 @@
-from production.codes.models import mt5Model, timeModel
+from production.codes import config
+from production.codes.models import mt5Model
 from production.codes.models.backtestModel import priceModel
 from production.codes.models import covModel
+import os
+
+options = {
+    'main_path': "{}/projects/210215_mt5/production/docs/{}/".format(config.COMP_PATH, config.VERSION),
+    'debug': True,
+    'local': False
+}
 
 data_options = {
     'start': (2010, 1, 1, 0, 0),
     'end': (2020, 12, 30, 0, 0),
     'symbols': ["EURUSD", "GBPUSD", "USDCHF", "USDJPY", "EURCAD","USDCAD", "AUDUSD", "EURGBP", "NZDUSD",
                 "AUDJPY", "GBPAUD", "CADJPY"],
-    'timeframe': timeModel.get_txt2timeframe('H1'),
+    'timeframe': '1H',
     'timezone': "Hongkong",
     'deposit_currency': 'USD',
+    'local_min_path': os.path.join(options['main_path'], "min_data"),
 }
 # config.START, config.END, symbols, config.TIMEFRAME, config.TIMEZONE
-def get_cor_matrix(symbols, start, end, timeframe, timezone, deposit_currency):
-    symbols = sorted(symbols, reverse=False)# sorting the symbols
-
-    # check if symbols exist, note 83h
-    all_symbols_info = mt5Model.get_all_symbols_info()
-    for symbol in data_options['symbols']:
-        try:
-            _ = all_symbols_info[symbol]
-        except KeyError:
-            raise Exception("The {} is not provided in this broker.".format(symbol))
-
-    Prices = priceModel.get_mt5_Prices(symbols, timeframe, timezone, start, end=end, deposit_currency=deposit_currency)
+def get_cor_matrix(prices_loader, local):
+    """
+    :param prices_loader: class object: Prices_Loader
+    :param local: Boolean
+    :return:
+    """
+    Prices = prices_loader.get_Prices(local)
     price_matrix = Prices.cc.values # note 83i
     cor_matrix = covModel.corela_matrix(price_matrix)
     cor_table = covModel.corela_table(cor_matrix, symbols)
     return cor_matrix, cor_table
 
 with mt5Model.Helper():
-    cor_matrix, cor_table = get_cor_matrix(data_options['symbols'], data_options['start'], data_options['end'],
-                                       data_options['timeframe'], data_options['timezone'], data_options['deposit_currency'])
+    symbols = sorted(data_options['symbols'], reverse=False)  # sorting the symbols
+    prices_loader = priceModel.Prices_Loader(symbols=symbols,
+                                             timeframe=data_options['timeframe'],
+                                             start=data_options['start'],
+                                             end=data_options['end'],
+                                             timezone=data_options['timezone'],
+                                             data_path=data_options['local_min_path'],
+                                             deposit_currency=data_options['deposit_currency'])
+
+    cor_matrix, cor_table = get_cor_matrix(prices_loader, options['local'])
 print()
