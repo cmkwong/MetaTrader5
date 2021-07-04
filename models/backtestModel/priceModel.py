@@ -132,17 +132,35 @@ def _prices_df2dict(prices_df, symbols, ohlc):
         prices[symbol] = prices_df.iloc[:,i:i+step]
     return prices
 
+def _get_specific_from_prices(prices, required_symbols, ohlc):
+    """
+    :param prices: {symbol: pd.DataFrame}
+    :param required_symbols: [str]
+    :param ohlc: str, '1000'
+    :return: pd.DataFrame
+    """
+    types = _price_type_from_code(ohlc)
+    required_prices = pd.DataFrame()
+    for i, symbol in enumerate(required_symbols):
+        if i == 0:
+            required_prices = prices[symbol].loc[:, types].copy()
+        else:
+            required_prices = pd.concat([required_prices, prices[symbol].loc[:, types]], axis=1)
+    required_prices.columns = required_symbols
+    return required_prices
+
 class Prices_Loader: # created note 86a
-    def __init__(self, symbols, timeframe, data_path='', start=None, end=None, count=10, timezone='Hongkong', deposit_currency='USD', keep_min=True):
+    def __init__(self, symbols, timeframe, data_path='', start=None, end=None, count=10, timezone='Hongkong', deposit_currency='USD'):
         self.symbols = symbols
         self.timeframe = timeframe
 
         # for local
         self.data_path = data_path # a symbol of data that stored in this directory
         self.data_time_difference_to_UTC = config.DOWNLOADED_MIN_DATA_TIME_BETWEEN_UTC
-        self.keep_min = keep_min # Boolean, if True, keep the data into self.prices_min
+
         # property
-        self.prices_min = {}
+        self.Prices = {}
+        self.min_Prices = {}
 
         # for mt5
         self.start = start
@@ -180,63 +198,23 @@ class Prices_Loader: # created note 86a
                         raise Exception("The {} is not provided in my {}.".format(symbol, self.data_path))
             self._symbols_available = True
 
-    def _get_specific_from_prices(self, required_symbols, ohlc):
-        """
-        :param required_symbols: [str]
-        :param ohlc: str, '1000'
-        :return: pd.DataFrame
-        """
-        types = _price_type_from_code(ohlc)
-        required_prices = pd.DataFrame()
-        for i, symbol in enumerate(required_symbols):
-            if i == 0:
-                required_prices = self.prices[symbol].loc[:, types].copy()
-            else:
-                required_prices = pd.concat([required_prices, self.prices[symbol].loc[:, types]], axis=1)
-        required_prices.columns = required_symbols
-        return required_prices
-
-    def get_data(self, local):
-        """
-        :return: pd.DataFrame
-        """
-        # read data in dictionary format
-        prices, prices_min = {}, {}
-        required_symbols = list(set(self.symbols + self.q2d_exchg_symbols + self.b2d_exchg_symbols))
-        self._check_if_symbols_available(required_symbols, local) # if not, raise Exception
-        if not local: # symbols, timeframe, timezone, start=None, end=None, ohlc='1111', count=10
-            prices = _get_mt5_prices(required_symbols, self.timeframe, self.timezone, self.start, self.end, '1111', self.count)
-        if local:
-            prices_min = _get_local_prices(self.data_path, required_symbols, self.data_time_difference_to_UTC, '1111')
-            if self.keep_min: self.prices_min = prices_min
-            # change the timeframe if needed
-            if self.timeframe != '1min':  # 1 minute data should not modify, saving the computation cost
-                for symbol in required_symbols:
-                    prices[symbol] = change_timeframe(prices_min[symbol], self.timeframe)
-        return prices
-
-    def get_Prices(self, local):
-        # prices_df = priceModel._get_mt5_prices_df(self.symbols, self.timeframe, self.timezone, start, end, '1001', count)
-        self.prices = self.get_data(local)
+    def format_Prices(self, prices):
 
         # get the change of close price
-        close_prices = self._get_specific_from_prices(self.symbols, ohlc='0001')
+        close_prices = _get_specific_from_prices(prices, self.symbols, ohlc='0001')
         changes = ((close_prices - close_prices.shift(1)) / close_prices.shift(1)).fillna(0.0)
 
         # get point diff values
-        open_prices = self._get_specific_from_prices(self.symbols, ohlc='1000')
+        open_prices = _get_specific_from_prices(prices, self.symbols, ohlc='1000')
         points_dff_values_df = pointsModel.get_points_dff_values_df(self.symbols, open_prices, open_prices.shift(periods=1), self.all_symbols_info)
 
         # get the quote to deposit exchange rate
-        exchg_open_prices = self._get_specific_from_prices(self.q2d_exchg_symbols, ohlc='1000')
+        exchg_open_prices = _get_specific_from_prices(prices, self.q2d_exchg_symbols, ohlc='1000')
         q2d_exchange_rate_df = exchgModel.get_exchange_df(self.symbols, self.q2d_exchg_symbols, exchg_open_prices, self.deposit_currency, "q2d")
 
         # get the base to deposit exchange rate
-        exchg_open_prices = self._get_specific_from_prices(self.b2d_exchg_symbols, ohlc='1000')
+        exchg_open_prices = _get_specific_from_prices(prices, self.b2d_exchg_symbols, ohlc='1000')
         b2d_exchange_rate_df = exchgModel.get_exchange_df(self.symbols, self.q2d_exchg_symbols, exchg_open_prices, self.deposit_currency, "b2d")
-
-        # inner joining two dataframe to get the consistent index
-        # self.prices = pd.concat([self.prices, points_dff_values_df, q2d_exchange_rate_df, b2d_exchange_rate_df], axis=1, join='inner')
 
         # assign the column into each collection tuple
         Prices = self.Prices_Collection(o=open_prices,
@@ -246,17 +224,30 @@ class Prices_Loader: # created note 86a
                                         quote_exchg=q2d_exchange_rate_df,
                                         base_exchg=b2d_exchange_rate_df)
 
-        # # re-assign the columns name
-        # for i, df in enumerate(Prices):
-        #     if i < len(Prices) - 2:
-        #         df.columns = self.symbols
-
         return Prices
 
-    def get_latest_Prices(self):
+    def get_data(self, local):
+        """
+        :return: pd.DataFrame
+        """
+        # read data in dictionary format
+        prices, min_prices = {}, {}
+        required_symbols = list(set(self.symbols + self.q2d_exchg_symbols + self.b2d_exchg_symbols))
+        self._check_if_symbols_available(required_symbols, local) # if not, raise Exception
+        if local:
+            min_prices = _get_local_prices(self.data_path, required_symbols, self.data_time_difference_to_UTC, '1111')
+            # change the timeframe if needed
+            if self.timeframe != '1min':  # 1 minute data should not modify, saving the computation cost
+                for symbol in required_symbols:
+                    prices[symbol] = change_timeframe(min_prices[symbol], self.timeframe)
+            self.Prices, self.min_Prices = self.format_Prices(prices), self.format_Prices(min_prices)
+        else:
+            prices = _get_mt5_prices(required_symbols, self.timeframe, self.timezone, self.start, self.end, '1111', self.count)
+            self.Prices = self.format_Prices(prices)
 
-        self.prices = self.get_data(local=False)
-        open_prices, close_prices = self._get_specific_from_prices(self.symbols, ohlc='1000'), self._get_specific_from_prices(self.symbols, ohlc='0001')
+    def get_latest_Prices_format(self, prices):
+
+        open_prices, close_prices = _get_specific_from_prices(prices, self.symbols, ohlc='1000'), _get_specific_from_prices(prices, self.symbols, ohlc='0001')
         if len(open_prices) != self.count:  # note 63a
             print("prices_df length of Data is not equal to count")
             return False
@@ -273,7 +264,7 @@ class Prices_Loader: # created note 86a
         points_dff_values_df = pointsModel.get_points_dff_values_df(self.symbols, latest_open_prices_df, latest_open_prices_df.shift(periods=1), self.all_symbols_info)
 
         # get quote exchange with values
-        exchg_open_prices, exchg_close_prices = self._get_specific_from_prices(self.q2d_exchg_symbols, ohlc='1000'), self._get_specific_from_prices(self.q2d_exchg_symbols, ohlc='0001')
+        exchg_open_prices, exchg_close_prices = _get_specific_from_prices(prices, self.q2d_exchg_symbols, ohlc='1000'), _get_specific_from_prices(prices, self.q2d_exchg_symbols, ohlc='0001')
         q2d_exchange_rate_df_o = exchgModel.get_exchange_df(self.symbols, self.q2d_exchg_symbols, exchg_open_prices, self.deposit_currency, "q2d")
         q2d_exchange_rate_df_c = exchgModel.get_exchange_df(self.symbols, self.q2d_exchg_symbols, exchg_close_prices, self.deposit_currency, "q2d")
         # if len(q2d_exchange_rate_df_o) or len(q2d_exchange_rate_df_c) == 39, return false and run again
@@ -287,11 +278,6 @@ class Prices_Loader: # created note 86a
                                                l_o=latest_open_prices_df,
                                                l_ptDv=points_dff_values_df,
                                                l_quote_exchg=q2d_exchange_rate_df)
-
-        # # re-assign the columns name
-        # for i, df in enumerate(Prices):
-        #     if i < len(Prices) - 1:
-        #         df.columns = self.symbols
 
         return Prices
 
@@ -349,166 +335,3 @@ def split_Prices(Prices, percentage):
     Train_Prices = prices._make(train_list)
     Test_Prices = prices._make(test_list)
     return Train_Prices, Test_Prices
-
-# def get_mt5_Prices(symbols, timeframe, timezone="Hongkong", start=None, end=None, count=10, deposit_currency='USD'):
-#     """
-#     :param symbols: [str]
-#     :param timeframe: str, '1H'
-#     :param timezone: str "Hongkong"
-#     :param start: (2010,1,1,0,0)
-#     :param end:  (2020,1,1,0,0)
-#     :param count: int
-#     :return: collection.nametuple. They are pd.Dataframe
-#     """
-#     all_symbols_info = mt5Model.get_all_symbols_info()
-#
-#     Prices_collection = collections.namedtuple("Prices_collection", ['o','c', 'cc', 'ptDv','quote_exchg','base_exchg'])
-#     prices_df = _get_mt5_prices(symbols, timeframe, timezone, start, end, '1001', count)
-#
-#     # get the change of close price
-#     changes = ((prices_df['close'] - prices_df['close'].shift(1)) / prices_df['close'].shift(1)).fillna(0.0)
-#
-#     # get point diff values
-#     diff_name = "ptDv"
-#     points_dff_values_df = pointsModel.get_points_dff_values_df(symbols, prices_df['open'], prices_df['open'].shift(periods=1), all_symbols_info, col_names=[diff_name] * len(symbols))
-#
-#     # get the quote to deposit exchange rate
-#     q2d_name = "q2d"
-#     q2d_exchange_rate_df, q2d_modified_names = exchgModel.get_mt5_exchange_df(symbols, all_symbols_info, deposit_currency, timeframe, timezone, '1000', count, exchg_type=q2d_name, col_names=[q2d_name] * len(symbols), start=start, end=end)
-#
-#     # get the base to deposit exchange rate
-#     b2d_name = "b2d"
-#     b2d_exchange_rate_df, b2d_modified_names = exchgModel.get_mt5_exchange_df(symbols, all_symbols_info, deposit_currency, timeframe, timezone, '1000', count, exchg_type=b2d_name, col_names=[b2d_name] * len(symbols), start=start, end=end)
-#
-#     # inner joining two dataframe to get the consistent index
-#     prices_df = pd.concat([prices_df, points_dff_values_df, q2d_exchange_rate_df, b2d_exchange_rate_df], axis=1, join='inner')
-#
-#     # assign the column into each collection tuple
-#     Prices = Prices_collection(o=pd.DataFrame(prices_df.loc[:,'open'], index=prices_df.index),
-#                                c=pd.DataFrame(prices_df.loc[:,'close'], index=prices_df.index),
-#                                cc=pd.DataFrame(changes, index=prices_df.index),
-#                                ptDv=pd.DataFrame(prices_df.loc[:,diff_name], index=prices_df.index),
-#                                quote_exchg=pd.DataFrame(prices_df.loc[:,q2d_name], index=prices_df.index),
-#                                base_exchg=pd.DataFrame(prices_df.loc[:,b2d_name], index=prices_df.index))
-#
-#     # re-assign the columns name
-#     for i, df in enumerate(Prices):
-#         if i < len(Prices) - 2:
-#             df.columns = symbols
-#         elif i == len(Prices) - 2:
-#             df.columns = q2d_modified_names
-#         elif i == len(Prices) - 1:
-#             df.columns = b2d_modified_names
-#
-#     return Prices
-
-# def get_local_Prices(symbols, data_path, data_time_difference_to_UTC, timeframe, deposit_currency='USD'):
-#     """
-#     note 85d
-#     :param symbols: [str]
-#     :param data_path: str, that symbol data stored
-#     :param data_time_difference_to_UTC: int
-#     :param timeframe: str, '2H'
-#     :param deposit_currency: str
-#     :return: pd.DataFrame
-#     """
-#     all_symbols_info = mt5Model.get_all_symbols_info()
-#
-#     Prices_collection = collections.namedtuple("Prices_collection", ['o', 'c', 'cc', 'ptDv','quote_exchg','base_exchg'])
-#     prices_df = _get_local_prices(data_path, symbols, data_time_difference_to_UTC, timeframe, ohlc='1111')
-#     # min_prices_df = _get_local_prices_df(data_path, symbols, data_time_difference_to_UTC, '1001')
-#     # prices_df = pd.DataFrame()
-#     # for i, symbol in enumerate(symbols):
-#     #     if i == 0:
-#     #         prices_df = change_timeframe(symbols_min_prices[symbol]).copy()
-#     #     else:
-#     #         prices_df = pd.concat([prices_df, change_timeframe(symbols_min_prices[symbol])], axis=1)
-#
-#     # get the change of close price
-#     changes = ((prices_df['close'] - prices_df['close'].shift(1)) / prices_df['close'].shift(1)).fillna(0.0)
-#
-#     # get point diff values
-#     diff_name = "ptDv"
-#     points_dff_values_df = pointsModel.get_points_dff_values_df(symbols, prices_df['open'], prices_df['open'].shift(periods=1), all_symbols_info, col_names=[diff_name] * len(symbols))
-#
-#     # get the quote to deposit exchange rate
-#     q2d_name = "q2d"
-#     q2d_exchange_rate_df, q2d_modified_names = exchgModel.get_local_exchange_df(symbols, all_symbols_info, deposit_currency, timeframe, '1000', q2d_name, [q2d_name] * len(symbols), data_path, data_time_difference_to_UTC)
-#
-#     # get the base to deposit exchange rate
-#     b2d_name = "b2d"
-#     b2d_exchange_rate_df, b2d_modified_names = exchgModel.get_local_exchange_df(symbols, all_symbols_info, deposit_currency, timeframe, '1000', b2d_name, [b2d_name] * len(symbols), data_path, data_time_difference_to_UTC)
-#
-#     # inner joining two dataframe to get the consistent index
-#     prices_df = pd.concat([prices_df, points_dff_values_df, q2d_exchange_rate_df, b2d_exchange_rate_df], axis=1, join='inner')
-#
-#     # assign the column into each collection tuple
-#     Prices = Prices_collection(o=pd.DataFrame(prices_df.loc[:,'open'], index=prices_df.index),
-#                                c=pd.DataFrame(prices_df.loc[:,'close'], index=prices_df.index),
-#                                cc=pd.DataFrame(changes, index=prices_df.index),
-#                                ptDv=pd.DataFrame(prices_df.loc[:,diff_name], index=prices_df.index),
-#                                quote_exchg=pd.DataFrame(prices_df.loc[:,q2d_name], index=prices_df.index),
-#                                base_exchg=pd.DataFrame(prices_df.loc[:,b2d_name], index=prices_df.index))
-#
-#     # re-assign the columns name
-#     for i, df in enumerate(Prices):
-#         if i < len(Prices) - 2:
-#             df.columns = symbols
-#         elif i == len(Prices) - 2:
-#             df.columns = q2d_modified_names
-#         elif i == len(Prices) - 1:
-#             df.columns = b2d_modified_names
-#
-#     return Prices
-
-# def get_latest_Prices(all_symbols_info, symbols, timeframe, timezone, count=10, deposit_currency='USD'):
-#
-#     Prices_collection = collections.namedtuple("Prices_collection", ['c', 'cc', 'l_o', 'l_ptDv', 'l_quote_exchg'])
-#
-#     # get latest open prices and close prices
-#     prices_df = _get_mt5_prices(symbols, timeframe, timezone, ohlc='1001', count=count)
-#     if len(prices_df) != count:  # note 63a
-#         print("prices_df length of Data is not equal to count")
-#         return False
-#     # concat the latest open prices and close prices
-#     new_index = prices_df.loc[:, 'open'].index.union([timeModel.get_current_utc_time_from_broker(timezone)]) # plus 1 length of data
-#     latest_open_price_arr = np.concatenate((prices_df['open'].values, prices_df['close'].values[-1,:].reshape(1,-1)), axis=0)
-#     latest_open_prices_df = pd.DataFrame(latest_open_price_arr, columns=['open'] * len(symbols), index=new_index)
-#     latest_close_price_arr = np.concatenate((prices_df['close'].values, prices_df['close'].values[-1, :].reshape(1, -1)), axis=0)
-#     latest_close_prices_df = pd.DataFrame(latest_close_price_arr, columns=['close'] * len(symbols), index=new_index)
-#     # calculate the change of close price (with latest close prices)
-#     latest_change_close_prices = ((latest_close_prices_df - latest_close_prices_df.shift(1)) / latest_close_prices_df.shift(1)).fillna(0.0)
-#     latest_change_close_prices_df = pd.DataFrame(latest_change_close_prices, columns=['change'] * len(symbols), index=new_index)
-#
-#     # get point diff values with latest value
-#     diff_name = "ptDv"
-#     points_dff_values_df = pointsModel.get_points_dff_values_df(symbols, latest_open_prices_df, latest_open_prices_df.shift(periods=1), all_symbols_info, col_names=[diff_name] * len(symbols))
-#
-#     # get quote exchange with values
-#     q2d_name = "q2d"
-#     q2d_exchange_rate_df_o, q2d_modified_names = exchgModel.get_mt5_exchange_df(symbols, all_symbols_info, deposit_currency, timeframe, timezone, '1000', count, exchg_type=q2d_name, col_names=[q2d_name] * len(symbols))
-#     q2d_exchange_rate_df_c, _ = exchgModel.get_mt5_exchange_df(symbols, all_symbols_info, deposit_currency, timeframe, timezone, '0001', count, exchg_type=q2d_name, col_names=[q2d_name] * len(symbols))
-#     # if len(q2d_exchange_rate_df_o) or len(q2d_exchange_rate_df_c) == 39, return false and run again
-#     if len(q2d_exchange_rate_df_o) != count or len(q2d_exchange_rate_df_c) != count: # note 63a
-#         print("q2d_exchange_rate_df_o or q2d_exchange_rate_df_c length of Data is not equal to count")
-#         return False
-#     q2d_exchange_rate_arr = np.concatenate((q2d_exchange_rate_df_o.values, q2d_exchange_rate_df_c.values[-1, :].reshape(1, -1)), axis=0)
-#     q2d_exchange_rate_df = pd.DataFrame(q2d_exchange_rate_arr, columns=[q2d_name] * len(symbols), index=new_index)
-#
-#     # joined all the df into one
-#     joined_prices_df = pd.concat([latest_open_prices_df, latest_close_prices_df, latest_change_close_prices_df, points_dff_values_df, q2d_exchange_rate_df], axis=1, join='inner')
-#
-#     Prices = Prices_collection(c=joined_prices_df.loc[:,'close'].iloc[:-1,:], # discard the last row
-#                                cc=joined_prices_df.loc[:,'change'].iloc[:-1,:], # discard the last row
-#                                l_o=pd.DataFrame(joined_prices_df.loc[:, 'open'], index=joined_prices_df.index),
-#                                l_ptDv=pd.DataFrame(points_dff_values_df.loc[:, diff_name], index=joined_prices_df.index),
-#                                l_quote_exchg=pd.DataFrame(q2d_exchange_rate_df.loc[:, q2d_name], index=joined_prices_df.index))
-#
-#     # re-assign the columns name
-#     for i, df in enumerate(Prices):
-#         if i < len(Prices) - 1:
-#             df.columns = symbols
-#         elif i == len(Prices) - 1:
-#             df.columns = q2d_modified_names
-#
-#     return Prices

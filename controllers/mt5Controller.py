@@ -50,7 +50,8 @@ with mt5Model.Trader(dt_string=options['dt'], history_path=trader_options["histo
     trader.register_strategy(short_strategy_id, trader_options['symbols'], trader_options['max_deviations'], trader_options['avg_spreads'], trader_options['lot_times'], long_mode=False)
 
     while True:
-        Prices = prices_loader.get_latest_Prices()
+        prices, _ = prices_loader.get_data(local=False)
+        Prices = prices_loader.get_latest_Prices_format(prices)
         if not Prices:
             time.sleep(2)
             continue

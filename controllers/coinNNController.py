@@ -62,7 +62,7 @@ with mt5Model.Helper():
                                              timezone=data_options['timezone'],
                                              data_path=data_options['local_min_path'],
                                              deposit_currency=data_options['deposit_currency'])
-    Prices = prices_loader.get_Prices(options['local'])
+    Prices = prices_loader.format_Prices(options['local'])
 
     # split into train set and test set
     Train_Prices, Test_Prices = priceModel.split_Prices(Prices, percentage=data_options['trainTestSplit'])

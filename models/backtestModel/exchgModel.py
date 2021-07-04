@@ -26,18 +26,18 @@ def get_resoluted_exchg(exchg, signal, index):
         resoluted_exchg.loc[s:e,:] = exchg.loc[s,:].values
     return resoluted_exchg
 
-def modify_exchg(exchg, signal):
+def get_exchg_by_signal(exchg, signal):
     """
     note 79a
     :param exchg: pd.DataFrame
     :param signal: pd.Series
     :return:
     """
-    exchg_copy = exchg.copy()
+    new_exchg = exchg.copy()
     start_index, end_index = indexModel.get_action_start_end_index(signal.reset_index(drop=True))
     for s, e in zip(start_index, end_index):
-        exchg_copy.iloc[s:e,:] = exchg.iloc[s,:].values
-    return exchg_copy
+        new_exchg.iloc[s:e,:] = exchg.iloc[s,:].values
+    return new_exchg
 
 def get_exchange_symbols(symbols, all_symbols_info, deposit_currency='USD', exchg_type='q2d'):
     """
@@ -103,27 +103,6 @@ def modify_exchange_rate(symbols, exchange_symbols, exchange_rate_df, deposit_cu
                 symbol_new_names.append("{}to{}".format(exch_symbol[:3], exch_symbol[3:]))
 
     return exchange_rate_df, symbol_new_names
-
-# def get_mt5_exchange_df(symbols, all_symbols_info, deposit_currency, timeframe, timezone, ohlc, count, exchg_type, col_names, start=None, end=None):
-#     """
-#     :param symbols: [str]
-#     :param all_symbols_info: mt5.symbols_info object
-#     :param deposit_currency: str, USD / GBP / EUR
-#     :param timeframe: mt5.timeFrame
-#     :param timezone: str "Hongkong"
-#     :param start: (2010,1,1,0,0)
-#     :param end: (2020,1,1,0,0)
-#     :param ohlc: 'str', eg: '1000'
-#     :param count: int
-#     :param exchg_type: q2d = quote exchange to deposit, b2d = base exchange to deposit
-#     :param col_names: list, the name assigned to column names
-#     :return: pd.DataFrame, [str]
-#     """
-#     exchange_symbols = get_exchange_symbols(symbols, all_symbols_info, deposit_currency, exchg_type=exchg_type)
-#     exchange_rate_df = priceModel._get_mt5_prices_df(exchange_symbols, timeframe, timezone, start, end, ohlc=ohlc, count=count)  # just need the open price
-#     exchange_rate_df, modified_names = modify_exchange_rate(symbols, exchange_symbols, exchange_rate_df, deposit_currency, exchg_type=exchg_type)
-#     exchange_rate_df.columns = col_names  # assign temp name
-#     return exchange_rate_df, modified_names
 
 def get_exchange_df(symbols, exchg_symbols, exchange_rate_df, deposit_currency, exchg_type, col_names=None):
     """

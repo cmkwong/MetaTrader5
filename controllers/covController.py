@@ -27,7 +27,7 @@ def get_cor_matrix(prices_loader, local):
     :param local: Boolean
     :return:
     """
-    Prices = prices_loader.get_Prices(local)
+    Prices = prices_loader.format_Prices(local)
     price_matrix = Prices.cc.values # note 83i
     cor_matrix = covModel.corela_matrix(price_matrix)
     cor_table = covModel.corela_table(cor_matrix, symbols)
