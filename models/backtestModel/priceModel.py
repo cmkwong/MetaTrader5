@@ -107,7 +107,7 @@ def _get_local_prices(data_path, symbols, data_time_difference_to_UTC, ohlc):
             prices_df = price_df.copy()
         else:
             # join='outer' method with all symbols in a bigger dataframe (axis = 1)
-            prices_df = pd.concat([prices_df, price_df], axis=1, join='outer')  # because of 1 minute data and for ensure the completion of data, concat in join='outer' method
+            prices_df = pd.concat([prices_df, price_df], axis=1, join='inner')  # because of 1 minute data and for ensure the completion of data, concat in join='outer' method
 
     # replace NaN values with preceding values
     prices_df.fillna(method='ffill', inplace=True)

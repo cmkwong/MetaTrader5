@@ -16,8 +16,8 @@ def get_resoluted_exchg(exchg, signal, index):
 
     # get int signal and its start_indexes and end_indexes
     int_signal = signalModel.get_int_signal(signal)
-    start_indexes = indexModel.get_signal_start_index(int_signal)
-    end_indexes = indexModel.get_signal_end_index(int_signal)
+    start_indexes = indexModel.find_target_index(int_signal, target=1, step=0)
+    end_indexes = indexModel.find_target_index(int_signal, target=-1, step=0)
 
     # init the empty signal series
     resoluted_exchg = pd.DataFrame(1.0, columns=exchg.columns, index=index)

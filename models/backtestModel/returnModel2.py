@@ -60,7 +60,7 @@ class Calculator:
         if self.slsp != None:
             start_index, end_index = indexModel.get_action_start_end_index(self.signal)
             for raw_s, raw_e in zip(start_index, end_index):
-                s, e = indexModel.get_required_index(ret_by_signal, raw_s, step=1), indexModel.get_required_index(ret_by_signal, raw_e, step=0) # why added 1, see notes (6) // Why step=0, note 87b
+                s, e = indexModel.get_step_index(ret_by_signal, raw_s, step=1), indexModel.get_step_index(ret_by_signal, raw_e, step=0)  # why added 1, see notes (6) // Why step=0, note 87b
                 ret_by_signal.loc[s:e], earning_by_signal.loc[s:e] = modify_ret_earning_with_SLSP(self.ret.loc[s:e], self.earning.loc[s:e], self.slsp[0], self.slsp[1])
         return ret_by_signal, earning_by_signal
 
@@ -68,7 +68,7 @@ class Calculator:
         start_index, end_index = indexModel.get_action_start_end_index(self.signal)
         rets, earnings = [], []
         for raw_s, raw_e in zip(start_index, end_index):
-            s, e = indexModel.get_required_index(self.ret, raw_s, step=1), indexModel.get_required_index(self.ret, raw_e, step=0)  # why added 1, see notes (6) // Why step=0, note 87b
+            s, e = indexModel.get_step_index(self.ret, raw_s, step=1), indexModel.get_step_index(self.ret, raw_e, step=0)  # why added 1, see notes (6) // Why step=0, note 87b
             ret_series, earning_series = self.ret.loc[s:e], self.earning.loc[s:e]
             if self.slsp != None:
                 ret_series, earning_series = modify_ret_earning_with_SLSP(ret_series, earning_series, self.slsp[0], self.slsp[1])  # modify the return and earning if has stop-loss and stop-profit setting

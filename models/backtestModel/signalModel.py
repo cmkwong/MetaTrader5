@@ -2,18 +2,6 @@ from production.codes.models.backtestModel import techModel, indexModel
 import pandas as pd
 from datetime import timedelta
 
-def get_latest_signal(signal, latest_index):
-    """
-    :param signal:
-    :param latest_index:
-    :return:
-    """
-    latest_signal = pd.Series(False, index=latest_index)
-    int_signal = get_int_signal(signal)
-    open_index = indexModel.get_signal_start_index(int_signal.reset_index(drop=True))[-1]
-    latest_signal.iloc[open_index:] = True
-    return latest_signal
-
 def discard_head_tail_signal(signal):
     """
     :param signal: pd.Series
@@ -57,8 +45,8 @@ def maxLimitClosed(signal, limit_unit):
     assert signal[len(signal) - 2] != True, "Signal not for backtesting"
 
     int_signal = get_int_signal(signal)
-    signal_starts = [i - 1 for i in indexModel.get_open_index(int_signal.reset_index(drop=True))]
-    signal_ends = [i - 1 for i in indexModel.get_close_index(int_signal.reset_index(drop=True))]
+    signal_starts = [i - 1 for i in indexModel.find_target_index(int_signal.reset_index(drop=True), target=1, step=1)]
+    signal_ends = [i - 1 for i in indexModel.find_target_index(int_signal.reset_index(drop=True), target=-1, step=1)]
     starts, ends = indexModel.simple_limit_end_index(signal_starts, signal_ends, limit_unit)
 
     # assign new signal
@@ -139,8 +127,8 @@ def get_resoluted_signal(signal, index):
 
     # get int signal and its start_indexes and end_indexes
     int_signal = get_int_signal(signal)
-    start_indexes = indexModel.get_signal_start_index(int_signal)
-    end_indexes = indexModel.get_signal_end_index(int_signal)
+    start_indexes = indexModel.find_target_index(int_signal, target=1, step=0)
+    end_indexes = indexModel.find_target_index(int_signal, target=-1, step=0)
     # start_indexes = pd.to_datetime(signal[signal==True].index)
     # end_indexes = pd.to_datetime(signal[signal==True].index).shift(freq_step, freq='H').shift(-1, freq='min') # note 82e
 

@@ -52,8 +52,8 @@ def get_coin_NN_plt_datas(Prices, min_Prices, coefficient_vector, upper_th, lowe
     """
     :param Prices: collections.nametuple object
     :param coefficient_vector: np.array
-    :param upper_th: float
-    :param lower_th: float
+    :param upper_th: np.float
+    :param lower_th: np.float
     :param z_score_mean_window: int
     :param z_score_std_window: int
     :param slsp: tuple(stop loss (negative), stop profit (positive))
@@ -61,14 +61,16 @@ def get_coin_NN_plt_datas(Prices, min_Prices, coefficient_vector, upper_th, lowe
     :param debug: Boolean
     :return: nested dictionary
     """
-    # prepare
+    # prepare signal
     symbols = list(Prices.cc.columns)
     coin_data = coinModel.get_coin_data(Prices.cc, coefficient_vector, z_score_mean_window, z_score_std_window)  # get_coin_data() can work for coinNN and coin
     long_signal, short_signal = signalModel.get_coin_NN_signal(coin_data, upper_th, lower_th)
+    long_min_signal, short_min_signal = signalModel.get_resoluted_signal(long_signal, min_Prices.quote_exchg.index), signalModel.get_resoluted_signal(short_signal, min_Prices.quote_exchg.index)
+    # prepare q2d
     long_modify_exchg_q2d = exchgModel.get_exchg_by_signal(Prices.quote_exchg, long_signal)
-    long_modify_min_exchg_q2d = exchgModel.get_exchg_by_signal(min_Prices.quote_exchg, signalModel.get_resoluted_signal(long_signal, min_Prices.quote_exchg.index))
+    long_modify_min_exchg_q2d = exchgModel.get_exchg_by_signal(min_Prices.quote_exchg, long_min_signal)
     short_modify_exchg_q2d = exchgModel.get_exchg_by_signal(Prices.quote_exchg, short_signal)
-    short_modify_min_exchg_q2d = exchgModel.get_exchg_by_signal(min_Prices.quote_exchg, signalModel.get_resoluted_signal(short_signal, min_Prices.quote_exchg.index))
+    short_modify_min_exchg_q2d = exchgModel.get_exchg_by_signal(min_Prices.quote_exchg, short_min_signal)
 
     # prepare data for graph 4 and 5
     long_ret, long_earning = returnModel.get_ret_earning(Prices.o, Prices.o.shift(1), long_modify_exchg_q2d, Prices.ptDv, coefficient_vector, long_mode=True)
@@ -150,13 +152,13 @@ def get_coin_NN_plt_datas(Prices, min_Prices, coefficient_vector, upper_th, lowe
     plt_datas[8] = _get_format_plot_data(df=accum_earning_slsp, text=text)
 
     # 10 graph: earning histogram for long
-    plt_datas[9] = _get_format_plot_data(hist=pd.Series(long_earning_list, name='long earning slsp'))
+    plt_datas[9] = _get_format_plot_data(hist=pd.Series(long_earning_list_slsp, name='long earning slsp'))
 
     # 11 graph: earning histogram for short
-    plt_datas[10] = _get_format_plot_data(hist=pd.Series(short_earning_list, name='short earning slsp'))
+    plt_datas[10] = _get_format_plot_data(hist=pd.Series(short_earning_list_slsp, name='short earning slsp'))
 
     # write out useful data as CSV (used for higher resolution data)
-    fileModel.write_min_extra_info(extra_path, extra_file, symbols, long_signal, short_signal, long_modify_exchg_q2d, short_modify_exchg_q2d)
+    # fileModel.write_min_extra_info(extra_path, extra_file, symbols, long_signal, short_signal, long_modify_exchg_q2d, short_modify_exchg_q2d)
 
     # ------------ DEBUG -------------
     if debug:

@@ -47,7 +47,7 @@ def get_ret_earning_list(ret_by_signal, earning_by_signal, signal):
     start_index, end_index = indexModel.get_action_start_end_index(signal)
     rets, earnings = [], []
     for start, end in zip(start_index, end_index):
-        s, e = indexModel.get_required_index(ret_by_signal, start, step=1), indexModel.get_required_index(ret_by_signal, end, step=0)  # why added 1, see notes (6) // Why step=0, note 87b
+        s, e = indexModel.get_step_index(ret_by_signal, start, step=1), indexModel.get_step_index(ret_by_signal, end, step=0)  # why added 1, see notes (6) // Why step=0, note 87b
         ret_series, earning_series = ret_by_signal.loc[s:e], earning_by_signal.loc[s:e] # attention to use loc, note 87b
         rets.append(ret_series.prod())
         earnings.append(np.sum(earning_series))
@@ -92,7 +92,7 @@ def get_ret_earning_by_signal(ret, earning, min_ret, min_earning, signal, slsp=N
     if slsp != None:
         start_index, end_index = indexModel.get_action_start_end_index(signal)
         for start, end in zip(start_index, end_index):
-            s, e = indexModel.get_required_index(ret_by_signal, start, step=1), indexModel.get_required_index(ret_by_signal, end, step=1)
+            s, e = indexModel.get_step_index(ret_by_signal, start, step=1), indexModel.get_step_index(ret_by_signal, end, step=1)
             ret_by_signal.loc[s:e], earning_by_signal.loc[s:e] = modify_ret_earning_with_SLSP(min_ret.loc[s:e + timedelta(minutes=-1)], min_earning.loc[s:e + timedelta(minutes=-1)], slsp[0], slsp[1])
     return ret_by_signal, earning_by_signal
 
@@ -116,7 +116,7 @@ def get_accum_ret_earning(ret_by_signal, earning_by_signal):
     :param slsp: tuple(stop loss (negative), stop profit (positive))
     :return: accum_ret (pd.Series), accum_earning (pd.Series)
     """
-    accum_ret = pd.Series(ret_by_signal.cumprod(), index=ret_by_signal.index, name="accum_ret") # Simplify the function note 47a
+    accum_ret = pd.Series(ret_by_signal.cumprod(), index=ret_by_signal.index, name="accum_ret")                 # Simplify the function note 47a
     accum_earning = pd.Series(earning_by_signal.cumsum(), index=earning_by_signal.index, name="accum_earning")  # Simplify the function note 47a
     return accum_ret, accum_earning
 
@@ -141,6 +141,21 @@ def modify_ret_earning_with_SLSP_late(ret_series, earning_series, sl, sp):
     return ret_mask, earning_mask
 
 def modify_ret_earning_with_SLSP(min_ret_series, min_earning_series, sl, sp, timeframe='1H'):
+    # range_mask = pd.Series(True, index=min_ret_series.index)
+    # find required index and set the required range as True
+    # tis = indexModel.find_target_index((min_earning_series.cumsum() <= sl) | (min_earning_series.cumsum() >= sp), target=True, step=0)
+    # if len(tis) > 0:
+    #     range_mask.loc[tis[0]:] = False # find the first one index
+    range_mask = ((min_earning_series.cumsum() >= sl) & (min_earning_series.cumsum() <= sp)).shift(1).fillna(True).cumprod()
+    ret_mask = (range_mask * min_ret_series).replace({0.0: 1.0})
+    earning_mask = range_mask * min_earning_series
+    # if min(earning_mask.cumsum()) < -804.0 and min(earning_mask.cumsum()) > -850.0: # for debug
+    #     print()
+    ret_mask = ret_mask.resample(timeframe).prod()
+    earning_mask = earning_mask.resample(timeframe).sum()
+    return ret_mask, earning_mask
+
+def modify_ret_earning_with_SLSP2(min_ret_series, min_earning_series, sl, sp, timeframe='1H'):
     total = 0
     sl_buffer, sp_buffer = sl, sp
     ret_mask, earning_mask = pd.Series(1.0, index=min_ret_series.index), pd.Series(0.0, index=min_earning_series.index)
@@ -163,8 +178,7 @@ def modify_ret_earning_with_SLSP(min_ret_series, min_earning_series, sl, sp, tim
     earning_mask = earning_mask.resample(timeframe).sum().dropna()
     return ret_mask, earning_mask
 
-
-# def modify_ret_earning_with_SLSP2(ret_series, earning_series, sl, sp):
+# def modify_ret_earning_with_SLSP3(ret_series, earning_series, sl, sp):
 #     """
 #     equation see 49b
 #     :param ret_series: pd.Series with numeric index

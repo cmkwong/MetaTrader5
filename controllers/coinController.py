@@ -29,11 +29,11 @@ data_options = {
     'local_min_path': os.path.join(options['main_path'], "min_data"),
 }
 train_options = {
-    'upper_th': -3.0,
-    'lower_th': -2.5,
-    'z_score_mean_window': 5,
+    'upper_th': 3.0,
+    'lower_th': -3.0,
+    'z_score_mean_window': 10,
     'z_score_std_window': 20,
-    'slsp': (-2000,2000), # None means no constraint
+    'slsp': (-5000,5000), # None means no constraint
 }
 
 with mt5Model.Helper():
@@ -55,7 +55,7 @@ with mt5Model.Helper():
     # get Linear Regression coefficients (independent variable and dependent variable)
     coefficient_vector = coinModel.get_coefficient_vector(Train_Prices.cc.values[:, :-1], Train_Prices.cc.values[:, -1])
 
-    fileModel.clear_files(data_options['extra_path']) # clear the files
+    # fileModel.clear_files(data_options['extra_path']) # clear the files
     train_plt_datas = plotModel.get_coin_NN_plt_datas(Train_Prices, prices_loader.min_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'],
                                                       train_options['z_score_mean_window'], train_options['z_score_std_window'], train_options['slsp'],
                                                       extra_path=data_options['extra_path'], extra_file='{}_train.csv'.format(options['dt']),
