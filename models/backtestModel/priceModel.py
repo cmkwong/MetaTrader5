@@ -71,7 +71,7 @@ def _get_mt5_prices(symbols, timeframe, timezone, start=None, end=None, ohlc='11
     required_types = _price_type_from_code(ohlc)
     prices_df = None
     for i, symbol in enumerate(symbols):
-        if start == None and end == None:   # get the last units of data
+        if start == None and end == None:   # get the latest units of data
             price = _get_current_bars(symbol, timeframe, count).loc[:, required_types]
             join = 'inner'                  # if getting count, need to join=inner to check if data getting completed
         elif start != None:                 # get data from start to end
@@ -228,25 +228,6 @@ class Prices_Loader: # created note 86a
 
         return Prices
 
-    def get_data(self, local):
-        """
-        :return: pd.DataFrame
-        """
-        # read data in dictionary format
-        prices, min_prices = {}, {}
-        required_symbols = list(set(self.symbols + self.q2d_exchg_symbols + self.b2d_exchg_symbols))
-        self._check_if_symbols_available(required_symbols, local) # if not, raise Exception
-        if local:
-            min_prices = _get_local_prices(self.data_path, required_symbols, self.data_time_difference_to_UTC, '1111')
-            # change the timeframe if needed
-            if self.timeframe != '1min':  # 1 minute data should not modify, saving the computation cost
-                for symbol in required_symbols:
-                    prices[symbol] = change_timeframe(min_prices[symbol], self.timeframe)
-            self.Prices, self.min_Prices = self.format_Prices(prices), self.format_Prices(min_prices)
-        else:
-            prices = _get_mt5_prices(required_symbols, self.timeframe, self.timezone, self.start, self.end, '1111', self.count)
-            self.Prices = self.format_Prices(prices)
-
     def get_latest_Prices_format(self, prices):
 
         open_prices, close_prices = _get_specific_from_prices(prices, self.symbols, ohlc='1000'), _get_specific_from_prices(prices, self.symbols, ohlc='0001')
@@ -282,6 +263,29 @@ class Prices_Loader: # created note 86a
                                                l_quote_exchg=q2d_exchange_rate_df)
 
         return Prices
+
+    def get_data(self, local=False, live=False):
+        """
+        :return: pd.DataFrame
+        """
+        # read data in dictionary format
+        prices, min_prices = {}, {}
+        required_symbols = list(set(self.symbols + self.q2d_exchg_symbols + self.b2d_exchg_symbols))
+        self._check_if_symbols_available(required_symbols, local) # if not, raise Exception
+        if not live:
+            if local:
+                min_prices = _get_local_prices(self.data_path, required_symbols, self.data_time_difference_to_UTC, '1111')
+                # change the timeframe if needed
+                if self.timeframe != '1min':  # 1 minute data should not modify, saving the computation cost
+                    for symbol in required_symbols:
+                        prices[symbol] = change_timeframe(min_prices[symbol], self.timeframe)
+                self.Prices, self.min_Prices = self.format_Prices(prices), self.format_Prices(min_prices)
+            else:
+                prices = _get_mt5_prices(required_symbols, self.timeframe, self.timezone, self.start, self.end, '1111', self.count)
+                self.Prices = self.format_Prices(prices)
+        else:
+            prices = _get_mt5_prices(required_symbols, self.timeframe, self.timezone, self.start, self.end, '1111', self.count)
+            self.Prices = self.get_latest_Prices_format(prices)
 
 def _get_ohlc_rule(df):
     """

@@ -16,14 +16,23 @@ def discard_head_tail_signal(signal):
                 break
 
     # tail
-    if signal[len(signal) - 1] == True or signal[len(signal) - 2] == True:  # See Note 6. and 11.
-        length = len(signal)
-        signal[length - 1] = True  # Set the last index is True, it will set back to false in following looping
-        for ii, value in enumerate(reversed(signal.values)):
-            if value == True:
-                signal[length - 1 - ii] = False
-            else:
-                break
+    last_tailed_index = 3   # See Note 6. and 11., why -3 note 90a issue 2
+    length = len(signal)
+    for start in range(1, last_tailed_index+1):
+        if signal[len(signal) - start] == True:
+            for ii, value in enumerate(reversed(signal.iloc[:length - start + 1].values)):
+                if value == True:
+                    signal[length - start - ii] = False
+                else:
+                    break
+    # if signal[len(signal) - 1] == True or signal[len(signal) - 2] == True or signal[len(signal) - 3] == True:  # See Note 6. and 11., why -3 note 90a issue 2
+    #     length = len(signal)
+    #     signal[length - 1] = True  # Set the last index is True, it will set back to false in following looping
+    #     for ii, value in enumerate(reversed(signal.values)):
+    #         if value == True:
+    #             signal[length - 1 - ii] = False
+    #         else:
+    #             break
     return signal
 
 def get_int_signal(signal):
@@ -99,7 +108,7 @@ def get_movingAverage_signal(long_ma_data, short_ma_data, limit_unit):
         short_signal = maxLimitClosed(short_signal, limit_unit)
     return long_signal, short_signal
 
-def get_coin_NN_signal(coin_NN_data, upper_th, lower_th, discard=True):
+def get_coin_NN_signal(coin_NN_data, upper_th, lower_th, discard_head_tail=True):
     """
     this function can available for coinNN and coin model
     :param coin_NN_data: pd.Dataframe(), columns='real','predict','spread','z_score'
@@ -109,7 +118,7 @@ def get_coin_NN_signal(coin_NN_data, upper_th, lower_th, discard=True):
     """
     long_signal = pd.Series(coin_NN_data['z_score'].values < lower_th, index=coin_NN_data.index, name='long_signal')
     short_signal = pd.Series(coin_NN_data['z_score'].values > upper_th, index=coin_NN_data.index, name='short_signal')
-    if discard:
+    if discard_head_tail:
         long_signal = discard_head_tail_signal(long_signal) # see 40c
         short_signal = discard_head_tail_signal(short_signal)
     return long_signal, short_signal

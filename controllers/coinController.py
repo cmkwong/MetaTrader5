@@ -12,12 +12,12 @@ options = {
     'main_path': "{}/projects/210215_mt5/production/docs/{}/".format(config.COMP_PATH, config.VERSION),
     'dt': DT_STRING,
     'debug': True,
-    'local': True
+    'local': False
 }
 data_options = {
     'start': (2015,1,1,0,0),
     'end': (2021,5,5,0,0),    # None = get the most current price
-    'symbols': ["CADJPY", "USDCAD","AUDJPY", "AUDUSD"],
+    'symbols': ["AUDJPY","AUDUSD","CADJPY","EURUSD","NZDUSD","USDCAD"],
     'timeframe': '1H',
     'timezone': "Hongkong",
     'deposit_currency': 'USD',
@@ -28,11 +28,12 @@ data_options = {
     'local_min_path': os.path.join(options['main_path'], "min_data"),
 }
 train_options = {
-    'upper_th': 3.0,
-    'lower_th': -3.0,
-    'z_score_mean_window': 10,
+    'upper_th': 1.8,
+    'lower_th': -1.8,
+    'z_score_mean_window': 5,
     'z_score_std_window': 20,
-    'slsp': (-5000,5000), # None means no constraint
+    'slsp': (-200,1000), # None means no constraint
+    'close_change': 1,  # 0 = close; 1 = change
 }
 
 with mt5Model.Helper():
@@ -52,14 +53,19 @@ with mt5Model.Helper():
     Train_Prices, Test_Prices = priceModel.split_Prices(prices_loader.Prices, percentage=data_options['trainTestSplit'])
 
     # get Linear Regression coefficients (independent variable and dependent variable)
-    coefficient_vector = coinModel.get_coefficient_vector(Train_Prices.cc.values[:, :-1], Train_Prices.cc.values[:, -1])
+    dependent_variable = Train_Prices.c
+    if train_options['close_change'] == 1:
+        dependent_variable = Train_Prices.cc
+    coefficient_vector = coinModel.get_coefficient_vector(dependent_variable.values[:, :-1], dependent_variable.values[:, -1])
 
     # fileModel.clear_files(data_options['extra_path']) # clear the files
     train_plt_datas = plotModel.get_coin_NN_plt_datas(Train_Prices, prices_loader.min_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'],
-                                                      train_options['z_score_mean_window'], train_options['z_score_std_window'], train_options['slsp'], data_options['timeframe'],
+                                                      train_options['z_score_mean_window'], train_options['z_score_std_window'], train_options['close_change'],
+                                                      train_options['slsp'], data_options['timeframe'],
                                                       debug_path=data_options['debug_path'], debug_file='{}_train.csv'.format(options['dt']), debug=options['debug'])
     test_plt_datas = plotModel.get_coin_NN_plt_datas(Test_Prices, prices_loader.min_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'],
-                                                     train_options['z_score_mean_window'], train_options['z_score_std_window'], train_options['slsp'], data_options['timeframe'],
+                                                     train_options['z_score_mean_window'], train_options['z_score_std_window'], train_options['close_change'],
+                                                     train_options['slsp'], data_options['timeframe'],
                                                      debug_path=data_options['debug_path'], debug_file='{}_test.csv'.format(options['dt']), debug=options['debug'])
 
     # save the plot

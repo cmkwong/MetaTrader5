@@ -34,7 +34,10 @@ def get_exchg_by_signal(exchg, signal):
     :return:
     """
     new_exchg = exchg.copy()
-    start_index, end_index = indexModel.get_start_end_index(signal, step=2)
+    try:
+        start_index, end_index = indexModel.get_start_end_index(signal, step=2)
+    except IndexError:
+        print()
     for s, e in zip(start_index, end_index):
         new_exchg.loc[s:e + timedelta(minutes=-1), :] = exchg.loc[s:e + timedelta(minutes=-1), :].iloc[0].values    # there is a problem to using shift(), note 89c
         # new_exchg.loc[s:e + timedelta(minutes=-1),:] = exchg.loc[s:s,:].values

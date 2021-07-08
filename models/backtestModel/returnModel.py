@@ -79,7 +79,7 @@ def get_ret_earning(new_prices, old_prices, modify_exchg_q2d, points_dff_values_
 
     return ret, earning
 
-def get_ret_earning_by_signal(ret, earning, min_ret, min_earning, signal, slsp=None, timeframe=None):
+def get_ret_earning_by_signal(ret, earning, signal, min_ret=None, min_earning=None, slsp=None, timeframe=None):
     """
     :param ret: pd.Series
     :param earning: earning
@@ -93,13 +93,13 @@ def get_ret_earning_by_signal(ret, earning, min_ret, min_earning, signal, slsp=N
         start_index, end_index = indexModel.get_start_end_index(signal, step=2, numeric=True)
         start_index_cal, end_index_cal = indexModel.get_start_end_index(signal, step=1) # calculate the slsp index
         for s, e, sc, ec in zip(start_index, end_index, start_index_cal, end_index_cal):
-            # s, e = indexModel.get_step_index(ret_by_signal, start, step=1), indexModel.get_step_index(ret_by_signal, end, step=1)
             refer_index = earning_by_signal.iloc[s:e].index
+            if s == 16695 and e == 16698:
+                print('s: {}'.format(s))
             new_ret, new_earning = modify_ret_earning_with_SLSP(min_ret.loc[sc + timedelta(minutes=1):ec], min_earning.loc[sc + timedelta(minutes=1):ec], slsp[0], slsp[1], refer_index, timeframe)
-            try:
-                ret_by_signal.iloc[s:e], earning_by_signal.iloc[s:e] = new_ret.values, new_earning.values
-            except ValueError:
-                print("debug")
+            if np.sum(new_earning.values) < -810.0:
+                print('debug')
+            ret_by_signal.iloc[s:e], earning_by_signal.iloc[s:e] = new_ret.values, new_earning.values
     return ret_by_signal, earning_by_signal
 
 def get_total_ret_earning(ret_list, earning_list):
@@ -148,14 +148,16 @@ def get_accum_ret_earning(ret_by_signal, earning_by_signal):
 
 def _packing_datetime(masked_ret, masked_earning, refer_index):
     ret, earning = pd.Series(1.0, index=refer_index), pd.Series(0.0, index=refer_index)
+    start = 0
     for ri in refer_index:
         r_buffer, e_buffer = 1.0, 0.0
-        for fi in masked_earning.index:
+        for c, fi in enumerate(masked_earning.index[start:]):
             e_buffer = e_buffer + masked_earning.loc[fi]
             r_buffer = r_buffer * masked_ret.loc[fi]
             if fi == ri:
                 earning[ri] = e_buffer
                 ret[ri] = r_buffer
+                start += c + 1
                 break
     return ret, earning
 
@@ -163,13 +165,11 @@ def modify_ret_earning_with_SLSP(min_ret_series, min_earning_series, sl, sp, ref
     range_mask = ((min_earning_series.cumsum() >= sl) & (min_earning_series.cumsum() <= sp)).shift(1).fillna(True).cumprod()
     masked_ret = (range_mask * min_ret_series).replace({0.0: 1.0})
     masked_earning = range_mask * min_earning_series
-    # if min(masked_earning.cumsum()) < -804.0 and min(masked_earning.cumsum()) > -850.0: # for debug
-    #     print()
-    masked_ret = masked_ret.resample(timeframe, closed='right', label='right').prod() # note 89a3, what is that mean of right/left
-    masked_earning = masked_earning.resample(timeframe, closed='right', label='right').sum()
-    if len(masked_earning.index) > len(refer_index):
-        masked_ret, masked_earning = _packing_datetime(masked_ret, masked_earning, refer_index)
-    return masked_ret, masked_earning
+    resampled_masked_ret = masked_ret.resample(timeframe, closed='right', label='right').prod() # note 89a3, what is that mean of right/left
+    resampled_masked_earning = masked_earning.resample(timeframe, closed='right', label='right').sum()
+    if len(resampled_masked_earning.index) > len(refer_index):
+        resampled_masked_ret, resampled_masked_earning = _packing_datetime(resampled_masked_ret, resampled_masked_earning, refer_index)
+    return resampled_masked_ret, resampled_masked_earning
 
 # def modify_ret_earning_with_SLSP2(min_ret_series, min_earning_series, sl, sp, timeframe='1H'):
 #     total = 0
