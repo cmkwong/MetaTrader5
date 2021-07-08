@@ -67,11 +67,13 @@ def _get_mt5_prices(symbols, timeframe, timezone, start=None, end=None, ohlc='11
     :param count: int, for get_current_bar_function()
     :return: pd.DataFrame
     """
+    join = 'outer'
     required_types = _price_type_from_code(ohlc)
     prices_df = None
     for i, symbol in enumerate(symbols):
         if start == None and end == None:   # get the last units of data
             price = _get_current_bars(symbol, timeframe, count).loc[:, required_types]
+            join = 'inner'                  # if getting count, need to join=inner to check if data getting completed
         elif start != None:                 # get data from start to end
             price = _get_historical_data(symbol, timeframe, timezone, start, end).loc[:, required_types]
         else:
@@ -79,7 +81,7 @@ def _get_mt5_prices(symbols, timeframe, timezone, start=None, end=None, ohlc='11
         if i == 0:
             prices_df = price.copy()
         else:
-            prices_df = pd.concat([prices_df, price], axis=1, join='inner')
+            prices_df = pd.concat([prices_df, price], axis=1, join=join)
 
     # replace NaN values with preceding values
     prices_df.fillna(method='ffill', inplace=True)
@@ -107,7 +109,7 @@ def _get_local_prices(data_path, symbols, data_time_difference_to_UTC, ohlc):
             prices_df = price_df.copy()
         else:
             # join='outer' method with all symbols in a bigger dataframe (axis = 1)
-            prices_df = pd.concat([prices_df, price_df], axis=1, join='inner')  # because of 1 minute data and for ensure the completion of data, concat in join='outer' method
+            prices_df = pd.concat([prices_df, price_df], axis=1, join='outer')  # because of 1 minute data and for ensure the completion of data, concat in join='outer' method
 
     # replace NaN values with preceding values
     prices_df.fillna(method='ffill', inplace=True)

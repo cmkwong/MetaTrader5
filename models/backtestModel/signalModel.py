@@ -126,9 +126,7 @@ def get_resoluted_signal(signal, index):
     index = pd.to_datetime(index)
 
     # get int signal and its start_indexes and end_indexes
-    int_signal = get_int_signal(signal)
-    start_indexes = indexModel.find_target_index(int_signal, target=1, step=0)
-    end_indexes = indexModel.find_target_index(int_signal, target=-1, step=0)
+    start_indexes, end_indexes = indexModel.get_start_end_index(signal, step=0)
     # start_indexes = pd.to_datetime(signal[signal==True].index)
     # end_indexes = pd.to_datetime(signal[signal==True].index).shift(freq_step, freq='H').shift(-1, freq='min') # note 82e
 

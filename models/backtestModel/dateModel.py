@@ -8,7 +8,7 @@ def get_action_date(df, signal):
     """
     start_date_list, end_date_list = [], []
     # int_signal = signal.astype(int).diff(1)
-    start_index, end_index = indexModel.get_action_start_end_index(signal)
+    start_index, end_index = indexModel.get_start_end_index(signal)
     # buy date
     dates = list(df['time'][start_index])
     start_date_list.extend([str(date) for date in dates])

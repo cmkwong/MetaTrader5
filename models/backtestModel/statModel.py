@@ -7,7 +7,7 @@ def get_action_total(signal):
     :param signal: pd.Series(Boolean)
     :return: int
     """
-    start, end = indexModel.get_action_start_end_index(signal.reset_index(drop=True))
+    start, end = indexModel.get_start_end_index(signal.reset_index(drop=True))
 
     return len(start)
 

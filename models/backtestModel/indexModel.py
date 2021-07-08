@@ -7,51 +7,22 @@ def find_target_index(series, target, step=1, numeric=False):
     :return: list
     """
     start_index = []
-    start_index.extend([get_step_index(series, index, step, numeric) for index in series[series == target].index])  # see note point 6 why added by 1
-    # start_index.extend([index + 1 for index in int_signal[int_signal == 1].index])  # see note point 6 why added by 1
+    start_index.extend([get_step_index_by_index(series, index, step, numeric) for index in series[series == target].index])  # see note point 6 why added by 1
     return start_index
 
-# def get_close_index(int_signal):
-#     """
-#     :param int_signal: pd.Series, index cannot be Timestamp
-#     :return: list
-#     """
-#     end_index = []
-#     end_index.extend([get_step_index(int_signal, index, step=1) for index in int_signal[int_signal == -1].index])   # see note point 6 why added by 1
-#     # end_index.extend([index + 1 for index in int_signal[int_signal == -1].index]) # see note point 6 why added by 1
-#     return end_index
-
-# def get_signal_start_index(int_signal):
-#     """
-#     :param int_signal: pd.Series, index can be Timestamp
-#     :return: list
-#     """
-#     start_index = []
-#     start_index.extend([index for index in int_signal[int_signal == 1].index])  # see note point 6 why added by 1
-#     return start_index
-#
-# def get_signal_end_index(int_signal):
-#     """
-#     :param int_signal: pd.Series, index can be Timestamp
-#     :return: list
-#     """
-#     start_index = []
-#     start_index.extend([index for index in int_signal[int_signal == -1].index])  # see note point 6 why added by 1
-#     return start_index
-
-def get_action_start_end_index(signal):
+def get_start_end_index(signal, step=1, numeric=False):
     """
     :param signal: pd.Series
     :return: list: start_index, end_index
     """
     int_signal = signalModel.get_int_signal(signal)
     # buy index
-    start_index = find_target_index(int_signal, 1, step=1)
+    start_index = find_target_index(int_signal, 1, step=step, numeric=numeric)
     # sell index
-    end_index = find_target_index(int_signal, -1, step=1)
+    end_index = find_target_index(int_signal, -1, step=step, numeric=numeric)
     return start_index, end_index
 
-def get_step_index(series, curr_index, step, numeric=False):
+def get_step_index_by_index(series, curr_index, step, numeric=False):
     """
     :param series: pd.Series, pd.DataFrame
     :param curr_index: index

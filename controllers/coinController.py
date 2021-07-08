@@ -25,7 +25,6 @@ data_options = {
     'trainTestSplit': 0.7,
     'plt_save_path': os.path.join(options['main_path'], "coin_plt"),
     'debug_path': os.path.join(options['main_path'], "debug"),
-    'extra_path': os.path.join(options['main_path'], "min_data//extra_data"),
     'local_min_path': os.path.join(options['main_path'], "min_data"),
 }
 train_options = {
@@ -57,12 +56,10 @@ with mt5Model.Helper():
 
     # fileModel.clear_files(data_options['extra_path']) # clear the files
     train_plt_datas = plotModel.get_coin_NN_plt_datas(Train_Prices, prices_loader.min_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'],
-                                                      train_options['z_score_mean_window'], train_options['z_score_std_window'], train_options['slsp'],
-                                                      extra_path=data_options['extra_path'], extra_file='{}_train.csv'.format(options['dt']),
+                                                      train_options['z_score_mean_window'], train_options['z_score_std_window'], train_options['slsp'], data_options['timeframe'],
                                                       debug_path=data_options['debug_path'], debug_file='{}_train.csv'.format(options['dt']), debug=options['debug'])
     test_plt_datas = plotModel.get_coin_NN_plt_datas(Test_Prices, prices_loader.min_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'],
-                                                     train_options['z_score_mean_window'], train_options['z_score_std_window'], train_options['slsp'],
-                                                     extra_path=data_options['extra_path'], extra_file='{}_test.csv'.format(options['dt']),
+                                                     train_options['z_score_mean_window'], train_options['z_score_std_window'], train_options['slsp'], data_options['timeframe'],
                                                      debug_path=data_options['debug_path'], debug_file='{}_test.csv'.format(options['dt']), debug=options['debug'])
 
     # save the plot

@@ -44,16 +44,16 @@ def get_ret_earning_list(ret_by_signal, earning_by_signal, signal):
     :param lot_times: lot lot_times
     :return: rets (list), earnings (list)
     """
-    start_index, end_index = indexModel.get_action_start_end_index(signal)
+    start_index, end_index = indexModel.get_start_end_index(signal)
     rets, earnings = [], []
     for start, end in zip(start_index, end_index):
-        s, e = indexModel.get_step_index(ret_by_signal, start, step=1), indexModel.get_step_index(ret_by_signal, end, step=0)  # why added 1, see notes (6) // Why step=0, note 87b
+        s, e = indexModel.get_step_index_by_index(ret_by_signal, start, step=1), indexModel.get_step_index_by_index(ret_by_signal, end, step=0)  # why added 1, see notes (6) // Why step=0, note 87b
         ret_series, earning_series = ret_by_signal.loc[s:e], earning_by_signal.loc[s:e] # attention to use loc, note 87b
         rets.append(ret_series.prod())
         earnings.append(np.sum(earning_series))
     return rets, earnings
 
-def get_ret_earning(new_prices, old_prices, modify_exchg_q2d, points_dff_values_df, coefficient_vector, long_mode, lot_times=1, shift_offset=(1, 'H')): # see note (45a)
+def get_ret_earning(new_prices, old_prices, modify_exchg_q2d, points_dff_values_df, coefficient_vector, long_mode, lot_times=1): # see note (45a)
     """
     :param new_prices: pd.DataFrame
     :param old_prices: pd.DataFrame
@@ -75,11 +75,11 @@ def get_ret_earning(new_prices, old_prices, modify_exchg_q2d, points_dff_values_
     # earning
     weighted_pt_diff = points_dff_values_df.values * modified_coefficient_vector.reshape(-1, )
     # calculate the price in required deposit dollar
-    earning = pd.Series(np.sum(modify_exchg_q2d.shift(shift_offset[0], freq=shift_offset[1]).values * weighted_pt_diff, axis=1), index=modify_exchg_q2d.index, name="earning")  # see note 34b and 35 why shift(1)
+    earning = pd.Series(np.sum(modify_exchg_q2d.values * weighted_pt_diff, axis=1), index=modify_exchg_q2d.index, name="earning")  # see note 34b and 35 why shift(1)
 
     return ret, earning
 
-def get_ret_earning_by_signal(ret, earning, min_ret, min_earning, signal, slsp=None):
+def get_ret_earning_by_signal(ret, earning, min_ret, min_earning, signal, slsp=None, timeframe=None):
     """
     :param ret: pd.Series
     :param earning: earning
@@ -90,10 +90,16 @@ def get_ret_earning_by_signal(ret, earning, min_ret, min_earning, signal, slsp=N
     ret_by_signal = pd.Series(signal.shift(2).values * ret.values, index=signal.index, name="ret_by_signal").fillna(1.0).replace({0: 1})
     earning_by_signal = pd.Series(signal.shift(2).values * earning.values, index=signal.index, name="earning_by_signal").fillna(0.0)  # shift 2 unit see (30e)
     if slsp != None:
-        start_index, end_index = indexModel.get_action_start_end_index(signal)
-        for start, end in zip(start_index, end_index):
-            s, e = indexModel.get_step_index(ret_by_signal, start, step=1), indexModel.get_step_index(ret_by_signal, end, step=1)
-            ret_by_signal.loc[s:e], earning_by_signal.loc[s:e] = modify_ret_earning_with_SLSP(min_ret.loc[s:e + timedelta(minutes=-1)], min_earning.loc[s:e + timedelta(minutes=-1)], slsp[0], slsp[1])
+        start_index, end_index = indexModel.get_start_end_index(signal, step=2, numeric=True)
+        start_index_cal, end_index_cal = indexModel.get_start_end_index(signal, step=1) # calculate the slsp index
+        for s, e, sc, ec in zip(start_index, end_index, start_index_cal, end_index_cal):
+            # s, e = indexModel.get_step_index(ret_by_signal, start, step=1), indexModel.get_step_index(ret_by_signal, end, step=1)
+            refer_index = earning_by_signal.iloc[s:e].index
+            new_ret, new_earning = modify_ret_earning_with_SLSP(min_ret.loc[sc + timedelta(minutes=1):ec], min_earning.loc[sc + timedelta(minutes=1):ec], slsp[0], slsp[1], refer_index, timeframe)
+            try:
+                ret_by_signal.iloc[s:e], earning_by_signal.iloc[s:e] = new_ret.values, new_earning.values
+            except ValueError:
+                print("debug")
     return ret_by_signal, earning_by_signal
 
 def get_total_ret_earning(ret_list, earning_list):
@@ -120,63 +126,73 @@ def get_accum_ret_earning(ret_by_signal, earning_by_signal):
     accum_earning = pd.Series(earning_by_signal.cumsum(), index=earning_by_signal.index, name="accum_earning")  # Simplify the function note 47a
     return accum_ret, accum_earning
 
-def modify_ret_earning_with_SLSP_late(ret_series, earning_series, sl, sp):
-    """
-    equation see 77ab
-    :param ret_series: pd.Series with numeric index
-    :param earning_series: pd.Series with numeric index
-    :param sl: stop-loss (negative value)
-    :param sp: stop-profit (positive value)
-    :return: ret (np.array), earning (np.array)
-    """
-    total = 0
-    ret_mask, earning_mask = np.ones((len(ret_series),)), np.zeros((len(ret_series),))
-    for i, (r, e) in enumerate(zip(ret_series, earning_series)):
-        total += e
-        ret_mask[i], earning_mask[i] = ret_series[i], earning_series[i]
-        if total >= sp:
-            break
-        elif total <= sl:
-            break
-    return ret_mask, earning_mask
+# def modify_ret_earning_with_SLSP_late(ret_series, earning_series, sl, sp):
+#     """
+#     equation see 77ab
+#     :param ret_series: pd.Series with numeric index
+#     :param earning_series: pd.Series with numeric index
+#     :param sl: stop-loss (negative value)
+#     :param sp: stop-profit (positive value)
+#     :return: ret (np.array), earning (np.array)
+#     """
+#     total = 0
+#     ret_mask, earning_mask = np.ones((len(ret_series),)), np.zeros((len(ret_series),))
+#     for i, (r, e) in enumerate(zip(ret_series, earning_series)):
+#         total += e
+#         ret_mask[i], earning_mask[i] = ret_series[i], earning_series[i]
+#         if total >= sp:
+#             break
+#         elif total <= sl:
+#             break
+#     return ret_mask, earning_mask
 
-def modify_ret_earning_with_SLSP(min_ret_series, min_earning_series, sl, sp, timeframe='1H'):
-    # range_mask = pd.Series(True, index=min_ret_series.index)
-    # find required index and set the required range as True
-    # tis = indexModel.find_target_index((min_earning_series.cumsum() <= sl) | (min_earning_series.cumsum() >= sp), target=True, step=0)
-    # if len(tis) > 0:
-    #     range_mask.loc[tis[0]:] = False # find the first one index
+def _packing_datetime(masked_ret, masked_earning, refer_index):
+    ret, earning = pd.Series(1.0, index=refer_index), pd.Series(0.0, index=refer_index)
+    for ri in refer_index:
+        r_buffer, e_buffer = 1.0, 0.0
+        for fi in masked_earning.index:
+            e_buffer = e_buffer + masked_earning.loc[fi]
+            r_buffer = r_buffer * masked_ret.loc[fi]
+            if fi == ri:
+                earning[ri] = e_buffer
+                ret[ri] = r_buffer
+                break
+    return ret, earning
+
+def modify_ret_earning_with_SLSP(min_ret_series, min_earning_series, sl, sp, refer_index, timeframe='1H'):
     range_mask = ((min_earning_series.cumsum() >= sl) & (min_earning_series.cumsum() <= sp)).shift(1).fillna(True).cumprod()
-    ret_mask = (range_mask * min_ret_series).replace({0.0: 1.0})
-    earning_mask = range_mask * min_earning_series
-    # if min(earning_mask.cumsum()) < -804.0 and min(earning_mask.cumsum()) > -850.0: # for debug
+    masked_ret = (range_mask * min_ret_series).replace({0.0: 1.0})
+    masked_earning = range_mask * min_earning_series
+    # if min(masked_earning.cumsum()) < -804.0 and min(masked_earning.cumsum()) > -850.0: # for debug
     #     print()
-    ret_mask = ret_mask.resample(timeframe).prod()
-    earning_mask = earning_mask.resample(timeframe).sum()
-    return ret_mask, earning_mask
+    masked_ret = masked_ret.resample(timeframe, closed='right', label='right').prod() # note 89a3, what is that mean of right/left
+    masked_earning = masked_earning.resample(timeframe, closed='right', label='right').sum()
+    if len(masked_earning.index) > len(refer_index):
+        masked_ret, masked_earning = _packing_datetime(masked_ret, masked_earning, refer_index)
+    return masked_ret, masked_earning
 
-def modify_ret_earning_with_SLSP2(min_ret_series, min_earning_series, sl, sp, timeframe='1H'):
-    total = 0
-    sl_buffer, sp_buffer = sl, sp
-    ret_mask, earning_mask = pd.Series(1.0, index=min_ret_series.index), pd.Series(0.0, index=min_earning_series.index)
-    for i, (r, e) in enumerate(zip(min_ret_series, min_earning_series)):
-        total += e
-        if total >= sp:
-            ret_mask[i] = 1 + ((r-1)/e) * sp_buffer
-            earning_mask[i] = sp_buffer
-            break
-        elif total <= sl:
-            ret_mask[i] = 1 - ((1-r)/e) * sl_buffer
-            earning_mask[i] = sl_buffer
-            break
-        else:
-            ret_mask.iloc[i], earning_mask.iloc[i] = min_ret_series.iloc[i], min_earning_series.iloc[i]
-            sl_buffer -= e
-            sp_buffer -= e
-    # resample
-    ret_mask = ret_mask.resample(timeframe).prod().dropna()
-    earning_mask = earning_mask.resample(timeframe).sum().dropna()
-    return ret_mask, earning_mask
+# def modify_ret_earning_with_SLSP2(min_ret_series, min_earning_series, sl, sp, timeframe='1H'):
+#     total = 0
+#     sl_buffer, sp_buffer = sl, sp
+#     ret_mask, earning_mask = pd.Series(1.0, index=min_ret_series.index), pd.Series(0.0, index=min_earning_series.index)
+#     for i, (r, e) in enumerate(zip(min_ret_series, min_earning_series)):
+#         total += e
+#         if total >= sp:
+#             ret_mask[i] = 1 + ((r-1)/e) * sp_buffer
+#             earning_mask[i] = sp_buffer
+#             break
+#         elif total <= sl:
+#             ret_mask[i] = 1 - ((1-r)/e) * sl_buffer
+#             earning_mask[i] = sl_buffer
+#             break
+#         else:
+#             ret_mask.iloc[i], earning_mask.iloc[i] = min_ret_series.iloc[i], min_earning_series.iloc[i]
+#             sl_buffer -= e
+#             sp_buffer -= e
+#     # resample
+#     ret_mask = ret_mask.resample(timeframe).prod().dropna()
+#     earning_mask = earning_mask.resample(timeframe).sum().dropna()
+#     return ret_mask, earning_mask
 
 # def modify_ret_earning_with_SLSP3(ret_series, earning_series, sl, sp):
 #     """

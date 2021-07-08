@@ -58,17 +58,17 @@ class Calculator:
         ret_by_signal = pd.Series(self.signal.shift(2).values * self.ret.values, index=self.signal.index, name="ret_by_signal").fillna(1.0).replace({0: 1})
         earning_by_signal = pd.Series(self.signal.shift(2).values * self.earning.values, index=self.signal.index, name="earning_by_signal").fillna(0.0)  # shift 2 unit see (30e)
         if self.slsp != None:
-            start_index, end_index = indexModel.get_action_start_end_index(self.signal)
+            start_index, end_index = indexModel.get_start_end_index(self.signal)
             for raw_s, raw_e in zip(start_index, end_index):
-                s, e = indexModel.get_step_index(ret_by_signal, raw_s, step=1), indexModel.get_step_index(ret_by_signal, raw_e, step=0)  # why added 1, see notes (6) // Why step=0, note 87b
+                s, e = indexModel.get_step_index_by_index(ret_by_signal, raw_s, step=1), indexModel.get_step_index_by_index(ret_by_signal, raw_e, step=0)  # why added 1, see notes (6) // Why step=0, note 87b
                 ret_by_signal.loc[s:e], earning_by_signal.loc[s:e] = modify_ret_earning_with_SLSP(self.ret.loc[s:e], self.earning.loc[s:e], self.slsp[0], self.slsp[1])
         return ret_by_signal, earning_by_signal
 
     def get_ret_earning_list(self):
-        start_index, end_index = indexModel.get_action_start_end_index(self.signal)
+        start_index, end_index = indexModel.get_start_end_index(self.signal)
         rets, earnings = [], []
         for raw_s, raw_e in zip(start_index, end_index):
-            s, e = indexModel.get_step_index(self.ret, raw_s, step=1), indexModel.get_step_index(self.ret, raw_e, step=0)  # why added 1, see notes (6) // Why step=0, note 87b
+            s, e = indexModel.get_step_index_by_index(self.ret, raw_s, step=1), indexModel.get_step_index_by_index(self.ret, raw_e, step=0)  # why added 1, see notes (6) // Why step=0, note 87b
             ret_series, earning_series = self.ret.loc[s:e], self.earning.loc[s:e]
             if self.slsp != None:
                 ret_series, earning_series = modify_ret_earning_with_SLSP(ret_series, earning_series, self.slsp[0], self.slsp[1])  # modify the return and earning if has stop-loss and stop-profit setting

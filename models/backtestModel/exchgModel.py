@@ -1,4 +1,4 @@
-from production.codes.models.backtestModel import indexModel, priceModel, signalModel
+from production.codes.models.backtestModel import indexModel, signalModel
 import pandas as pd
 from datetime import timedelta
 
@@ -29,14 +29,16 @@ def get_resoluted_exchg(exchg, signal, index):
 def get_exchg_by_signal(exchg, signal):
     """
     note 79a
-    :param exchg: pd.DataFrame
-    :param signal: pd.Series
+    :param exchg: pd.DataFrame, eg, 1min TimeFrame
+    :param signal: pd.Series, original signal, eg: 1H TimeFrame
     :return:
     """
     new_exchg = exchg.copy()
-    start_index, end_index = indexModel.get_action_start_end_index(signal.reset_index(drop=True))
+    start_index, end_index = indexModel.get_start_end_index(signal, step=2)
     for s, e in zip(start_index, end_index):
-        new_exchg.iloc[s:e,:] = exchg.iloc[s,:].values
+        new_exchg.loc[s:e + timedelta(minutes=-1), :] = exchg.loc[s:e + timedelta(minutes=-1), :].iloc[0].values    # there is a problem to using shift(), note 89c
+        # new_exchg.loc[s:e + timedelta(minutes=-1),:] = exchg.loc[s:s,:].values
+    # new_exchg = new_exchg.shift(shift_offset[0], freq=shift_offset[1])
     return new_exchg
 
 def get_exchange_symbols(symbols, all_symbols_info, deposit_currency='USD', exchg_type='q2d'):
