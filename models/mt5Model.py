@@ -216,25 +216,6 @@ class Trader:
                     return False
         return True
 
-    # def get_strategy_available_code(self, strategy_id, signal):
-    #     """
-    #     note 69a: code meaning
-    #     :param strategy_id: string
-    #     :param signal: pd.Series
-    #     :return: int
-    #     """
-    #     different_open_position = (signal.index[-1] != self.open_postions_date[strategy_id]) # different position to the previous one, note 69a
-    #     if signal[-2] == True and signal[-3] == False and self.status[strategy_id] == 0 and different_open_position:
-    #         # if open signal has available
-    #         return 0
-    #     elif self.status[strategy_id] == 1:
-    #         if signal[-2] == False and signal[-3]:
-    #             # if close signal has available
-    #             return 1
-    #         else:
-    #             # if close signal has not available, check the ret and earning
-    #             return 2
-
     def strategy_controller(self, strategy_id, latest_open_prices, latest_quote_exchg, coefficient_vector, signal, slsp, lots):
         """
         :param strategy_id: str, each strategy has unique id for identity

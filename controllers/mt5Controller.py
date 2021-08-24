@@ -14,7 +14,7 @@ options = {
     'dt': DT_STRING,
 }
 trader_options = {
-    'symbols': ["AUDJPY","AUDUSD","CADJPY","EURUSD","NZDUSD","USDCAD"],
+    'symbols': ["AUDJPY","AUDUSD","CADJPY","USDCAD"],
     'timeframe': '5min', # 1H
     'timezone': "Hongkong",
     'count': 40,
@@ -26,7 +26,7 @@ trader_options = {
     'lot_times': 10
 }
 coin_option = {
-    'coefficient_vector': np.array([2.58766,0.01589,-1.76342,-0.01522,0.00351,0.01389]),    # will be round to 2 decimal
+    'coefficient_vector': np.array([0.0,0.98467,-0.98578,-0.98662]),    # will be round to 2 decimal
     'upper_th': 0.001,    # 0.3
     'lower_th': -0.001,   # -0.3
     'z_score_mean_window': 5,

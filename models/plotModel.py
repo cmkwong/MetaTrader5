@@ -30,13 +30,19 @@ def get_total_height(plt_datas):
         total_height += plt_data['height']
     return total_height
 
-def get_plot_title(start, end, timeframe_str):
+def get_plot_title(start, end, timeframe_str, local):
+    # end_str
     start_str = timeModel.get_time_string(start)
     if end != None:
         end_str = timeModel.get_time_string(end)
     else:
         end_str = timeModel.get_current_time_string()
-    title = "{} : {}, {}".format(start_str, end_str, timeframe_str)
+    # local/mt5
+    if local:
+        source = 'local'
+    else:
+        source = 'mt5'
+    title = "{} : {}, timeframe={}, source={}".format(start_str, end_str, timeframe_str, source)
     return title
 
 def get_coin_NN_plot_image_name(dt_str, symbols, episode):

@@ -25,7 +25,7 @@ with mt5Model.Helper():
     spreads = spreadModel.get_spreads(data_options['symbols'], data_options['start'], data_options['end'], data_options['timezone'])
     plt_datas = plotModel.get_spread_plt_datas(spreads)
 
-    title = plotModel.get_plot_title(data_options['start'], data_options['end'], 'tick')
+    title = plotModel.get_plot_title(data_options['start'], data_options['end'], 'tick', local=False)
     plotView.save_plot(plt_datas, None, data_options['symbols'], 0, data_options['plt_save_path'], # test_plt_data = None; note 56e
                        options['dt'], dpi=500, linewidth=0.2, title=title, figure_size=(30, 60), fontsize=20, bins=500)
 

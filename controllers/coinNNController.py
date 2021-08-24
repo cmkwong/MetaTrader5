@@ -1,4 +1,4 @@
-from production.codes.models import mt5Model, batchModel, coinNNModel, plotModel, timeModel, fileModel
+from production.codes.models import mt5Model, batchModel, coinNNModel, plotModel, fileModel
 from production.codes.models.backtestModel import priceModel
 from production.codes.views import printStat, plotView
 from production.codes import config
@@ -13,8 +13,7 @@ DT_STRING = now.strftime("%y%m%d%H%M%S")
 options = {
     'main_path': "{}/projects/210215_mt5/production/docs/{}/".format(config.COMP_PATH, config.VERSION),
     'dt': DT_STRING,
-    'model_type': 0, # 0=FC, 1=LSTM
-    'local': True,
+    'debug': True,
 }
 data_options = {
     'start': (2015,1,1,0,0),
@@ -30,11 +29,13 @@ data_options = {
     'test_epiosdes': 5,
     'check_price_plot': 5,
     'plt_save_path': os.path.join(options['main_path'], "coin_NN_plt"),
-    'extra_path': os.path.join(options['main_path'], "min_data//extra_data"),
+    'debug_path': os.path.join(options['main_path'], "debug"),
     'tensorboard_save_path': options['main_path'] + "runs/",
+    'local': False,
 }
 Model_options = {
     'lr': 0.01,
+    'model_type': 0, # 0=FC, 1=LSTM
 }
 FC_options = {
     'input_size': len(data_options['symbols']) - 1
@@ -51,6 +52,7 @@ train_options = {
     'z_score_mean_window': 3,
     'z_score_std_window': 6,
     'slsp': (-100,2000), # None means no constraint
+    'close_change': 1,  # 0 = close; 1 = change
 }
 # tensorboard --logdir C:\Users\Chris\projects\210215_mt5\production\docs\1\runs --host localhost
 
@@ -62,15 +64,21 @@ with mt5Model.Helper():
                                              timezone=data_options['timezone'],
                                              data_path=data_options['local_min_path'],
                                              deposit_currency=data_options['deposit_currency'])
+    # get the data
+    prices_loader.get_data(data_options['local'])
     Prices = prices_loader.format_Prices(options['local'])
 
     # split into train set and test set
-    Train_Prices, Test_Prices = priceModel.split_Prices(Prices, percentage=data_options['trainTestSplit'])
+    Train_Prices, Test_Prices = priceModel.split_Prices(prices_loader.Prices, percentage=data_options['trainTestSplit'])
+    dependent_variable = Train_Prices.c
+    if train_options['close_change'] == 1:
+        dependent_variable = Train_Prices.cc
 
+    # define the model, optimizer, trainer, writer
     myModel = None
-    if options['model_type'] == 0:
+    if Model_options['model_type'] == 0:
         myModel = coinNNModel.FC_NN(FC_options['input_size'])
-    elif options['model_type'] == 1:
+    elif Model_options['model_type'] == 1:
         myModel = coinNNModel.LSTM(LSTM_options['input_size'], LSTM_options['hidden_size'], LSTM_options['layer'], LSTM_options['batch_first'])
     optimizer = optim.Adam(myModel.parameters(), lr=Model_options['lr'])
     writer = SummaryWriter(log_dir=data_options['tensorboard_save_path'] + options['dt'], comment="coin")
@@ -78,7 +86,7 @@ with mt5Model.Helper():
 
     episode = 1
     while True:
-        train_batch = batchModel.get_batches(Train_Prices.c.values, seq_len=data_options['seq_len'], batch_size=data_options['batch_size'], shuffle=data_options['shuffle'])
+        train_batch = batchModel.get_batches(dependent_variable.values, seq_len=data_options['seq_len'], batch_size=data_options['batch_size'], shuffle=data_options['shuffle'])
         train_loss = trainer.run(train_batch.input, train_batch.target, train_mode=True)
         printStat.loss_status(writer, train_loss, episode, mode='train')
 
@@ -92,14 +100,16 @@ with mt5Model.Helper():
             coefficient_vector = coinNNModel.get_coefficient_vector(myModel) # coefficient_vector got from neural network
 
             fileModel.clear_files(data_options['extra_path'])  # clear the files
-            train_plt_datas = plotModel.get_coin_NN_plt_datas(Train_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'],
-                                                              train_options['z_score_mean_window'], train_options['z_score_std_window'], train_options['slsp'],
-                                                              extra_path=data_options['extra_path'], extra_file='{}_train.csv'.format(options['dt']))
-            test_plt_datas = plotModel.get_coin_NN_plt_datas(Test_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'],
-                                                             train_options['z_score_mean_window'], train_options['z_score_std_window'], train_options['slsp'],
-                                                             extra_path=data_options['extra_path'], extra_file='{}_test.csv'.format(options['dt']))
+            train_plt_datas = plotModel.get_coin_NN_plt_datas(Train_Prices, prices_loader.min_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'],
+                                                              train_options['z_score_mean_window'], train_options['z_score_std_window'], train_options['close_change'],
+                                                              train_options['slsp'], data_options['timeframe'],
+                                                              debug_path=data_options['debug_path'], debug_file='{}_train.csv'.format(options['dt']), debug=options['debug'])
+            test_plt_datas = plotModel.get_coin_NN_plt_datas(Test_Prices, prices_loader.min_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'],
+                                                             train_options['z_score_mean_window'], train_options['z_score_std_window'], train_options['close_change'],
+                                                             train_options['slsp'], data_options['timeframe'],
+                                                             debug_path=data_options['debug_path'], debug_file='{}_train.csv'.format(options['dt']), debug=options['debug'])
 
-            title = plotModel.get_plot_title(data_options['start'], data_options['end'], timeModel.get_timeframe2txt(data_options['timeframe']))
+            title = plotModel.get_plot_title(data_options['start'], data_options['end'], data_options['timeframe'], data_options['local'])
             plotView.save_plot(train_plt_datas, test_plt_datas, data_options['symbols'], episode,
                                data_options['plt_save_path'], options['dt'], dpi=500, linewidth=0.2,
                                title=title, figure_size=(56, 24))

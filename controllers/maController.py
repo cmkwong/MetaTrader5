@@ -3,6 +3,7 @@ from production.codes.models import mt5Model, plotModel, timeModel
 from production.codes.models.backtestModel import priceModel
 from production.codes.views import plotView
 from datetime import datetime
+import os
 now = datetime.now()
 DT_STRING = now.strftime("%y%m%d%H%M%S")
 
@@ -21,6 +22,8 @@ data_options = {
     'trainTestSplit': 0.7,
     'hist_bins': 100,
     'price_plt_save_path': options['main_path'] + "ma_backtest/",
+    'debug_path': os.path.join(options['main_path'], "debug"),
+    'local': False,
 }
 train_options = {
     'long_mode': True,
@@ -44,7 +47,7 @@ with mt5Model.Helper():
     train_plt_datas = plotModel.get_ma_plt_datas(Train_Prices, train_options['long_param'], train_options['short_param'], train_options['limit_unit'])
     test_plt_datas = plotModel.get_ma_plt_datas(Test_Prices, train_options['long_param'], train_options['short_param'], train_options['limit_unit'])
 
-    title = plotModel.get_plot_title(data_options['start'], data_options['end'], timeModel.get_timeframe2txt(data_options['timeframe']))
+    title = plotModel.get_plot_title(data_options['start'], data_options['end'], timeModel.get_timeframe2txt(data_options['timeframe']), data_options['local'])
     plotView.save_plot(train_plt_datas, test_plt_datas, data_options['symbols'], 0,
                        data_options['price_plt_save_path'], options['dt'], dpi=500, linewidth=0.2, title=title,
                        figure_size=(42, 18), fontsize=5, bins=data_options['hist_bins'])
