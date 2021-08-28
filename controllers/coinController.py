@@ -1,6 +1,6 @@
+import numpy as np
 from production.codes import config
-from production.codes.models import mt5Model, plotModel, coinModel, fileModel
-from production.codes.models.backtestModel import priceModel
+from production.codes.models import mt5Model, plotModel, coinModel, priceModel
 from production.codes.views import plotView
 import os
 
@@ -14,26 +14,26 @@ options = {
     'debug': True,
 }
 data_options = {
-    'start': (2015,1,1,0,0),
-    'end': (2021,5,5,0,0),    # None = get the most current price
+    'start': (2021,8,25,0,0),
+    'end': (2021,8,28,0,0),    # None = get the most current price
     'symbols': ["AUDJPY","AUDUSD","CADJPY","USDCAD"],
-    'timeframe': '4H',
+    'timeframe': '5min',
     'timezone': "Hongkong",
     'deposit_currency': 'USD',
     'shuffle': True,
-    'trainTestSplit': 0.7,
+    'trainTestSplit': 0.1,
     'plt_save_path': os.path.join(options['main_path'], "coin_plt"),
     'debug_path': os.path.join(options['main_path'], "debug"),
     'local_min_path': os.path.join(options['main_path'], "min_data"),
     'local': False,
 }
 train_options = {
-    'upper_th': 1.5,
-    'lower_th': -1.5,
+    'upper_th': 0.001,
+    'lower_th': -0.001,
     'z_score_mean_window': 5,
     'z_score_std_window': 20,
     'slsp': (-200,1000), # None means no constraint
-    'close_change': 0,  # 0 = close; 1 = change
+    'close_change': 1,  # 0 = close; 1 = change
 }
 
 with mt5Model.Helper():
@@ -57,6 +57,8 @@ with mt5Model.Helper():
     if train_options['close_change'] == 1:
         dependent_variable = Train_Prices.cc
     coefficient_vector = coinModel.get_coefficient_vector(dependent_variable.values[:, :-1], dependent_variable.values[:, -1])
+    # debug
+    coefficient_vector = np.array([0.0, 0.98467, -0.98578, -0.98662])
 
     # fileModel.clear_files(data_options['extra_path']) # clear the files
     train_plt_datas = plotModel.get_coin_NN_plt_datas(Train_Prices, prices_loader.min_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'],

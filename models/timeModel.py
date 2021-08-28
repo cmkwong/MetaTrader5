@@ -1,4 +1,5 @@
 from production.codes import config
+from production.codes.models.backtestModel import indexModel
 from datetime import datetime, timedelta
 import MetaTrader5 as mt5
 import pytz
@@ -58,3 +59,21 @@ def get_current_time_string():
     now = datetime.today()
     end_str = get_time_string((now.year, now.month, now.day, now.hour, now.minute))
     return end_str
+
+def get_action_date(df, signal):
+    """
+    :param signal: Series(Boolean) without time index
+    :return: start_date_list, end_date_list
+    """
+    start_date_list, end_date_list = [], []
+    # int_signal = signal.astype(int).diff(1)
+    start_index, end_index = indexModel.get_start_end_index(signal)
+    # buy date
+    dates = list(df['time'][start_index])
+    start_date_list.extend([str(date) for date in dates])
+
+    # sell date
+    dates = list(df['time'][end_index])
+    end_date_list.extend([str(date) for date in dates])
+
+    return start_date_list, end_date_list

@@ -43,12 +43,19 @@ def get_points_dff(symbols, news, olds, all_symbols_info):
         pt_diffs[i] = (new - old) * (10 ** digits)
     return pt_diffs
 
-def get_pt_diff(results, requests, prices_at, all_symbol_info):
+def get_pt_diff(results, requests, expected_prices, all_symbol_info):
+    """
+    :param results: [result]
+    :param requests: [request], request is dict
+    :param expected_prices: np.array
+    :param all_symbol_info: dict for required symbol
+    :return:
+    """
     pt_diff_arr = []
-    for result, request, price_at in zip(results, requests, prices_at):
+    for result, request, expected_price in zip(results, requests, expected_prices):
         symbol = request['symbol']
         if request['type'] == mt5.ORDER_TYPE_BUY:
-            pt_diff_arr.append((result.price - price_at) * (10 ** all_symbol_info[symbol].digits))
+            pt_diff_arr.append((result.price - expected_price) * (10 ** all_symbol_info[symbol].digits))
         elif request['type'] == mt5.ORDER_TYPE_SELL:
-            pt_diff_arr.append((price_at - result.price) * (10 ** all_symbol_info[symbol].digits))
+            pt_diff_arr.append((expected_price - result.price) * (10 ** all_symbol_info[symbol].digits))
     return np.array(pt_diff_arr)

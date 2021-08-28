@@ -1,5 +1,4 @@
-from production.codes.models import mt5Model, batchModel, coinNNModel, plotModel, fileModel
-from production.codes.models.backtestModel import priceModel
+from production.codes.models import mt5Model, batchModel, coinNNModel, plotModel, fileModel, priceModel
 from production.codes.views import printStat, plotView
 from production.codes import config
 from torch import optim

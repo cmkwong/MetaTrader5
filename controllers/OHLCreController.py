@@ -1,5 +1,5 @@
-from production.codes.models import mt5Model, fileModel
-from production.codes.models.backtestModel import signalModel, exchgModel, pointsModel, returnModel, priceModel
+from production.codes.models import mt5Model, fileModel, priceModel
+from production.codes.models.backtestModel import signalModel, exchgModel, pointsModel, returnModel
 from production.codes import config
 import os
 import numpy as np

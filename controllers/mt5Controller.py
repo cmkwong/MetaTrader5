@@ -1,5 +1,5 @@
-from production.codes.models import mt5Model, coinModel, timeModel
-from production.codes.models.backtestModel import signalModel, priceModel
+from production.codes.models import mt5Model, coinModel, priceModel
+from production.codes.models.backtestModel import signalModel
 from production.codes import config
 import os
 import numpy as np

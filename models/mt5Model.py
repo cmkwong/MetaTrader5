@@ -67,10 +67,10 @@ class Trader:
         self.dt_string = dt_string
         self.history, self.status, self.strategy_symbols, \
         self.position_ids, self.deviations, self.avg_spreads, \
-        self.open_postions, self.open_postions_date, self.close_postions, \
+        self.open_postions, self.open_postions_date, self.close_postions, self.close_postions_date, \
         self.rets, self.earnings, self.mt5_deal_details, \
         self.q2d_at, self.open_pt_diff, self.close_pt_diff, self.lot_times, \
-        self.long_modes = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {} # see note 60b
+        self.long_modes = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {} # see note 60b
 
     def __enter__(self):
         connect_server()
@@ -104,9 +104,12 @@ class Trader:
         :return: pd.DataFrame
         """
         symbols = self.strategy_symbols[strategy_id]
-        level_2_arr = np.array(['ret', 'earning'] * 2 + ['commission', 'swap', 'fee', 'earning', 'balanced', 'diff']
-                               + symbols * 2)  # Asterisk * unpacking the list, Programming/Python note 14
-        level_1_arr = np.array(['expected'] * 2 + ['real'] * 2 + ['mt5'] * 6 + ['open']*len(symbols) + ['close']*len(symbols))
+        level_2_arr = np.array(['ret', 'earning'] * 2 + ['commission', 'swap', 'fee', 'earning', 'balanced', 'diff', 'open_date', 'closed_date']
+                               + symbols * 6)  # Asterisk * unpacking the list, Programming/Python note 14
+        level_1_arr = np.array(['expected'] * 2 + ['real'] * 2 + ['mt5'] * 8 +
+                               ['open_real'] * len(symbols) + ['close_real'] * len(symbols) +
+                               ['open_expected'] * len(symbols) + ['close_expected'] * len(symbols) +
+                               ['open_spread']*len(symbols) + ['close_spread']*len(symbols))
         column_index_arr = [
             level_1_arr, level_2_arr
         ]
@@ -149,10 +152,21 @@ class Trader:
         self.history[strategy_id].loc[dt, ('mt5', 'earning')] = self.mt5_deal_details[strategy_id]['earning']
         self.history[strategy_id].loc[dt, ('mt5', 'balanced')] = self.mt5_deal_details[strategy_id]['balanced']
         self.history[strategy_id].loc[dt, ('mt5', 'diff')] = self.mt5_deal_details[strategy_id]['balanced'] - self.earnings[strategy_id]['expected']
+        # open date and closed date
+        self.history[strategy_id].loc[dt, ('mt5', 'open_date')] = self.open_postions_date[strategy_id]
+        self.history[strategy_id].loc[dt, ('mt5', 'closed_date')] = self.close_postions_date[strategy_id]
+
         # update spreads, note 74a
         for i, symbol in enumerate(self.strategy_symbols[strategy_id]):
-            self.history[strategy_id].loc[dt, ('open', symbol)] = self.open_pt_diff[strategy_id][i]
-            self.history[strategy_id].loc[dt, ('close', symbol)] = self.close_pt_diff[strategy_id][i]
+            # open positions
+            self.history[strategy_id].loc[dt, ('open_real', symbol)] = self.open_postions[strategy_id]['real'][i]
+            self.history[strategy_id].loc[dt, ('open_expected', symbol)] = self.open_postions[strategy_id]['expected'][i]
+            self.history[strategy_id].loc[dt, ('open_spread', symbol)] = self.open_pt_diff[strategy_id][i]
+            # close positions
+            self.history[strategy_id].loc[dt, ('close_real', symbol)] = self.close_postions[strategy_id]['real'][i]
+            self.history[strategy_id].loc[dt, ('close_expected', symbol)] = self.close_postions[strategy_id]['expected'][i]
+            self.history[strategy_id].loc[dt, ('close_spread', symbol)] = self.close_pt_diff[strategy_id][i]
+
         return True
     
     def update_mt5_deal_details(self, strategy_id):
@@ -189,10 +203,11 @@ class Trader:
         self.rets[strategy_id], self.earnings[strategy_id] = {}, {}
         self.mt5_deal_details[strategy_id] = self.mt5_deal_detail_format()
         self.q2d_at[strategy_id] = np.zeros((len(self.strategy_symbols[strategy_id]),))
+        # their difference in points
         self.open_pt_diff[strategy_id] = np.zeros((len(self.strategy_symbols[strategy_id]),))
         self.close_pt_diff[strategy_id] = np.zeros((len(self.strategy_symbols[strategy_id]),))
 
-    def check_allowed_with_avg_spread(self, requests, prices_at, avg_spreads):
+    def check_allowed_with_avg_spread(self, requests, expected_prices, avg_spreads):
         """
         check if the market is in very high spread, like hundred of point spread
         if condition cannot meet, return False
@@ -200,7 +215,7 @@ class Trader:
         :param deviations: list
         :return: Boolean
         """
-        for request, price_at, deviation in zip(requests, prices_at, avg_spreads):
+        for request, price_at, deviation in zip(requests, expected_prices, avg_spreads):
             symbol, action_type = request['symbol'], request['type']
             if action_type == mt5.ORDER_TYPE_BUY:
                 cost_price = mt5.symbol_info_tick(symbol).ask
@@ -234,18 +249,18 @@ class Trader:
         different_open_position = (signal.index[-1] != self.open_postions_date[strategy_id])  # different position to the previous one, note 69a
         if signal[-2] == True and signal[-3] == False and self.status[strategy_id] == 0 and different_open_position:
             # if open signal has available
-            prices_at = latest_open_prices.iloc[-2, :].values
+            expected_prices = latest_open_prices.iloc[-2, :].values
             q2d_at = latest_quote_exchg.iloc[-2, :].values
             print("\n----------------------------------{}: Open position----------------------------------".format(strategy_id))
-            results, requests = self.strategy_open(strategy_id, prices_at, lots)  # open position
+            results, requests = self.strategy_open(strategy_id, expected_prices, lots)  # open position
             if results:
-                self.strategy_open_update(strategy_id, results, requests, prices_at, q2d_at, signal.index[-1])
+                self.strategy_open_update(strategy_id, results, requests, expected_prices, q2d_at, signal.index[-1])
 
         elif self.status[strategy_id] == 1:
             if signal[-2] == False and signal[-3] == True:
-                prices_at = latest_open_prices.iloc[-2, :].values
+                expected_prices = latest_open_prices.iloc[-2, :].values # -2 is the open price from the day
                 expected_ret, expected_earning = returnModel.get_value_of_ret_earning(symbols=self.strategy_symbols[strategy_id],
-                                                                                      new_values=prices_at,
+                                                                                      new_values=expected_prices,
                                                                                       old_values=self.open_postions[strategy_id]['expected'],
                                                                                       q2d_at=self.q2d_at[strategy_id],
                                                                                       all_symbols_info=self.all_symbol_info,
@@ -255,11 +270,11 @@ class Trader:
                 print("\n----------------------------------{}: Close position----------------------------------".format(strategy_id))
                 results, requests = self.strategy_close(strategy_id, lots)  # close position
                 if results:
-                    self.strategy_close_update(strategy_id, results, requests, coefficient_vector, prices_at, expected_ret, expected_earning)
+                    self.strategy_close_update(strategy_id, results, requests, coefficient_vector, expected_prices, expected_ret, expected_earning, signal.index[-1])
             else:
-                prices_at = latest_open_prices.iloc[-1, :].values
+                expected_prices = latest_open_prices.iloc[-1, :].values # -1 is latest value from the day
                 expected_ret, expected_earning = returnModel.get_value_of_ret_earning(symbols=self.strategy_symbols[strategy_id],
-                                                                                      new_values=prices_at,
+                                                                                      new_values=expected_prices,
                                                                                       old_values=self.open_postions[strategy_id]['expected'],
                                                                                       q2d_at=self.q2d_at[strategy_id],
                                                                                       all_symbols_info=self.all_symbol_info,
@@ -267,7 +282,7 @@ class Trader:
                                                                                       coefficient_vector=coefficient_vector,
                                                                                       long_mode=self.long_modes[strategy_id])
                 print("ret: {}, earning: {}".format(expected_ret, expected_earning))
-                print(str(prices_at))
+                print(str(expected_prices))
                 if expected_earning > slsp[1]:  # Stop Profit
                     print("\n----------------------------------{}: Close position (Stop profit)----------------------------------".format(strategy_id))
                     results, requests = self.strategy_close(strategy_id, lots)  # close position
@@ -275,14 +290,14 @@ class Trader:
                     print("\n----------------------------------{}: Close position (Stop Loss)----------------------------------".format(strategy_id))
                     results, requests = self.strategy_close(strategy_id, lots)  # close position
                 if results:
-                    self.strategy_close_update(strategy_id, results, requests, coefficient_vector, prices_at, expected_ret, expected_earning)
+                    self.strategy_close_update(strategy_id, results, requests, coefficient_vector, expected_prices, expected_ret, expected_earning, signal.index[-1])
 
-    def strategy_open_update(self, strategy_id, results, requests, prices_at, q2d_at, open_position_date):
+    def strategy_open_update(self, strategy_id, results, requests, expected_prices, q2d_at, open_position_date):
         """
         :param strategy_id: str
         :param results: mt5 results
         :param requests: request dict
-        :param prices_at: np.array, size = (len(symbols), )
+        :param expected_prices: np.array, size = (len(symbols), )
         :param q2d_at: np.array
         :param open_position_date: the date that open position
         :return: Boolean
@@ -290,28 +305,32 @@ class Trader:
         # update status
         self.status[strategy_id] = 1
         # update the open position: expected
-        self.open_postions[strategy_id]['expected'] = prices_at
+        self.open_postions[strategy_id]['expected'] = expected_prices
         # update the open position: real
         self.open_postions[strategy_id]['real'] = [result.price for result in results]
         # update open pt diff
-        self.open_pt_diff[strategy_id] = pointsModel.get_pt_diff(results, requests, prices_at, self.all_symbol_info)
+        self.open_pt_diff[strategy_id] = pointsModel.get_pt_diff(results, requests, expected_prices, self.all_symbol_info)
+        # date
         self.open_postions_date[strategy_id] = open_position_date # update the open position time to avoid the buy again after stop loss or profit
         self.q2d_at[strategy_id] = q2d_at
         return True
 
-    def strategy_close_update(self, strategy_id, results, requests, coefficient_vector, prices_at, expected_ret, expected_earning):
+    def strategy_close_update(self, strategy_id, results, requests, coefficient_vector, expected_prices, expected_ret, expected_earning, close_position_date):
         """
         :param strategy_id: str
         :param results: mt5 results
         :param coefficient_vector: np.array
-        :param prices_at: np.array, size = (len(symbols), )
+        :param expected_prices: np.array, size = (len(symbols), )
         :param expected_ret: float
         :param expected_earning: float
         :param long_mode: Boolean
+        :param close_position_date: the date that close position
         :return: Boolean
         """
+        # update closed date
+        self.close_postions_date[strategy_id] = close_position_date
         # update the close position: expected
-        self.close_postions[strategy_id]['expected'] = prices_at
+        self.close_postions[strategy_id]['expected'] = expected_prices
         self.rets[strategy_id]['expected'] = expected_ret
         self.earnings[strategy_id]['expected'] = expected_earning
 
@@ -330,7 +349,7 @@ class Trader:
         self.earnings[strategy_id]['real'] = real_earning
 
         # update close pt diff
-        self.close_pt_diff[strategy_id] = pointsModel.get_pt_diff(results, requests, prices_at, self.all_symbol_info)
+        self.close_pt_diff[strategy_id] = pointsModel.get_pt_diff(results, requests, expected_prices, self.all_symbol_info)
 
         # update status
         self.status[strategy_id] = 0
@@ -346,14 +365,14 @@ class Trader:
         self.init_strategy(strategy_id)  # clear the record
         return True
 
-    def strategy_open(self, strategy_id, prices_at, lots):
+    def strategy_open(self, strategy_id, expected_prices, lots):
         """
         :param strategy_id: str
         :param lots: [float], that is open position that lots going to buy(+ve) / sell(-ve)
         :return: dict: requests, results
         """
         requests = self.requests_format(strategy_id, lots, close_pos=False)
-        spread_allowed = self.check_allowed_with_avg_spread(requests, prices_at, self.avg_spreads[strategy_id]) # note 59a
+        spread_allowed = self.check_allowed_with_avg_spread(requests, expected_prices, self.avg_spreads[strategy_id]) # note 59a
         if not spread_allowed:
             return False, False
         results = self.requests_execute(requests)
@@ -383,7 +402,7 @@ class Trader:
         """
         :param strategy_id: str, belong to specific strategy
         :param lots: [float]
-        :param prices_at: np.array, size = (len(symbols), )
+        :param close_pos: Boolean, if it is for closing position, it will need to store the position id for reference
         :return: requests, [dict], a list of request
         """
         # the target with respect to the strategy id

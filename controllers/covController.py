@@ -1,6 +1,5 @@
 from production.codes import config
-from production.codes.models import mt5Model
-from production.codes.models.backtestModel import priceModel
+from production.codes.models import mt5Model, priceModel
 from production.codes.models import covModel
 import os
 
