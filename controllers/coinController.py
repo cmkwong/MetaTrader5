@@ -14,25 +14,25 @@ options = {
     'debug': True,
 }
 data_options = {
-    'start': (2021,8,25,0,0),
+    'start': (2015,1,1,0,0),
     'end': (2021,8,28,0,0),    # None = get the most current price
     'symbols': ["AUDJPY","AUDUSD","CADJPY","USDCAD"],
-    'timeframe': '5min',
+    'timeframe': '1H',
     'timezone': "Hongkong",
     'deposit_currency': 'USD',
     'shuffle': True,
-    'trainTestSplit': 0.1,
+    'trainTestSplit': 0.7,
     'plt_save_path': os.path.join(options['main_path'], "coin_plt"),
     'debug_path': os.path.join(options['main_path'], "debug"),
     'local_min_path': os.path.join(options['main_path'], "min_data"),
     'local': False,
 }
 train_options = {
-    'upper_th': 0.001,
-    'lower_th': -0.001,
+    'upper_th': 1.5,
+    'lower_th': -1.5,
     'z_score_mean_window': 5,
     'z_score_std_window': 20,
-    'slsp': (-200,1000), # None means no constraint
+    'slsp': (-50000,50000), # None means no constraint
     'close_change': 1,  # 0 = close; 1 = change
 }
 
