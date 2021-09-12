@@ -22,6 +22,7 @@ data_options = {
     'deposit_currency': 'USD',
     'shuffle': True,
     'trainTestSplit': 0.7,
+    'hist_bins': 500,
     'plt_save_path': os.path.join(options['main_path'], "coin_plt"),
     'debug_path': os.path.join(options['main_path'], "debug"),
     'local_min_path': os.path.join(options['main_path'], "min_data"),
@@ -74,7 +75,7 @@ with mt5Model.Helper():
     title = plotModel.get_plot_title(data_options['start'], data_options['end'], data_options['timeframe'], data_options['local'])
     setting = plotModel.get_setting_txt(train_options)
     plotView.save_plot(train_plt_datas, test_plt_datas, data_options['symbols'], 0, data_options['plt_save_path'],
-                       options['dt'], dpi=500, linewidth=0.2, title=title, figure_size=(40, 56), fontsize=6, bins=500,
+                       options['dt'], dpi=500, linewidth=0.2, title=title, figure_size=(40, 56), fontsize=6, bins=data_options['hist_bins'],
                        setting=setting, hist_range=train_options['slsp'])
 
 print("Saved successfully. \n{}".format(data_options['plt_save_path']))

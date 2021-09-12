@@ -9,46 +9,61 @@ DT_STRING = now.strftime("%y%m%d%H%M%S")
 options = {
     'main_path': "{}/projects/210215_mt5/production/docs/{}/".format(config.COMP_PATH, config.VERSION),
     'dt': DT_STRING,
+    'debug': True,
 }
 
 data_options = {
-    'start': (2010, 1, 1, 0, 0),
+    'start': (2010, 1, 2, 0, 0),
     'end': (2020, 12, 30, 0, 0),
     'symbols': ["EURUSD"],
-    'timeframe': timeModel.get_txt2timeframe('D1'),
+    'timeframe': '1H',
     'timezone': "Hongkong",
     'deposit_currency': 'USD',
     'trainTestSplit': 0.7,
     'hist_bins': 100,
-    'price_plt_save_path': options['main_path'] + "ma_backtest/",
+    'plt_save_path': os.path.join(options['main_path'], "ma_backtest"),
     'debug_path': os.path.join(options['main_path'], "debug"),
+    'local_min_path': os.path.join(options['main_path'], "min_data"),
     'local': False,
 }
 train_options = {
     'long_mode': True,
-    'limit_unit': 5,
+    'limit_unit': 100,
     'long_param': {
-        'fast': 2,
-        'slow': 7
+        'fast': 3,
+        'slow': 60
     },
     'short_param': {
-        'fast': 56,
-        'slow': 10
+        'fast': 3,
+        'slow': 60
     }
 }
 
 with mt5Model.Helper():
-    Prices = priceModel.get_mt5_Prices(data_options['symbols'], data_options['timeframe'], data_options['timezone'], data_options['start'], data_options['end'], deposit_currency='USD')
+    # define loader
+    prices_loader = priceModel.Prices_Loader(symbols=data_options['symbols'],
+                                             timeframe=data_options['timeframe'],
+                                             data_path=data_options['local_min_path'],
+                                             start=data_options['start'],
+                                             end=data_options['end'],
+                                             timezone=data_options['timezone'],
+                                             deposit_currency=data_options['deposit_currency'])
+
+    # get the data
+    prices_loader.get_data(data_options['local'])
 
     # split into train set and test set
-    Train_Prices, Test_Prices = priceModel.split_Prices(Prices, percentage=data_options['trainTestSplit'])
+    Train_Prices, Test_Prices = priceModel.split_Prices(prices_loader.Prices, percentage=data_options['trainTestSplit'])
 
-    train_plt_datas = plotModel.get_ma_plt_datas(Train_Prices, train_options['long_param'], train_options['short_param'], train_options['limit_unit'])
-    test_plt_datas = plotModel.get_ma_plt_datas(Test_Prices, train_options['long_param'], train_options['short_param'], train_options['limit_unit'])
+    train_plt_datas = plotModel.get_ma_plt_datas(Train_Prices, train_options['long_param'], train_options['short_param'], train_options['limit_unit'],
+                                                 debug_path=data_options['debug_path'], debug_file='{}_train.csv'.format(options['dt']), debug=options['debug'])
+    test_plt_datas = plotModel.get_ma_plt_datas(Test_Prices, train_options['long_param'], train_options['short_param'], train_options['limit_unit'],
+                                                debug_path=data_options['debug_path'], debug_file='{}_test.csv'.format(options['dt']), debug=options['debug'])
 
-    title = plotModel.get_plot_title(data_options['start'], data_options['end'], timeModel.get_timeframe2txt(data_options['timeframe']), data_options['local'])
-    plotView.save_plot(train_plt_datas, test_plt_datas, data_options['symbols'], 0,
-                       data_options['price_plt_save_path'], options['dt'], dpi=500, linewidth=0.2, title=title,
-                       figure_size=(42, 18), fontsize=5, bins=data_options['hist_bins'])
+    title = plotModel.get_plot_title(data_options['start'], data_options['end'], data_options['timeframe'], data_options['local'])
+    setting = plotModel.get_setting_txt(train_options)
+    plotView.save_plot(train_plt_datas, test_plt_datas, data_options['symbols'], 0, data_options['plt_save_path'],
+                       options['dt'], dpi=500, linewidth=0.2, title=title, figure_size=(42, 18), fontsize=5, bins=data_options['hist_bins'],
+                       setting=setting)
 
-    print("Saved successfully. \n{}".format(data_options['price_plt_save_path']))
+    print("Saved successfully. \n{}".format(data_options['plt_save_path']))

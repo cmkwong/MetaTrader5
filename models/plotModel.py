@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import collections
 import os
 
 from production.codes.models import coinModel, maModel, timeModel
@@ -22,6 +23,46 @@ def _get_format_plot_data(df=None, hist=None, text=None, equation=None, height=2
     plt_data['equation'] = equation
     plt_data['height'] = height
     return plt_data
+
+def _get_graph_data(Prices, long_signal, short_signal, coefficient_vector):
+    Graph_Data = collections.namedtuple("Graph_Data", ["long_modify_exchg_q2d", "short_modify_exchg_q2d",
+                                                       "long_ret", "long_earning",
+                                                       "long_accum_ret", "long_accum_earning",
+                                                       "short_ret", "short_earning",
+                                                       "short_accum_ret","short_accum_earning",
+                                                       "long_ret_list", "long_earning_list",
+                                                       "short_ret_list","short_earning_list",
+                                                       "stats"])
+    # prepare q2d
+    long_modify_exchg_q2d = exchgModel.get_exchg_by_signal(Prices.quote_exchg, long_signal)
+    short_modify_exchg_q2d = exchgModel.get_exchg_by_signal(Prices.quote_exchg, short_signal)
+
+    # prepare data for graph ret and earning
+    long_ret, long_earning = returnModel.get_ret_earning(Prices.o, Prices.o.shift(1), long_modify_exchg_q2d, Prices.ptDv, coefficient_vector, long_mode=True)
+    long_ret_by_signal, long_earning_by_signal = returnModel.get_ret_earning_by_signal(long_ret, long_earning, long_signal)
+    long_accum_ret, long_accum_earning = returnModel.get_accum_ret_earning(long_ret_by_signal, long_earning_by_signal)
+
+    short_ret, short_earning = returnModel.get_ret_earning(Prices.o, Prices.o.shift(1), short_modify_exchg_q2d, Prices.ptDv, coefficient_vector, long_mode=False)
+    short_ret_by_signal, short_earning_by_signal = returnModel.get_ret_earning_by_signal(short_ret, short_earning, short_signal)
+    short_accum_ret, short_accum_earning = returnModel.get_accum_ret_earning(short_ret_by_signal, short_earning_by_signal)
+
+    # prepare data for graph histogram
+    long_ret_list, long_earning_list = returnModel.get_ret_earning_list(long_ret_by_signal, long_earning_by_signal, long_signal)
+    short_ret_list, short_earning_list = returnModel.get_ret_earning_list(short_ret_by_signal, short_earning_by_signal, short_signal)
+
+    # prepare stat
+    stats = statModel.get_stats(long_ret_list, long_earning_list, short_ret_list, short_earning_list)
+
+    # assigned to Graph_Data
+    Graph_Data.long_modify_exchg_q2d, Graph_Data.short_modify_exchg_q2d = long_modify_exchg_q2d, short_modify_exchg_q2d
+    Graph_Data.long_ret, Graph_Data.long_earning = long_ret, long_earning
+    Graph_Data.long_accum_ret, Graph_Data.long_accum_earning = long_accum_ret, long_accum_earning
+    Graph_Data.short_ret, Graph_Data.short_earning = short_ret, short_earning
+    Graph_Data.short_accum_ret, Graph_Data.short_accum_earning = short_accum_ret, short_accum_earning
+    Graph_Data.long_ret_list, Graph_Data.long_earning_list = long_ret_list, long_earning_list
+    Graph_Data.short_ret_list, Graph_Data.short_earning_list = short_ret_list, short_earning_list
+    Graph_Data.stats = stats
+    return Graph_Data
 
 def get_total_height(plt_datas):
     # graph proportion
@@ -74,26 +115,8 @@ def get_coin_NN_plt_datas(Prices, min_Prices, coefficient_vector, upper_th, lowe
         dependent_variable = Prices.cc
     coin_data = coinModel.get_coin_data(dependent_variable, coefficient_vector, z_score_mean_window, z_score_std_window)  # get_coin_data() can work for coinNN and coin
     long_signal, short_signal = signalModel.get_coin_NN_signal(coin_data, upper_th, lower_th)
-
-    # prepare q2d
-    long_modify_exchg_q2d = exchgModel.get_exchg_by_signal(Prices.quote_exchg, long_signal)
-    short_modify_exchg_q2d = exchgModel.get_exchg_by_signal(Prices.quote_exchg, short_signal)
-
-    # prepare data for graph 4 and 5
-    long_ret, long_earning = returnModel.get_ret_earning(Prices.o, Prices.o.shift(1), long_modify_exchg_q2d, Prices.ptDv, coefficient_vector, long_mode=True)
-    long_ret_by_signal, long_earning_by_signal = returnModel.get_ret_earning_by_signal(long_ret, long_earning, long_signal)
-    long_accum_ret, long_accum_earning = returnModel.get_accum_ret_earning(long_ret_by_signal, long_earning_by_signal)
-
-    short_ret, short_earning = returnModel.get_ret_earning(Prices.o, Prices.o.shift(1), short_modify_exchg_q2d, Prices.ptDv, coefficient_vector, long_mode=False)
-    short_ret_by_signal, short_earning_by_signal = returnModel.get_ret_earning_by_signal(short_ret, short_earning, short_signal)
-    short_accum_ret, short_accum_earning = returnModel.get_accum_ret_earning(short_ret_by_signal, short_earning_by_signal)
-
-    # prepare data for graph 6 and 7
-    long_ret_list, long_earning_list = returnModel.get_ret_earning_list(long_ret_by_signal, long_earning_by_signal, long_signal)
-    short_ret_list, short_earning_list = returnModel.get_ret_earning_list(short_ret_by_signal, short_earning_by_signal, short_signal)
-
-    # prepare stat
-    stats = statModel.get_stats(long_ret_list, long_earning_list, short_ret_list, short_earning_list)
+    # Get Graph Data
+    Graph_Data = _get_graph_data(Prices, long_signal, short_signal, coefficient_vector)
 
     # -------------------------------------------------------------------- standard graph --------------------------------------------------------------------
     plt_datas = {}
@@ -111,33 +134,32 @@ def get_coin_NN_plt_datas(Prices, min_Prices, coefficient_vector, upper_th, lowe
     z_df = pd.DataFrame(coin_data['z_score'], index=dependent_variable.index)
     plt_datas[2] = _get_format_plot_data(df=z_df)
 
-
     # 4 graph: return for long and short
     accum_ret_df = pd.DataFrame(index=dependent_variable.index)
-    accum_ret_df["long_accum_ret"] = long_accum_ret
-    accum_ret_df["short_accum_ret"] = short_accum_ret
-    text = get_stat_text_condition(stats, 'ret')
+    accum_ret_df["long_accum_ret"] = Graph_Data.long_accum_ret
+    accum_ret_df["short_accum_ret"] = Graph_Data.short_accum_ret
+    text = get_stat_text_condition(Graph_Data.stats, 'ret')
     plt_datas[3] = _get_format_plot_data(df=accum_ret_df, text=text)
 
     # 5 graph: earning for long and short
     accum_earning_df = pd.DataFrame(index=dependent_variable.index)
-    accum_earning_df["long_accum_earning"] = long_accum_earning
-    accum_earning_df["short_accum_earning"] = short_accum_earning
-    text = get_stat_text_condition(stats, 'earning')
+    accum_earning_df["long_accum_earning"] = Graph_Data.long_accum_earning
+    accum_earning_df["short_accum_earning"] = Graph_Data.short_accum_earning
+    text = get_stat_text_condition(Graph_Data.stats, 'earning')
     plt_datas[4] = _get_format_plot_data(df=accum_earning_df, text=text)
 
     # 6 graph: earning histogram for long
-    plt_datas[5] = _get_format_plot_data(hist=pd.Series(long_earning_list, name='long earning'))
+    plt_datas[5] = _get_format_plot_data(hist=pd.Series(Graph_Data.long_earning_list, name='long earning'))
 
     # 7 graph: earning histogram for short
-    plt_datas[6] = _get_format_plot_data(hist=pd.Series(short_earning_list, name='short earning'))
+    plt_datas[6] = _get_format_plot_data(hist=pd.Series(Graph_Data.short_earning_list, name='short earning'))
 
     # ------------ DEBUG -------------
     df_debug = pd.DataFrame(index=Prices.o.index)
-    df_debug = pd.concat([df_debug, Prices.o, long_modify_exchg_q2d, short_modify_exchg_q2d, Prices.ptDv, coin_data,
+    df_debug = pd.concat([df_debug, Prices.o, Graph_Data.long_modify_exchg_q2d, Graph_Data.short_modify_exchg_q2d, Prices.ptDv, coin_data,
                           long_signal, short_signal,
-                          long_ret, short_ret, accum_ret_df,
-                          long_earning, short_earning, accum_earning_df
+                          Graph_Data.long_ret, Graph_Data.short_ret, accum_ret_df,
+                          Graph_Data.long_earning, Graph_Data.short_earning, accum_earning_df
                           ], axis=1)
 
     # -------------------------------------------------------------------- slsp --------------------------------------------------------------------
@@ -150,9 +172,9 @@ def get_coin_NN_plt_datas(Prices, min_Prices, coefficient_vector, upper_th, lowe
         short_min_ret, short_min_earning = returnModel.get_ret_earning(min_Prices.o, min_Prices.o.shift(1), short_modify_min_exchg_q2d, min_Prices.ptDv, coefficient_vector, long_mode=False)
 
         # prepare data for graph 8 and 9: ret and earning with stop-loss and stop-profit
-        long_ret_by_signal_slsp, long_earning_by_signal_slsp = returnModel.get_ret_earning_by_signal(long_ret, long_earning, long_signal, long_min_ret, long_min_earning, slsp, timeframe)
+        long_ret_by_signal_slsp, long_earning_by_signal_slsp = returnModel.get_ret_earning_by_signal(Graph_Data.long_ret, Graph_Data.long_earning, long_signal, long_min_ret, long_min_earning, slsp, timeframe)
         long_accum_ret_slsp, long_accum_earning_slsp = returnModel.get_accum_ret_earning(long_ret_by_signal_slsp, long_earning_by_signal_slsp)
-        short_ret_by_signal_slsp, short_earning_by_signal_slsp = returnModel.get_ret_earning_by_signal(short_ret, short_earning, short_signal, short_min_ret, short_min_earning, slsp, timeframe)
+        short_ret_by_signal_slsp, short_earning_by_signal_slsp = returnModel.get_ret_earning_by_signal(Graph_Data.short_ret, Graph_Data.short_earning, short_signal, short_min_ret, short_min_earning, slsp, timeframe)
         short_accum_ret_slsp, short_accum_earning_slsp = returnModel.get_accum_ret_earning(short_ret_by_signal_slsp, short_earning_by_signal_slsp)
 
         # prepare data for graph 10 and 11
@@ -204,7 +226,7 @@ def get_coin_NN_plt_datas(Prices, min_Prices, coefficient_vector, upper_th, lowe
 
     return plt_datas
 
-def get_ma_plt_datas(Prices, long_param, short_param, limit_unit):
+def get_ma_plt_datas(Prices, long_param, short_param, limit_unit, debug_path, debug_file, debug=False):
     """
     :param Prices: collections nametuples
     :param long_param: dict ['fast', 'slow']
@@ -215,55 +237,51 @@ def get_ma_plt_datas(Prices, long_param, short_param, limit_unit):
     long_ma_data = maModel.get_ma_data(Prices.c, long_param['fast'], long_param['slow'])
     short_ma_data = maModel.get_ma_data(Prices.c, short_param['fast'], short_param['slow'])
     long_signal, short_signal = signalModel.get_movingAverage_signal(long_ma_data, short_ma_data, limit_unit=limit_unit)
-    stats = statModel.get_stats(Prices, long_signal, short_signal, coefficient_vector=np.array([]))
-    long_modify_exchg_q2d = exchgModel.get_exchg_by_signal(Prices.quote_exchg, long_signal)
-    short_modify_exchg_q2d = exchgModel.get_exchg_by_signal(Prices.quote_exchg, short_signal)
-    plt_datas = {}
+    # Get Graph Data
+    Graph_Data = _get_graph_data(Prices, long_signal, short_signal, coefficient_vector=np.array([]))
 
+    # -------------------------------------------------------------------- standard graph --------------------------------------------------------------------
+    plt_datas = {}
     # 1 graph: close price, fast ma,  slow ma (long)
-    df = pd.concat([Prices.c, long_ma_data['fast'], long_ma_data['slow']], axis=1)
+    long_ma_df = pd.concat([Prices.c, long_ma_data['fast'], long_ma_data['slow']], axis=1)
     text = 'Long: \n  fast: {}\n  slow: {}'.format(long_param['fast'], long_param['slow'])
-    plt_datas[0] = _get_format_plot_data(df=df, text=text)
+    plt_datas[0] = _get_format_plot_data(df=long_ma_df, text=text)
 
     # 2 graph: close price, fast ma,  slow ma (short)
-    df = pd.concat([Prices.c, short_ma_data['fast'], short_ma_data['slow']], axis=1)
+    short_ma_df = pd.concat([Prices.c, short_ma_data['fast'], short_ma_data['slow']], axis=1)
     text = 'Short: \n  fast: {}\n  slow: {}'.format(short_param['fast'], short_param['slow'])
-    plt_datas[1] = _get_format_plot_data(df=df, text=text)
-
-    # calculate the ret and earning for graph 3 and 4
-    long_ret, long_earning = returnModel.get_ret_earning(Prices.o, Prices.o.shift(1), long_modify_exchg_q2d, Prices.ptDv, coefficient_vector=np.array([]), long_mode=True)
-    long_accum_ret, long_accum_earning = returnModel.get_accum_ret_earning(long_ret, long_earning, long_signal)
-    short_ret, short_earning = returnModel.get_ret_earning(Prices.o, Prices.o.shift(1), short_modify_exchg_q2d, Prices.ptDv, coefficient_vector=np.array([]), long_mode=False)
-    short_accum_ret, short_accum_earning = returnModel.get_accum_ret_earning(short_ret, short_earning, short_signal)
+    plt_datas[1] = _get_format_plot_data(df=short_ma_df, text=text)
 
     # 3 graph: ret (long and short)
-    df = pd.DataFrame(index=Prices.c.index)
-    df["long_accum_ret"] = long_accum_ret
-    df["short_accum_ret"] = short_accum_ret
-    text = get_stat_text_condition(stats, 'ret')
-    plt_datas[2] = _get_format_plot_data(df=df, text=text)
+    accum_ret_df = pd.DataFrame(index=Prices.c.index)
+    accum_ret_df["long_accum_ret"] = Graph_Data.long_accum_ret
+    accum_ret_df["short_accum_ret"] = Graph_Data.short_accum_ret
+    text = get_stat_text_condition(Graph_Data.stats, 'ret')
+    plt_datas[2] = _get_format_plot_data(df=accum_ret_df, text=text)
 
     # 4 graph: earning (long and short)
-    df = pd.DataFrame(index=Prices.c.index)
-    df["long_accum_earning"] = long_accum_earning
-    df["short_accum_earning"] = short_accum_earning
-    text = get_stat_text_condition(stats, 'earning')
-    plt_datas[3] = _get_format_plot_data(df=df, text=text)
+    accum_earning_df = pd.DataFrame(index=Prices.c.index)
+    accum_earning_df["long_accum_earning"] = Graph_Data.long_accum_earning
+    accum_earning_df["short_accum_earning"] = Graph_Data.short_accum_earning
+    text = get_stat_text_condition(Graph_Data.stats, 'earning')
+    plt_datas[3] = _get_format_plot_data(df=accum_earning_df, text=text)
 
     # 5 graph: ret histogram for long
-    long_ret_list, _ = returnModel.get_ret_earning_list(Prices.o, Prices.o.shift(1), long_modify_exchg_q2d, Prices.ptDv, coefficient_vector=np.array([]), signal=long_signal, long_mode=True)
-    plt_datas[4] = _get_format_plot_data(hist=pd.Series(long_ret_list, name='long earning'))
+    plt_datas[4] = _get_format_plot_data(hist=pd.Series(Graph_Data.long_ret_list, name='long earning'))
 
     # 6 graph: ret histogram for short
-    short_earning_list = returnModel.get_ret_earning_list(Prices.o, Prices.o.shift(1), short_modify_exchg_q2d, Prices.ptDv, coefficient_vector=np.array([]), signal=long_signal, long_mode=False)
-    plt_datas[5] = _get_format_plot_data(hist=pd.Series(short_earning_list, name='short earning'))
+    plt_datas[5] = _get_format_plot_data(hist=pd.Series(Graph_Data.short_earning_list, name='short earning'))
 
     # ------------ DEBUG -------------
-    # long_ret = returnModel.get_ret(Prices.o, Prices.quote_exchg, coefficient_vector=np.array([]), long_mode=True)
-    # short_ret = returnModel.get_ret(Prices.o, Prices.quote_exchg, coefficient_vector=np.array([]), long_mode=False)
-    # long_earning = returnModel.get_earning(Prices.quote_exchg, Prices.ptDv, coefficient_vector=np.array([]), long_mode=True)
-    # short_earning = returnModel.get_earning(Prices.quote_exchg, Prices.ptDv, coefficient_vector=np.array([]), long_mode=False)
-
+    df_debug = pd.DataFrame(index=Prices.o.index)
+    df_debug = pd.concat([df_debug, Prices.o, Graph_Data.long_modify_exchg_q2d, Graph_Data.short_modify_exchg_q2d, Prices.ptDv,
+                          long_ma_data, short_ma_data,
+                          long_signal, short_signal,
+                          Graph_Data.long_ret, Graph_Data.short_ret, accum_ret_df,
+                          Graph_Data.long_earning, Graph_Data.short_earning, accum_earning_df
+                          ], axis=1)
+    if debug:
+        df_debug.to_csv(os.path.join(debug_path, debug_file))
     return plt_datas
 
 def get_spread_plt_datas(spreads):
@@ -341,6 +359,13 @@ def get_coin_NN_equation_text(symbols, coefficient_vector):
 def get_setting_txt(setting_dict):
     setting = 'Setting: \n'
     for key, value in setting_dict.items():
-        setting += "{}: {}\n".format(key, value)
+        # for nested dictionary (Second level)
+        if type(value) == dict:
+            setting += "{}: \n".format(key)
+            for k, v in value.items():
+                setting += "  {}: {}\n".format(k, v)
+        # if only one level of dictionary
+        else:
+            setting += "{}: {}\n".format(key, value)
     return setting
 
