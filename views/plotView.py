@@ -2,7 +2,7 @@ import os
 import seaborn as sns
 import pandas as pd
 from matplotlib import pyplot as plt
-from production.codes.models import plotModel
+from production.codes.backtest import plotPre
 
 from pandas.plotting import register_matplotlib_converters
 register_matplotlib_converters()
@@ -27,7 +27,7 @@ def save_plot(train_plt_data, test_plt_data, symbols, episode, saved_path, dt_st
     fig = plt.figure(figsize=figure_size, dpi=dpi)
     fig.suptitle(title, fontsize=fontsize*4)
     plt.figtext(0.1,0.9, setting, fontsize=fontsize*2)
-    gs = fig.add_gridspec(plotModel.get_total_height(train_plt_data), 1)  # slice into grid with different size
+    gs = fig.add_gridspec(plotPre.get_total_height(train_plt_data), 1)  # slice into grid with different size
     # for histogram range
     if hist_range != None: hist_range = (hist_range[0]+1, hist_range[1]-1) # exclude the range, see note (51a)
 
@@ -76,7 +76,7 @@ def save_plot(train_plt_data, test_plt_data, symbols, episode, saved_path, dt_st
 
         plt.legend()
 
-    full_path = os.path.join(saved_path, plotModel.get_coin_NN_plot_image_name(dt_str, symbols, episode))
+    full_path = os.path.join(saved_path, plotPre.get_coin_NN_plot_image_name(dt_str, symbols, episode))
     plt.savefig(full_path)  # save in higher resolution image
     plt.clf()                                                                              # clear the plot data
 

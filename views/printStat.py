@@ -1,6 +1,6 @@
 
 def print_dict(data_dict):
-    print("\n~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*")
+    print("~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*")
     for key, value in data_dict.items():
         print("{}:\t{:.5f}".format(key, value))
 
