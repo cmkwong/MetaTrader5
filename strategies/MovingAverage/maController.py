@@ -30,7 +30,7 @@ data_options = {
 }
 train_options = {
     'long_mode': True,
-    'limit_unit': 100,
+    'limit_unit': 3,
     'long_param': {
         'fast': 3,
         'slow': 60

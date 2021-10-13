@@ -17,15 +17,16 @@ options = {
     'debug': True,
 }
 data_options = {
-    'start': (2015,1,1,0,0),
-    'end': (2021,9,10,0,0),    # None = get the most current price
+    'start': (2021,1,1,0,0),
+    'end': (2021,10,13,0,0),    # None = get the most current price
     'symbols': ["AUDJPY","AUDUSD","CADJPY","USDCAD"],
     'timeframe': '1H',
     'timezone': "Hongkong",
     'deposit_currency': 'USD',
     'shuffle': True,
     'trainTestSplit': 0.7,
-    'hist_bins': 500,
+    'hist_bins': 300,
+    'dpi': 300,
     'plt_save_path': os.path.join(options['main_path'], "coin_plt"),
     'debug_path': os.path.join(options['main_path'], "debug"),
     'local_min_path': os.path.join(options['main_path'], "min_data"),
@@ -36,7 +37,7 @@ train_options = {
     'lower_th': -1.5,
     'z_score_mean_window': 5,
     'z_score_std_window': 20,
-    'slsp': (-50000,50000), # None means no constraint
+    'slsp': None, # None means no constraint
     'close_change': 1,  # 0 = close; 1 = change
 }
 
@@ -78,7 +79,7 @@ with mt5Model.csv_Writer_Helper():
     title = plotPre.get_plot_title(data_options['start'], data_options['end'], data_options['timeframe'], data_options['local'])
     setting = plotPre.get_setting_txt(train_options)
     plotView.save_plot(train_plt_datas, test_plt_datas, data_options['symbols'], 0, data_options['plt_save_path'],
-                       options['dt'], dpi=500, linewidth=0.2, title=title, figure_size=(40, 56), fontsize=6, bins=data_options['hist_bins'],
+                       options['dt'], dpi=data_options['dpi'], linewidth=0.2, title=title, figure_size=(40, 56), fontsize=6, bins=data_options['hist_bins'],
                        setting=setting, hist_range=train_options['slsp'])
 
 print("Saved successfully. \n{}".format(data_options['plt_save_path']))

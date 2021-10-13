@@ -54,8 +54,8 @@ def maxLimitClosed(signal, limit_unit):
     assert signal[len(signal) - 2] != True, "Signal not for backtesting"
 
     int_signal = get_int_signal(signal)
-    signal_starts = [i - 1 for i in indexModel.find_target_index(int_signal.reset_index(drop=True), target=1, step=1)]
-    signal_ends = [i - 1 for i in indexModel.find_target_index(int_signal.reset_index(drop=True), target=-1, step=1)]
+    signal_starts = [i for i in indexModel.find_target_index(int_signal.reset_index(drop=True), target=1, step=0)]
+    signal_ends = [i for i in indexModel.find_target_index(int_signal.reset_index(drop=True), target=-1, step=0)]
     starts, ends = indexModel.simple_limit_end_index(signal_starts, signal_ends, limit_unit)
 
     # assign new signal

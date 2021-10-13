@@ -2,14 +2,14 @@ import numpy as np
 from production.codes.backtest import indexModel, returnModel
 from production.codes.utils import tools
 
-def get_action_total(signal):
-    """
-    :param signal: pd.Series(Boolean)
-    :return: int
-    """
-    start, end = indexModel.get_start_end_index(signal.reset_index(drop=True))
-
-    return len(start)
+# def get_action_total(signal):
+#     """
+#     :param signal: pd.Series(Boolean)
+#     :return: int
+#     """
+#     start, end = indexModel.get_start_end_index(signal.reset_index(drop=True))
+#
+#     return len(start)
 
 def get_stat(ret_list, earning_list):
     """

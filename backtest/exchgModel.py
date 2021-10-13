@@ -34,7 +34,7 @@ def get_exchg_by_signal(exchg, signal):
     :return:
     """
     new_exchg = exchg.copy()
-    start_index, end_index = indexModel.get_start_end_index(signal, step=2)
+    start_index, end_index = indexModel.get_start_end_index(signal, step=1) # step 1 instead of step 2 because change to use close price as action price (see note 95a)
     for s, e in zip(start_index, end_index):
         new_exchg.loc[s:e + timedelta(minutes=-1), :] = exchg.loc[s:e + timedelta(minutes=-1), :].iloc[0].values    # there is a problem to using shift(), note 89c
         # new_exchg.loc[s:e + timedelta(minutes=-1),:] = exchg.loc[s:s,:].values

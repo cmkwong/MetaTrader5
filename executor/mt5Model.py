@@ -289,11 +289,11 @@ class Trader:
                     return False
         return True
 
-    def strategy_controller(self, strategy_id, latest_open_prices, latest_quote_exchg, coefficient_vector, signal, slsp, lots):
+    def strategy_controller(self, strategy_id, close_prices, quote_exchg, coefficient_vector, signal, slsp, lots):
         """
         :param strategy_id: str, each strategy has unique id for identity
-        :param latest_open_prices: pd.DataFrame, open price with latest prices
-        :param latest_quote_exchg: pd.DataFrame, quote exchange rate with latest rate
+        :param close_prices: pd.DataFrame, open price with latest prices
+        :param quote_exchg: pd.DataFrame, quote exchange rate with latest rate
         :param coefficient_vector: np.array (raw vector: [y-intercepy, coefficients])
         :param signal: pd.Series
         :param slsp: tuple, (stop-loss, stop-profit)
@@ -307,8 +307,8 @@ class Trader:
         different_open_position = (signal.index[-1] != self.open_postions_date[strategy_id])  # different position to the previous one, note 69a
         if signal[-2] == True and signal[-3] == False and self.status[strategy_id] == 0 and different_open_position:
             # if open signal has available
-            expected_prices = latest_open_prices.iloc[-2, :].values
-            q2d_at = latest_quote_exchg.iloc[-2, :].values
+            expected_prices = close_prices.iloc[-2, :].values
+            q2d_at = quote_exchg.iloc[-2, :].values
             print("\n----------------------------------{}: Open position----------------------------------".format(strategy_id))
             results, requests = self.strategy_open(strategy_id, expected_prices, lots)  # open position
             if results:
@@ -316,7 +316,7 @@ class Trader:
 
         elif self.status[strategy_id] == 1:
             if signal[-2] == False and signal[-3] == True:
-                expected_prices = latest_open_prices.iloc[-2, :].values # -2 is the open price from the day
+                expected_prices = close_prices.iloc[-2, :].values # -2 is the open price from the day
                 expected_ret, expected_earning = returnModel.get_value_of_ret_earning(symbols=self.strategy_symbols[strategy_id],
                                                                                       new_values=expected_prices,
                                                                                       old_values=self.open_postions[strategy_id]['expected'],
@@ -330,7 +330,7 @@ class Trader:
                 if results:
                     self.strategy_close_update(strategy_id, results, requests, coefficient_vector, expected_prices, expected_ret, expected_earning, signal.index[-1])
             else:
-                expected_prices = latest_open_prices.iloc[-1, :].values # -1 is latest value from the day
+                expected_prices = close_prices.iloc[-1, :].values # -1 is latest value from the day
                 expected_ret, expected_earning = returnModel.get_value_of_ret_earning(symbols=self.strategy_symbols[strategy_id],
                                                                                       new_values=expected_prices,
                                                                                       old_values=self.open_postions[strategy_id]['expected'],

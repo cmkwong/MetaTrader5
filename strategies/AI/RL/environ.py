@@ -31,11 +31,12 @@ class State:
         self.actions['skip'] = 0
         self.actions['open'] = 1
         self.actions['close'] = 2
-        self.action_space_size = len(list(self.actions.keys()))
-    
+        self.action_space = list(self.actions.values())
+        self.action_space_size = len(self.action_space)
+
     def cal_profit(self, curr_action_price, q2d_at):
         modified_coefficient_vector = coinModel.get_modified_coefficient_vector(np.array([]), self.long_mode, self.lot_times)
-        return returnModel.get_value_of_earning(self.symbol, curr_action_price, self._prev_open_price, q2d_at, self.all_symbols_info, modified_coefficient_vector)
+        return returnModel.get_value_of_earning(self.symbol, curr_action_price, self._prev_action_price, q2d_at, self.all_symbols_info, modified_coefficient_vector)
     
     def encode(self):
         # encoded_data = collections.namedtuple('encoded_data', field_names=['date', 'open_price', 'dependent_datas'])
@@ -78,10 +79,10 @@ class State:
             self.deal_step += 1
 
         # update status
-        if self._offset >= len(self.action_price):
-            done = True
+        self._prev_action_price = curr_action_price
         self._offset += 1
-        self._prev_open_price = curr_action_price
+        if self._offset >= len(self.action_price)-1:
+            done = True
 
         return reward, done
 

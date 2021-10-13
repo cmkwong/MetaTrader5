@@ -47,13 +47,15 @@ class DQNAgent(BaseAgent):
     DQNAgent is a memoryless DQN agent which calculates Q values
     from the observations and  converts them into the actions using action_selector
     """
-    def __init__(self, dqn_model, action_selector):
+    def __init__(self, dqn_model, action_selector, preprocessor=default_states_preprocessor):
         self.dqn_model = dqn_model
         self.action_selector = action_selector
+        self.preprocessor = preprocessor
 
     def __call__(self, states, agent_states=None):
         if agent_states is None:
             agent_states = [None] * len(states)
+        states = self.preprocessor(states) # states is a list
         q_v = self.dqn_model(states)
         q = q_v.data.cpu().numpy()
         actions = self.action_selector(q)

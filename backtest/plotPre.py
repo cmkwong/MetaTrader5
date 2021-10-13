@@ -41,11 +41,11 @@ def _get_graph_data(Prices, long_signal, short_signal, coefficient_vector):
     short_modify_exchg_q2d = exchgModel.get_exchg_by_signal(Prices.quote_exchg, short_signal)
 
     # prepare data for graph ret and earning
-    long_ret, long_earning = returnModel.get_ret_earning(Prices.o, Prices.o.shift(1), long_modify_exchg_q2d, Prices.ptDv, coefficient_vector, long_mode=True)
+    long_ret, long_earning = returnModel.get_ret_earning(Prices.c, Prices.c.shift(1), long_modify_exchg_q2d, Prices.ptDv, coefficient_vector, long_mode=True)
     long_ret_by_signal, long_earning_by_signal = returnModel.get_ret_earning_by_signal(long_ret, long_earning, long_signal)
     long_accum_ret, long_accum_earning = returnModel.get_accum_ret_earning(long_ret_by_signal, long_earning_by_signal)
 
-    short_ret, short_earning = returnModel.get_ret_earning(Prices.o, Prices.o.shift(1), short_modify_exchg_q2d, Prices.ptDv, coefficient_vector, long_mode=False)
+    short_ret, short_earning = returnModel.get_ret_earning(Prices.c, Prices.c.shift(1), short_modify_exchg_q2d, Prices.ptDv, coefficient_vector, long_mode=False)
     short_ret_by_signal, short_earning_by_signal = returnModel.get_ret_earning_by_signal(short_ret, short_earning, short_signal)
     short_accum_ret, short_accum_earning = returnModel.get_accum_ret_earning(short_ret_by_signal, short_earning_by_signal)
 
@@ -158,8 +158,8 @@ def get_coin_NN_plt_datas(Prices, min_Prices, coefficient_vector, upper_th, lowe
     plt_datas[6] = _get_format_plot_data(hist=pd.Series(Graph_Data.short_earning_list, name='short earning'))
 
     # ------------ DEBUG -------------
-    df_debug = pd.DataFrame(index=Prices.o.index)
-    df_debug = pd.concat([df_debug, Prices.o, Graph_Data.long_modify_exchg_q2d, Graph_Data.short_modify_exchg_q2d, Prices.ptDv, coin_data,
+    df_debug = pd.DataFrame(index=Prices.c.index)
+    df_debug = pd.concat([df_debug, Prices.c, Graph_Data.long_modify_exchg_q2d, Graph_Data.short_modify_exchg_q2d, Prices.ptDv, coin_data,
                           long_signal, short_signal,
                           Graph_Data.long_ret, Graph_Data.short_ret, accum_ret_df,
                           Graph_Data.long_earning, Graph_Data.short_earning, accum_earning_df
@@ -171,8 +171,8 @@ def get_coin_NN_plt_datas(Prices, min_Prices, coefficient_vector, upper_th, lowe
         long_min_signal, short_min_signal = signalModel.get_resoluted_signal(long_signal, min_Prices.quote_exchg.index), signalModel.get_resoluted_signal(short_signal, min_Prices.quote_exchg.index)
         long_modify_min_exchg_q2d = exchgModel.get_exchg_by_signal(min_Prices.quote_exchg, long_signal)
         short_modify_min_exchg_q2d = exchgModel.get_exchg_by_signal(min_Prices.quote_exchg, short_signal)
-        long_min_ret, long_min_earning = returnModel.get_ret_earning(min_Prices.o, min_Prices.o.shift(1), long_modify_min_exchg_q2d, min_Prices.ptDv, coefficient_vector, long_mode=True)
-        short_min_ret, short_min_earning = returnModel.get_ret_earning(min_Prices.o, min_Prices.o.shift(1), short_modify_min_exchg_q2d, min_Prices.ptDv, coefficient_vector, long_mode=False)
+        long_min_ret, long_min_earning = returnModel.get_ret_earning(min_Prices.c, min_Prices.c.shift(1), long_modify_min_exchg_q2d, min_Prices.ptDv, coefficient_vector, long_mode=True)
+        short_min_ret, short_min_earning = returnModel.get_ret_earning(min_Prices.c, min_Prices.c.shift(1), short_modify_min_exchg_q2d, min_Prices.ptDv, coefficient_vector, long_mode=False)
 
         # prepare data for graph 8 and 9: ret and earning with stop-loss and stop-profit
         long_ret_by_signal_slsp, long_earning_by_signal_slsp = returnModel.get_ret_earning_by_signal(Graph_Data.long_ret, Graph_Data.long_earning, long_signal, long_min_ret, long_min_earning, slsp, timeframe)

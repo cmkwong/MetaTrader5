@@ -16,7 +16,7 @@ class validator:
             'order_profits': [],
             'order_steps': []
         }
-        columns_list = ['episode', 'open_date', 'open_position_price', 'close_date', 'close_position_price', 'position_steps', 'order_profit']
+        columns_list = ['episode', 'open_date', 'open_position_price', 'close_date', 'close_position_price', 'order_steps', 'order_profits']
         self.df = pd.DataFrame(columns=columns_list)
         self.path_csv = self.save_path + "/record_" + str(step_idx) + ".csv"
         # date for that env
@@ -30,8 +30,8 @@ class validator:
         self.df.loc[self._total_count, 'episode'] = episode
         self.df.loc[self._total_count, 'close_date'] = self.date[self.env._state._offset]
         self.df.loc[self._total_count, 'close_position_price'] = self.curr_action_price
-        self.df.loc[self._total_count, 'position_steps'] = self.position_steps
-        self.df.loc[self._total_count, 'order_profit'] = self.profit
+        self.df.loc[self._total_count, 'order_steps'] = self.order_steps
+        self.df.loc[self._total_count, 'order_profits'] = self.order_profits
         self._total_count += 1
 
     def run(self, episodes, step_idx, epsilon):
@@ -40,10 +40,10 @@ class validator:
         for episode in range(episodes):
             obs = self.env.reset()
 
-            self.total_reward = 0.0
-            self.openPos_price = None
-            self.sell_position = None
-            self.position_steps = None
+            self.episode_reward = 0.0
+            self.openPos_price = 0.0
+            self.order_steps = 0
+            self.have_position = False
             self.episode_steps = 0
 
             while True:
@@ -56,38 +56,36 @@ class validator:
 
                 self.curr_action_price = self.env._state.action_price[self.env._state._offset]  # base_offset = 8308
 
-                if (action_idx == self.env._state.actions['open']) and (self.openPos_price is None):
+                if (action_idx == self.env._state.actions['open']) and not self.have_position:
                     self.openPos_price = self.curr_action_price
-                    self.position_steps = 0
                     # store the data
                     self.update_df_open()
 
-                elif (action_idx == self.env._state.actions['close']) and (self.openPos_price is not None):
-                    self.profit = self.env._state.cal_profit(self.openPos_price, self.env._state.quote_exchg[self.env._state._offset])
-                    self.stats['order_profits'].append(self.profit)
-                    self.stats['order_steps'].append(self.position_steps)
+                elif (action_idx == self.env._state.actions['close']) and self.have_position:
+                    self.order_profits = self.env._state.cal_profit(self.openPos_price, self.env._state.quote_exchg[self.env._state._offset])
+                    self.stats['order_profits'].append(self.order_profits)
+                    self.stats['order_steps'].append(self.order_steps)
                     # store the data
                     self.update_df_close(episode)
 
                     # reset the value
-                    self.openPos_price = None
-                    self.position_steps = None
+                    self.order_steps = 0
+                    self.have_position = False
 
                 obs, reward, done, _ = self.env.step(action_idx)
-                self.total_reward += reward
+                self.episode_reward += reward
                 self.episode_steps += 1
-                if self.position_steps is not None:
-                    self.position_steps += 1
+                if self.have_position: self.order_steps += 1
                 if done:
-                    if self.openPos_price is not None:
-                        self.profit = self.env._state.cal_profit(self.openPos_price, self.env._state.quote_exchg[self.env._state._offset])
-                        self.stats['order_profits'].append(self.profit)
-                        self.stats['order_steps'].append(self.position_steps)
+                    if self.have_position:
+                        self.order_profits = self.env._state.cal_profit(self.openPos_price, self.env._state.quote_exchg[self.env._state._offset])
+                        self.stats['order_profits'].append(self.order_profits)
+                        self.stats['order_steps'].append(self.order_steps)
 
                         # store the data (have not sell yet but reached end-date)
                         self.update_df_close(episode)
                     break
-            self.stats['episode_reward'].append(self.total_reward)
+            self.stats['episode_reward'].append(self.episode_reward)
             self.stats['episode_steps'].append(self.episode_steps)
 
             # export the csv files

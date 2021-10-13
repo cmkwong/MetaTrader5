@@ -53,7 +53,7 @@ with mt5Model.Trader(dt_string=options['dt'], history_path=trader_options["histo
     trader.register_strategy(short_strategy_id, trader_options['symbols'], trader_options['max_deviations'], trader_options['avg_spreads'], trader_options['lot_times'], long_mode=False)
 
     while True:
-        prices_loader.get_data(live=True)
+        prices_loader.get_data(latest=True)
         Prices = prices_loader.Prices
         if not Prices:
             time.sleep(2)
@@ -68,7 +68,7 @@ with mt5Model.Trader(dt_string=options['dt'], history_path=trader_options["histo
         # calculate for checking for stop-loss and stop-profit reached
         long_signal, short_signal = signalModel.get_coin_NN_signal(coin_data, coin_option['upper_th'], coin_option['lower_th'], discard_head_tail=False)
 
-        trader.strategy_controller(long_strategy_id, Prices.l_o, Prices.l_quote_exchg, coin_option['coefficient_vector'], long_signal, coin_option['slsp'], long_lots)
-        trader.strategy_controller(short_strategy_id, Prices.l_o, Prices.l_quote_exchg, coin_option['coefficient_vector'], short_signal, coin_option['slsp'], short_lots)
+        trader.strategy_controller(long_strategy_id, Prices.c, Prices.quote_exchg, coin_option['coefficient_vector'], long_signal, coin_option['slsp'], long_lots)
+        trader.strategy_controller(short_strategy_id, Prices.c, Prices.quote_exchg, coin_option['coefficient_vector'], short_signal, coin_option['slsp'], short_lots)
 
         time.sleep(5)

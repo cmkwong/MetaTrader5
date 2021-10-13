@@ -20,7 +20,7 @@ def get_ret_earning_list(ret_by_signal, earning_by_signal, signal):
     start_index, end_index = indexModel.get_start_end_index(signal)
     rets, earnings = [], []
     for start, end in zip(start_index, end_index):
-        s, e = indexModel.get_step_index_by_index(ret_by_signal, start, step=1), indexModel.get_step_index_by_index(ret_by_signal, end, step=0)  # why added 1, see notes (6) // Why step=0, note 87b
+        s, e = indexModel.get_step_index_by_index(ret_by_signal, start, step=0), indexModel.get_step_index_by_index(ret_by_signal, end, step=-1)  # why added 1, see notes (6) // Why step=0, note 87b //
         ret_series, earning_series = ret_by_signal.loc[s:e], earning_by_signal.loc[s:e] # attention to use loc, note 87b
         rets.append(ret_series.prod())
         earnings.append(np.sum(earning_series))
@@ -60,10 +60,10 @@ def get_ret_earning_by_signal(ret, earning, signal, min_ret=None, min_earning=No
     :param slsp: tuple(stop loss (negative), stop profit (positive))
     :return: pd.Series
     """
-    ret_by_signal = pd.Series(signal.shift(2).values * ret.values, index=signal.index, name="ret_by_signal").fillna(1.0).replace({0: 1})
-    earning_by_signal = pd.Series(signal.shift(2).values * earning.values, index=signal.index, name="earning_by_signal").fillna(0.0)  # shift 2 unit see (30e)
+    ret_by_signal = pd.Series(signal.shift(1).values * ret.values, index=signal.index, name="ret_by_signal").fillna(1.0).replace({0: 1})    # shift 1 (see 95 & 96) instead of shift 2 (see 30e)
+    earning_by_signal = pd.Series(signal.shift(1).values * earning.values, index=signal.index, name="earning_by_signal").fillna(0.0)  # shift 1 (see 95 & 96) instead of shift 2 (see 30e)
     if slsp != None:
-        start_index, end_index = indexModel.get_start_end_index(signal, step=2, numeric=True)
+        start_index, end_index = indexModel.get_start_end_index(signal, step=1, numeric=True) # step=1 (see 95 & 96)
         start_index_cal, end_index_cal = indexModel.get_start_end_index(signal, step=1) # calculate the slsp index
         for s, e, sc, ec in zip(start_index, end_index, start_index_cal, end_index_cal):
             refer_index = earning_by_signal.iloc[s:e].index
@@ -94,26 +94,6 @@ def get_accum_ret_earning(ret_by_signal, earning_by_signal):
     accum_ret = pd.Series(ret_by_signal.cumprod(), index=ret_by_signal.index, name="accum_ret")                 # Simplify the function note 47a
     accum_earning = pd.Series(earning_by_signal.cumsum(), index=earning_by_signal.index, name="accum_earning")  # Simplify the function note 47a
     return accum_ret, accum_earning
-
-# def modify_ret_earning_with_SLSP_late(ret_series, earning_series, sl, sp):
-#     """
-#     equation see 77ab
-#     :param ret_series: pd.Series with numeric index
-#     :param earning_series: pd.Series with numeric index
-#     :param sl: stop-loss (negative value)
-#     :param sp: stop-profit (positive value)
-#     :return: ret (np.array), earning (np.array)
-#     """
-#     total = 0
-#     ret_mask, earning_mask = np.ones((len(ret_series),)), np.zeros((len(ret_series),))
-#     for i, (r, e) in enumerate(zip(ret_series, earning_series)):
-#         total += e
-#         ret_mask[i], earning_mask[i] = ret_series[i], earning_series[i]
-#         if total >= sp:
-#             break
-#         elif total <= sl:
-#             break
-#     return ret_mask, earning_mask
 
 def _packing_datetime(masked_ret, masked_earning, refer_index):
     ret, earning = pd.Series(1.0, index=refer_index), pd.Series(0.0, index=refer_index)

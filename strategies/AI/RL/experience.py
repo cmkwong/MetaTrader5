@@ -57,12 +57,12 @@ class ExperienceSource:
 
         iter_idx = 0
         while True:
-            actions = [None] * len(states)
+            actions = [-1] * len(states)
             states_input = []
             states_indices = []
             for idx, state in enumerate(states):
                 if state is None:
-                    actions[idx] = self.pool[0].action_space.sample()  # assume that all envs are from the same family
+                    actions[idx] = np.random.randint(self.pool[0].get_action_space_size())  # assume that all envs are from the same family
                 else:
                     states_input.append(state)
                     states_indices.append(idx)

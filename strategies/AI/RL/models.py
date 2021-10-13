@@ -26,6 +26,7 @@ class SimpleFFDQN(nn.Module):
         ).to(self.device)
 
     def forward(self, x):
+        x = x.to(self.device)
         val = self.fc_val(x)
         adv = self.fc_adv(x)
         return val + adv - adv.mean(dim=1, keepdim=True)
