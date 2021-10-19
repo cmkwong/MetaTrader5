@@ -12,25 +12,25 @@ now = datetime.now()
 DT_STRING = now.strftime("%y%m%d%H%M%S")
 
 options = {
-    'main_path': "{}/projects/210215_mt5/production/docs/{}/".format(config.COMP_PATH, config.VERSION),
+    'docs_path': os.path.join(config.PROJECT_PATH, 'docs/{}/'.format(config.VERSION)),
     'dt': DT_STRING,
 }
 trader_options = {
     'symbols': ["AUDJPY","AUDUSD","CADJPY","USDCAD"],
-    'timeframe': '1H', # 1H
+    'timeframe': '5min', # 1H
     'timezone': "Hongkong",
     'count': 40,
     'deposit_currency': 'USD',
-    'history_path': os.path.join(options['main_path'], "history"),
-    'max_deviations': [3,3,3,3,3,3],        # the difference between ideal and real price when trading
-    'avg_spreads': [18,15,16,16,14,14],     # the max tolerance of spread that accepted
+    'history_path': os.path.join(options['docs_path'], "history"),
+    'max_deviations': [50,50,50,50,50,50],        # the difference between ideal and real price when trading
+    'avg_spreads': [50,50,50,50,50,50],     # the max tolerance of spread that accepted - eg: [18,15,16,16,14,14]
     'type_filling': 'ioc', # ioc / fok / return
     'lot_times': 10
 }
 coin_option = {
     'coefficient_vector': np.array([0.0,0.98467,-0.98578,-0.98662]),    # will be round to 2 decimal
-    'upper_th': 1.5,
-    'lower_th': -1.5,
+    'upper_th': 0.5, # 1.5
+    'lower_th': -0.5, # -1.5
     'z_score_mean_window': 5,
     'z_score_std_window': 20,
     'slsp': (-50000, 50000),  # None means no constraint

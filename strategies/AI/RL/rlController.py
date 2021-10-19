@@ -17,7 +17,7 @@ now = datetime.now()
 DT_STRING = now.strftime("%y%m%d%H%M%S")
 
 options = {
-    'main_path': "{}/projects/210215_mt5/production/docs/{}/".format(config.COMP_PATH, config.VERSION),
+    'docs_path': os.path.join(config.PROJECT_PATH, 'docs/{}/'.format(config.VERSION)),
     'dt': DT_STRING,
     'debug': True,
 }
@@ -31,9 +31,7 @@ data_options = {
     'deposit_currency': 'USD',
     'trainTestSplit': 0.7,
     'hist_bins': 100,
-    'plt_save_path': os.path.join(options['main_path'], "rl_plt"),
-    'debug_path': os.path.join(options['main_path'], "debug"),
-    'local_min_path': os.path.join(options['main_path'], "min_data"),
+    'local_min_path': os.path.join(options['docs_path'], "min_data"),
     'local': False,
 }
 
@@ -46,10 +44,10 @@ RL_options = {
     'epsilon_end': 0.15,
     'gamma': 0.9,
     'reward_steps': 2,
-    'net_saved_path': '',
-    'val_save_path': '',
-    'runs_save_path': '',
-    'buffer_save_path': '',
+    'net_saved_path': os.path.join(options['docs_path'], "net"),
+    'val_save_path': os.path.join(options['docs_path'], "val"),
+    'runs_save_path': os.path.join(options['docs_path'], "runs"),
+    'buffer_save_path': os.path.join(options['docs_path'], "buffer"),
     'replay_size': 100000,
     'monitor_buffer_size': 10000,
     'replay_init': 10000,
@@ -65,9 +63,9 @@ RL_options = {
 tech_params = {
     'ma': [5,10,25,50,100,150,200,250],
     'bb': [(20,2,2,0),(20,3,3,0),(20,4,4,0),(40,2,2,0),(40,3,3,0),(40,4,4,0)],
-    'std': [(5,0),(20,0),(50,0),(100,0),(150,0),(250,0)],
+    'std': [(5,1),(20,1),(50,1),(100,1),(150,1),(250,1)],
     'rsi': [5,15,25,50,100,150,250],
-    'stocOsci': [(5,3,3),(14,3,3),(21,14,14)],
+    'stocOsci': [(5,3,3,0,0),(14,3,3,0,0),(21,14,14,0,0)],
     'macd': [(12,26,9),(19,39,9)]
 }
 
@@ -85,15 +83,6 @@ with mt5Model.csv_Writer_Helper() as helper:
 
     # split into train set and test set
     Train_Prices, Test_Prices = prices.split_Prices(prices_loader.Prices, percentage=data_options['trainTestSplit'])
-
-    # # Get the technical data (training)
-    # ma = techModel.get_tech_datas(Train_Prices, tech_params['ma'], tech_type='ma')
-    # bb = techModel.get_tech_datas(Train_Prices, tech_params['bb'], tech_type='bb')
-    # std = techModel.get_tech_datas(Train_Prices, tech_params['std'], tech_type='std')
-    # rsi = techModel.get_tech_datas(Train_Prices, tech_params['rsi'], tech_type='rsi')
-    # stocOsci = techModel.get_tech_datas(Train_Prices, tech_params['stocOsci'], tech_type='stocOsci')
-    # macd = techModel.get_tech_datas(Train_Prices, tech_params['macd'], tech_type='macd')
-    # tech_df = techModel.concat_tech_datas(join='inner', ma=ma, bb=bb, std=std, rsi=rsi, stocOsci=stocOsci, macd=macd)
 
     # build the env (long)
     env = environ.TechicalForexEnv(data_options['symbols'][0], Train_Prices, tech_params, True, prices_loader.all_symbols_info, 0.05, 8, 15, 1, False)

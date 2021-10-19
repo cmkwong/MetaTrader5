@@ -9,7 +9,7 @@ now = datetime.now()
 DT_STRING = now.strftime("%y%m%d%H%M%S")
 
 options = {
-    'main_path': "{}/projects/210215_mt5/production/docs/{}/".format(config.COMP_PATH, config.VERSION),
+    'docs_path': os.path.join(config.PROJECT_PATH, 'docs/{}/'.format(config.VERSION)),
     'dt': DT_STRING,
     'debug': True,
 }
@@ -25,8 +25,8 @@ data_options = {
     'max_index': 201,
     'max_limit_range': (0, 21),
     'append_checkpoint': 5,
-    'csv_save_path': os.path.join(options['main_path'], "ma_backtest"),
-    'local_min_path': os.path.join(options['main_path'], "min_data"),
+    'csv_save_path': os.path.join(options['docs_path'], "ma_backtest"),
+    'local_min_path': os.path.join(options['docs_path'], "min_data"),
     'local': False,
 }
 

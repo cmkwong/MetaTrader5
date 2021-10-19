@@ -365,7 +365,7 @@ class Trader:
         # update the open position: expected
         self.open_postions[strategy_id]['expected'] = expected_prices
         # update the open position: real
-        self.open_postions[strategy_id]['real'] = [result.price for result in results]
+        self.open_postions[strategy_id]['real'] = np.array([result.price for result in results])
         # update open pt diff
         self.open_point_diff[strategy_id] = pointsModel.get_point_diff_from_results(results, requests, expected_prices, self.all_symbol_info)
         # date

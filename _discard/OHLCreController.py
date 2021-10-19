@@ -11,16 +11,16 @@ now = datetime.now()
 DT_STRING = now.strftime("%y%m%d%H%M%S")
 
 options = {
-    'main_path': "{}/projects/210215_mt5/production/docs/{}/".format(config.COMP_PATH, config.VERSION),
+    'docs_path': os.path.join(config.PROJECT_PATH, 'docs/{}/'.format(config.VERSION)),
     'dt': DT_STRING,
 }
 file_options = {
     'symbols': ["AUDJPY", 	"AUDUSD", 	"CADJPY", 	"EURUSD", 	"NZDUSD", 	"USDCAD"],
     'timeframe': 'H1',
     'deposit_currency': 'USD',
-    'data_path': os.path.join(options['main_path'], "min_data"),
-    'extra_data_path': os.path.join(options['main_path'], 'min_data\extra_data'),
-    'output_path': os.path.join(options['main_path'], "ohlc_ret_earning")
+    'data_path': os.path.join(options['docs_path'], "min_data"),
+    'extra_data_path': os.path.join(options['docs_path'], 'min_data\extra_data'),
+    'output_path': os.path.join(options['docs_path'], "ohlc_ret_earning")
 }
 specific_option = {
     'coefficient_vector': np.array([2.58766,0.01589,-1.76342,-0.01522,0.00351,0.01389]),

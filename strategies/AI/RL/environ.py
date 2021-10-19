@@ -45,7 +45,7 @@ class State:
         # encoded_data.dependent_datas = self.dependent_datas.iloc[self._offset].values
         res = []
         earning = 0.0
-        res.append(list(self.dependent_datas.iloc[self._offset].values))
+        res.append(list(self.dependent_datas.iloc[self._offset,:].values))
         if self.have_position:
             earning = self.cal_profit(self.action_price[self._offset], self.quote_exchg[self._offset])
         res.extend([earning, float(self.have_position)])     # earning, have_position (True = 1.0, False = 0.0)

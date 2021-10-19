@@ -4,11 +4,12 @@ from production.codes.strategies.Spread import spreadModel
 from production.codes.views import plotView
 from production.codes import config
 from datetime import datetime
+import os
 now = datetime.now()
 DT_STRING = now.strftime("%y%m%d%H%M%S")
 
 options = {
-    'main_path': "{}/projects/210215_mt5/production/docs/{}/".format(config.COMP_PATH, config.VERSION),
+    'docs_path': os.path.join(config.PROJECT_PATH, 'docs/{}/'.format(config.VERSION)),
     'dt': DT_STRING,
 }
 
@@ -19,7 +20,7 @@ data_options = {
     'timeframe': 'tick',
     'timezone': "Hongkong",
     'deposit_currency': 'USD',
-    'plt_save_path': options['main_path'] + "spread_plt/",
+    'plt_save_path': os.path.join(options['docs_path'], "spread_plt")
 }
 
 with mt5Model.csv_Writer_Helper():

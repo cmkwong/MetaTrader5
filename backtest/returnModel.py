@@ -20,7 +20,7 @@ def get_ret_earning_list(ret_by_signal, earning_by_signal, signal):
     start_index, end_index = indexModel.get_start_end_index(signal)
     rets, earnings = [], []
     for start, end in zip(start_index, end_index):
-        s, e = indexModel.get_step_index_by_index(ret_by_signal, start, step=0), indexModel.get_step_index_by_index(ret_by_signal, end, step=-1)  # why added 1, see notes (6) // Why step=0, note 87b //
+        s, e = indexModel.get_step_index_by_index(ret_by_signal, start, step=0), indexModel.get_step_index_by_index(ret_by_signal, end, step=-1)  # why added 1, see notes (6) // Why step=0, note 87b // Why step=0,-1 (see note 96)
         ret_series, earning_series = ret_by_signal.loc[s:e], earning_by_signal.loc[s:e] # attention to use loc, note 87b
         rets.append(ret_series.prod())
         earnings.append(np.sum(earning_series))

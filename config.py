@@ -39,4 +39,4 @@ CSV_FILE_NAME = "T{}_{}_Frame-{}_Long-{}_Limit-{}_From-{}-to-{}_result.csv".form
     END_STRING)
 
 # relative path for different computer
-COMP_PATH = (Path(os.getcwd()).parent.parent.parent.parent.parent.parent.absolute())
+PROJECT_PATH = (Path(os.getcwd()).parent.parent.absolute())

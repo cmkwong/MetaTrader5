@@ -5,7 +5,7 @@ from production.codes.strategies.Covariance import covModel
 import os
 
 options = {
-    'main_path': "{}/projects/210215_mt5/production/docs/{}/".format(config.COMP_PATH, config.VERSION),
+    'docs_path': os.path.join(config.PROJECT_PATH, 'docs/{}/'.format(config.VERSION)),
     'debug': True,
     'local': False
 }
@@ -18,7 +18,7 @@ data_options = {
     'timeframe': '1H',
     'timezone': "Hongkong",
     'deposit_currency': 'USD',
-    'local_min_path': os.path.join(options['main_path'], "min_data"),
+    'local_min_path': os.path.join(options['docs_path'], "min_data"),
 }
 # config.START, config.END, symbols, config.TIMEFRAME, config.TIMEZONE
 def get_cor_matrix(prices_loader, local):

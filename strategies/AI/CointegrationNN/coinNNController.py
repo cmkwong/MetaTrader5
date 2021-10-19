@@ -13,7 +13,7 @@ now = datetime.now()
 DT_STRING = now.strftime("%y%m%d%H%M%S")
 
 options = {
-    'main_path': "{}/projects/210215_mt5/production/docs/{}/".format(config.COMP_PATH, config.VERSION),
+    'docs_path': os.path.join(config.PROJECT_PATH, 'docs/{}/'.format(config.VERSION)),
     'dt': DT_STRING,
     'debug': True,
 }
@@ -30,9 +30,9 @@ data_options = {
     'batch_size': 32,
     'test_epiosdes': 5,
     'check_price_plot': 5,
-    'plt_save_path': os.path.join(options['main_path'], "coin_NN_plt"),
-    'debug_path': os.path.join(options['main_path'], "debug"),
-    'tensorboard_save_path': options['main_path'] + "runs/",
+    'plt_save_path': os.path.join(options['docs_path'], "coin_NN_plt"),
+    'debug_path': os.path.join(options['docs_path'], "debug"),
+    'tensorboard_save_path': options['docs_path'] + "runs/",
     'local': False,
 }
 Model_options = {
