@@ -17,7 +17,7 @@ options = {
 }
 trader_options = {
     'symbols': ["AUDJPY","AUDUSD","CADJPY","USDCAD"],
-    'timeframe': '5min', # 1H
+    'timeframe': '1H', # 1H
     'timezone': "Hongkong",
     'count': 40,
     'deposit_currency': 'USD',
@@ -29,8 +29,8 @@ trader_options = {
 }
 coin_option = {
     'coefficient_vector': np.array([0.0,0.98467,-0.98578,-0.98662]),    # will be round to 2 decimal
-    'upper_th': 0.5, # 1.5
-    'lower_th': -0.5, # -1.5
+    'upper_th': 1.5, # 1.5
+    'lower_th': -1.5, # -1.5
     'z_score_mean_window': 5,
     'z_score_std_window': 20,
     'slsp': (-50000, 50000),  # None means no constraint
