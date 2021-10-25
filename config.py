@@ -2,6 +2,8 @@ import MetaTrader5 as mt5
 import os
 from pathlib import Path
 from datetime import datetime
+from production.codes.utils import tools
+
 now = datetime.now()
 DT_STRING = now.strftime("%y%m%d%H%M%S")
 TIMEFRAME_DICT = {"M1": mt5.TIMEFRAME_M1, "M2": mt5.TIMEFRAME_M2, "M3": mt5.TIMEFRAME_M3, "M4": mt5.TIMEFRAME_M4,
@@ -39,4 +41,4 @@ CSV_FILE_NAME = "T{}_{}_Frame-{}_Long-{}_Limit-{}_From-{}-to-{}_result.csv".form
     END_STRING)
 
 # relative path for different computer
-PROJECT_PATH = (Path(os.getcwd()).parent.parent.absolute())
+PROJECT_PATH = tools.find_required_path(os.getcwd(), 'production')

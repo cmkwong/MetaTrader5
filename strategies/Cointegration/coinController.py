@@ -17,8 +17,8 @@ options = {
     'debug': True,
 }
 data_options = {
-    'start': (2021,1,1,0,0),
-    'end': (2021,10,13,0,0),    # None = get the most current price
+    'start': (2021,5,1,0,0),
+    'end': (2021,10,25,0,0),    # None = get the most current price
     'symbols': ["AUDJPY","AUDUSD","CADJPY","USDCAD"],
     'timeframe': '1H',
     'timezone': "Hongkong",
@@ -41,6 +41,7 @@ train_options = {
     'close_change': 1,  # 0 = close; 1 = change
 }
 
+print(data_options['debug_path'])
 with mt5Model.csv_Writer_Helper():
 
     # define loader

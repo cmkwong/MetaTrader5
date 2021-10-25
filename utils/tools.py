@@ -1,4 +1,5 @@
 import numpy as np
+import os
 
 def shift_list(lst, s):
     s %= len(lst)
@@ -19,3 +20,10 @@ def append_dict_into_text(stat, txt=''):
     values = list(stat.values())
     txt += ','.join([str(value) for value in values]) + '\n'
     return txt
+
+def find_required_path(path, target):
+    while(True):
+        head, tail = os.path.split(path)
+        if tail == target:
+            return path
+        path = head
