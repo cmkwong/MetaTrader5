@@ -38,7 +38,7 @@ data_options = {
 RL_options = {
     'load_net': False,
     'lr': 0.009,
-    'net_file': '',
+    # 'net_file': '',
     'batch_size': 128,
     'epsilon_start': 1.0,
     'epsilon_end': 0.15,
@@ -50,7 +50,7 @@ RL_options = {
     'buffer_save_path': os.path.join(options['docs_path'], "buffer"),
     'replay_size': 100000,
     'monitor_buffer_size': 10000,
-    'replay_init': 10000,
+    'replay_start': 10000,
     'epsilon_step': 1000000,
     'target_net_sync': 1000,
     'validation_step': 30000,
@@ -85,8 +85,8 @@ with mt5Model.csv_Writer_Helper() as helper:
     Train_Prices, Test_Prices = prices.split_Prices(prices_loader.Prices, percentage=data_options['trainTestSplit'])
 
     # build the env (long)
-    env = environ.TechicalForexEnv(data_options['symbols'][0], Train_Prices, tech_params, True, prices_loader.all_symbols_info, 0.05, 8, 15, 1, False)
-    env_val = environ.TechicalForexEnv(data_options['symbols'][0], Test_Prices, tech_params, True, prices_loader.all_symbols_info, 0.05, 8, 15, 1, False)
+    env = environ.TechicalForexEnv(data_options['symbols'][0], Train_Prices, tech_params, True, prices_loader.all_symbols_info, 0.05, 8, 15, 1, random_ofs_on_reset=True, reset_on_close=True)
+    env_val = environ.TechicalForexEnv(data_options['symbols'][0], Test_Prices, tech_params, True, prices_loader.all_symbols_info, 0.05, 8, 15, 1, random_ofs_on_reset=False, reset_on_close=False)
 
     net = models.SimpleFFDQN(env.get_obs_len(), env.get_action_space_size())
 
@@ -96,8 +96,6 @@ with mt5Model.csv_Writer_Helper() as helper:
             checkpoint = torch.load(f)
         net = models.SimpleFFDQN(env.get_obs_len(), env.get_action_space_size())
         net.load_state_dict(checkpoint['state_dict'])
-
-    tgt_net = agents.TargetNet(net)
 
     # create buffer
     selector = actions.EpsilonGreedyActionSelector(RL_options['epsilon_start'])
@@ -110,7 +108,7 @@ with mt5Model.csv_Writer_Helper() as helper:
     optimizer = optim.Adam(net.parameters(), lr=RL_options['lr'])
 
     # create net pre-processor
-    net_processor = common.netPreprocessor(net, tgt_net.target_model)
+    net_processor = common.netPreprocessor(net, agent.target_model)
 
     # main training loop
     if RL_options['load_net']:
@@ -138,8 +136,8 @@ with mt5Model.csv_Writer_Helper() as helper:
 
             new_rewards = exp_source.pop_rewards_steps()
             if new_rewards:
-                reward_tracker.reward(new_rewards[0], step_idx, selector.epsilon)
-            if len(buffer) < RL_options['replay_init']:
+                reward_tracker.reward(new_rewards, step_idx, selector.epsilon)
+            if len(buffer) < RL_options['replay_start']:
                 continue
 
             optimizer.zero_grad()
@@ -147,14 +145,14 @@ with mt5Model.csv_Writer_Helper() as helper:
 
             # init the hidden both in network and tgt network
             net_processor.train_mode(batch_size=RL_options['batch_size'])
-            loss_v = common.calc_loss(batch, net, tgt_net.target_model, RL_options['gamma'] ** RL_options['reward_steps'], train_on_gpu=True)
+            loss_v = common.calc_loss(batch, agent, RL_options['gamma'] ** RL_options['reward_steps'], train_on_gpu=True)
             loss_v.backward()
             optimizer.step()
             loss_value = loss_v.item()
             loss_tracker.loss(loss_value, step_idx)
 
             if step_idx % RL_options['target_net_sync'] == 0:
-                tgt_net.sync()
+                agent.sync()
 
             if step_idx % RL_options['checkpoint_step'] == 0:
                 # idx = step_idx // CHECKPOINT_EVERY_STEP

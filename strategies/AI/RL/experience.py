@@ -77,9 +77,9 @@ class ExperienceSource:
             global_ofs = 0
             for env_idx, (env, action_n) in enumerate(zip(self.pool, grouped_actions)):
                 if self.vectorized:
-                    next_state_n, r_n, is_done_n, _ = env.step(action_n)
+                    next_state_n, r_n, is_done_n = env.step(action_n)
                 else:
-                    next_state, r, is_done, _ = env.step(action_n[0])
+                    next_state, r, is_done = env.step(action_n[0])
                     next_state_n, r_n, is_done_n = [next_state], [r], [is_done]
 
                 for ofs, (action, next_state, r, is_done) in enumerate(zip(action_n, next_state_n, r_n, is_done_n)):
@@ -140,9 +140,49 @@ def _group_list(items, lens):
         cur_ofs += g_len
     return res
 
+class ExperienceSourceCMK:
+    def __init__(self, env, agent, steps_count):
+        self.env = env
+        self.agent = agent
+        self.steps_count = steps_count
+        self.total_rewards, self.total_steps = None, None
+
+    def init_source(self):
+        history = []
+        cur_reward, cur_step = 0.0, 0.0
+        state = self.env.reset()
+        return state, history, cur_reward, cur_step
+
+    def __iter__(self):
+        state, history, cur_reward, cur_step = self.init_source()
+        while True:
+            if state is None:
+                action = np.random.randint(self.env.get_action_space_size())
+            else:
+                action, _ = self.agent([state])
+            next_state, r, is_done = self.env.step(action)
+            cur_reward += r
+            cur_step += 1
+            history.append(Experience(state=state, action=action, reward=r, done=is_done))
+            state = next_state
+            if len(history) == self.steps_count:
+                yield history
+                history = []
+            if is_done:
+                state, history, cur_reward, cur_step = self.init_source()
+                self.total_rewards = cur_reward
+                self.total_steps = cur_step
+
+    def pop_rewards_steps(self):
+        if self.total_rewards != None and self.total_steps != None:
+            res = [self.total_rewards, self.total_steps]
+            self.total_rewards, self.total_steps = None, None
+            return res
+        return False
+
 # those entries are emitted from ExperienceSourceFirstLast. Reward is discounted over the trajectory piece
 ExperienceFirstLast = collections.namedtuple('ExperienceFirstLast', ('state', 'action', 'reward', 'last_state'))
-class ExperienceSourceFirstLast(ExperienceSource):
+class ExperienceSourceFirstLast(ExperienceSourceCMK):
     """
     This is a wrapper around ExperienceSource to prevent storing full trajectory in replay buffer when we need
     only first and last states. For every trajectory piece it calculates discounted reward and emits only first
@@ -150,9 +190,9 @@ class ExperienceSourceFirstLast(ExperienceSource):
 
     If we have partial trajectory at the end of episode, last_state will be None
     """
-    def __init__(self, env, agent, gamma, steps_count=1, steps_delta=1, vectorized=False):
+    def __init__(self, env, agent, gamma, steps_count=1):
         assert isinstance(gamma, float)
-        super(ExperienceSourceFirstLast, self).__init__(env, agent, steps_count+1, steps_delta, vectorized=vectorized)
+        super(ExperienceSourceFirstLast, self).__init__(env, agent, steps_count+1)
         self.gamma = gamma
         self.steps = steps_count
 
@@ -173,7 +213,7 @@ class ExperienceSourceFirstLast(ExperienceSource):
 
 class ExperienceReplayBuffer:
     def __init__(self, experience_source, buffer_size):
-        assert isinstance(experience_source, (ExperienceSource, type(None)))
+        assert isinstance(experience_source, (ExperienceSourceCMK, type(None)))
         assert isinstance(buffer_size, int)
         self.experience_source_iter = None if experience_source is None else iter(experience_source)
         self.buffer = []

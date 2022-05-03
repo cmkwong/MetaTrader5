@@ -6,7 +6,8 @@ import numpy as np
 import pandas as pd
 
 class State:
-    def __init__(self, symbol, close_price, quote_exchg, dependent_datas, date, time_cost_pt, commission_pt, spread_pt, lot_times, long_mode, all_symbols_info):
+    def __init__(self, symbol, close_price, quote_exchg, dependent_datas, date, time_cost_pt, commission_pt, spread_pt, lot_times, long_mode, all_symbols_info,
+                 reset_on_close):
         self.symbol = symbol
         self.action_price = close_price   # close price (pd.DataFrame)
         self.quote_exchg = quote_exchg  # quote to deposit (pd.DataFrame)
@@ -18,6 +19,7 @@ class State:
         self.lot_times = lot_times  # normally it is 1
         self.long_mode = long_mode
         self.all_symbols_info = all_symbols_info
+        self.reset_on_close = reset_on_close
         self._init_action_space()
 
         self.deal_step = 0.0  # step counter from buy to sell (buy date = step 1, if sell date = 4, time cost = 3)
@@ -45,9 +47,9 @@ class State:
         # encoded_data.dependent_datas = self.dependent_datas.iloc[self._offset].values
         res = []
         earning = 0.0
-        res.append(list(self.dependent_datas.iloc[self._offset,:].values))
+        res.extend(list(self.dependent_datas.iloc[self._offset,:].values))
         if self.have_position:
-            earning = self.cal_profit(self.action_price[self._offset], self.quote_exchg[self._offset])
+            earning = self.cal_profit(self.action_price.iloc[self._offset,:].values, self.quote_exchg.iloc[self._offset,:].values)
         res.extend([earning, float(self.have_position)])     # earning, have_position (True = 1.0, False = 0.0)
         return np.array(res, dtype=np.float32)
     
@@ -58,8 +60,8 @@ class State:
         """
         done = False
         reward = 0.0  # in deposit USD
-        curr_action_price = self.action_price.iloc[self._offset].values
-        q2d_at = self.quote_exchg.iloc[self._offset].values
+        curr_action_price = self.action_price.iloc[self._offset].values[0]
+        q2d_at = self.quote_exchg.iloc[self._offset].values[0]
 
         if action == self.actions['open'] and not self.have_position:
             reward -= pointsModel.get_point_to_deposit(self.symbol, self.spread_pt, q2d_at, self.all_symbols_info)      # spread cost
@@ -81,18 +83,18 @@ class State:
         # update status
         self._prev_action_price = curr_action_price
         self._offset += 1
-        if self._offset >= len(self.action_price)-1:
+        if self._offset >= len(self.action_price) - 1:
             done = True
 
         return reward, done
 
 class TechicalForexEnv:
-    def __init__(self, symbol, Prices, tech_params, long_mode, all_symbols_info, time_cost_pt, commission_pt, spread_pt, lot_times, random_ofs_on_reset):
+    def __init__(self, symbol, Prices, tech_params, long_mode, all_symbols_info, time_cost_pt, commission_pt, spread_pt, lot_times, random_ofs_on_reset, reset_on_close):
         self.Prices = Prices
         self.tech_params = tech_params  # pd.DataFrame
         self.dependent_datas = pd.concat([self._get_tech_df(), Prices.o, Prices.h, Prices.l, Prices.c], axis=1, join='outer').fillna(0)
         self._state = State(symbol, Prices.c, Prices.quote_exchg, self.dependent_datas, Prices.c.index,
-                            time_cost_pt, commission_pt, spread_pt, lot_times, long_mode, all_symbols_info)
+                            time_cost_pt, commission_pt, spread_pt, lot_times, long_mode, all_symbols_info, reset_on_close)
         self.random_ofs_on_reset = random_ofs_on_reset
 
     def _get_tech_df(self):
@@ -103,19 +105,20 @@ class TechicalForexEnv:
         return tech_df
 
     def get_obs_len(self):
-        self.reset()
-        obs = self._state.encode()
+        obs = self.reset()
         return len(obs)
 
     def get_action_space_size(self):
         return self._state.action_space_size
 
     def reset(self):
-        if self.random_ofs_on_reset:
+        if not self.random_ofs_on_reset:
             self._state.reset(0)
         else:
             random_offset = np.random.randint(len(self.Prices.o))
             self._state.reset(random_offset)
+        obs = self._state.encode()
+        return obs
 
     def step(self, action):
         reward, done = self._state.step(action)

@@ -14,8 +14,8 @@ options = {
 }
 
 data_options = {
-    'start': (2021,4,15,0,0),
-    'end': (2021,5,5,23,59),    # None = get the most current price
+    'start': (2021,11,15,0,0),
+    'end': (2021,11,18,23,59),    # None = get the most current price
     'symbols': ["AUDJPY", 	"AUDUSD", 	"CADJPY", 	"EURUSD", 	"NZDUSD", 	"USDCAD"],
     'timeframe': 'tick',
     'timezone': "Hongkong",
@@ -29,6 +29,6 @@ with mt5Model.csv_Writer_Helper():
 
     title = plotPre.get_plot_title(data_options['start'], data_options['end'], 'tick', local=False)
     plotView.save_plot(plt_datas, None, data_options['symbols'], 0, data_options['plt_save_path'], # test_plt_data = None; note 56e
-                       options['dt'], dpi=500, linewidth=0.2, title=title, figure_size=(30, 60), fontsize=20, bins=500)
+                       options['dt'], dpi=250, linewidth=0.2, title=title, figure_size=(30, 60), fontsize=20, bins=500)
 
 print("Saved successfully. \n{}".format(data_options['plt_save_path']))

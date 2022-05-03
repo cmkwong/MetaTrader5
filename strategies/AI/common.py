@@ -86,19 +86,18 @@ class lossTracker:
 def unpack_batch(batch):
     states, actions, rewards, dones, last_states = [], [], [], [], []
     for exp in batch:
-        state = exp.state
-        states.append(state)
+        states.append(exp.state)
         actions.append(exp.action)
         rewards.append(exp.reward)
         dones.append(exp.last_state is None)
         if exp.last_state is None:
-            last_states.append(state)       # the result will be masked anyway
+            last_states.append(exp.state)       # the result will be masked anyway
         else:
             last_states.append(exp.last_state)
     return states, np.array(actions), np.array(rewards, dtype=np.float32), \
            np.array(dones, dtype=np.uint8), last_states
 
-def calc_loss(batch, net, tgt_net, gamma, train_on_gpu):
+def calc_loss(batch, agent, gamma, train_on_gpu):
     if train_on_gpu:
         device = torch.device("cuda")
     else:
@@ -115,9 +114,9 @@ def calc_loss(batch, net, tgt_net, gamma, train_on_gpu):
     else:
         done_mask = torch.BoolTensor(dones)
 
-    state_action_values = net(states_v).gather(1, actions_v.unsqueeze(-1)).squeeze(-1)
-    next_state_actions = net(next_states_v).max(1)[1]
-    next_state_values = tgt_net(next_states_v).gather(1, next_state_actions.unsqueeze(-1)).squeeze(-1)
+    state_action_values = agent.get_Q_value(states_v).gather(1, actions_v).squeeze(-1)
+    next_state_actions = agent.get_Q_value(next_states_v).max(1)[1]
+    next_state_values = agent.get_Q_value(next_states_v, tgt=True).gather(1, next_state_actions.unsqueeze(-1)).squeeze(-1)
     next_state_values[done_mask] = 0.0
 
     expected_state_action_values = next_state_values.detach() * gamma + rewards_v
@@ -138,18 +137,18 @@ class netPreprocessor:
     def train_mode(self, batch_size):
         self.net.train()
         self.net.zero_grad()
-        self.net.init_hidden(batch_size)
+        # self.net.init_hidden(batch_size)
 
         self.tgt_net.eval()
-        self.tgt_net.init_hidden(batch_size)
+        # self.tgt_net.init_hidden(batch_size)
 
     def eval_mode(self, batch_size):
         self.net.eval()
-        self.net.init_hidden(batch_size)
+        # self.net.init_hidden(batch_size)
 
     def populate_mode(self, batch_size):
         self.net.eval()
-        self.net.init_hidden(batch_size)
+        # self.net.init_hidden(batch_size)
 
 def weight_visualize(net, writer):
     for name, param in net.named_parameters():

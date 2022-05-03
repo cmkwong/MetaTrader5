@@ -129,6 +129,20 @@ def get_value_of_ret(new_values, old_values, modified_coefficient_vector):
     return ret
 
 def get_value_of_earning(symbols, new_values, old_values, q2d_at, all_symbols_info, modified_coefficient_vector):
+    """
+    :param symbols: [str]
+    :param new_values: np.array
+    :param old_values: np.array
+    :param q2d_at: np.array
+    :param all_symbols_info: nametuple
+    :param modified_coefficient_vector: np.array
+    :return: float
+    """
+    if isinstance(symbols, str): symbols = [symbols]
+    if isinstance(new_values, (float, int)): new_values = np.array([new_values])
+    if isinstance(old_values, (float, int)): old_values = np.array([old_values])
+    if isinstance(q2d_at, (float, int)): q2d_at = np.array([q2d_at])
+
     # earning value
     points_dff_values = pointsModel.get_points_dff_values_arr(symbols, new_values, old_values, all_symbols_info)
     weighted_pt_diff = points_dff_values * modified_coefficient_vector.reshape(-1, )

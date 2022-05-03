@@ -48,18 +48,42 @@ class DQNAgent(BaseAgent):
     from the observations and  converts them into the actions using action_selector
     """
     def __init__(self, dqn_model, action_selector, preprocessor=default_states_preprocessor):
-        self.dqn_model = dqn_model
+        self.model = dqn_model
+        self.target_model = copy.deepcopy(dqn_model)
         self.action_selector = action_selector
         self.preprocessor = preprocessor
 
     def __call__(self, states, agent_states=None):
+        """
+        :param states: [state]
+        :param agent_states:
+        :return:
+        """
         if agent_states is None:
             agent_states = [None] * len(states)
         states = self.preprocessor(states) # states is a list
-        q_v = self.dqn_model(states)
+        q_v = self.model(states)
         q = q_v.data.cpu().numpy()
         actions = self.action_selector(q)
         return actions, agent_states
+
+    def get_Q_value(self, states, tgt=False):
+        """
+        :param states: [state]
+        :return: pyTorch tensor
+        """
+        states = self.preprocessor(states)  # states is a list
+        if not tgt:
+            q_v = self.model(states)
+        else:
+            q_v = self.target_model(states)
+        return q_v
+
+    def sync(self):
+        """
+        sync the model and target model
+        """
+        self.target_model.load_state_dict(self.model.state_dict())
 
 class Supervised_DQNAgent(BaseAgent):
     def __init__(self, dqn_model, action_selector, sample_sheet, assistance_ratio=0.2):
@@ -87,26 +111,26 @@ class Supervised_DQNAgent(BaseAgent):
         actions[sample_mask] = sample_actions
         return actions, agent_states
 
-class TargetNet:
-    """
-    Wrapper around model which provides copy of it instead of trained weights
-    """
-    def __init__(self, model):
-        self.model = model
-        self.target_model = copy.deepcopy(model)
-
-    def sync(self):
-        self.target_model.load_state_dict(self.model.state_dict())
-
-    def alpha_sync(self, alpha):
-        """
-        Blend params of target net with params from the model
-        :param alpha:
-        """
-        assert isinstance(alpha, float)
-        assert 0.0 < alpha <= 1.0
-        state = self.model.state_dict()
-        tgt_state = self.target_model.state_dict()
-        for k, v in state.items():
-            tgt_state[k] = tgt_state[k] * alpha + (1 - alpha) * v
-        self.target_model.load_state_dict(tgt_state)
+# class TargetNet:
+#     """
+#     Wrapper around model which provides copy of it instead of trained weights
+#     """
+#     def __init__(self, model):
+#         self.model = model
+#         self.target_model = copy.deepcopy(model)
+#
+#     def sync(self):
+#         self.target_model.load_state_dict(self.model.state_dict())
+#
+#     def alpha_sync(self, alpha):
+#         """
+#         Blend params of target net with params from the model
+#         :param alpha:
+#         """
+#         assert isinstance(alpha, float)
+#         assert 0.0 < alpha <= 1.0
+#         state = self.model.state_dict()
+#         tgt_state = self.target_model.state_dict()
+#         for k, v in state.items():
+#             tgt_state[k] = tgt_state[k] * alpha + (1 - alpha) * v
+#         self.target_model.load_state_dict(tgt_state)
