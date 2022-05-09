@@ -47,8 +47,8 @@ class validator:
             self.episode_steps = 0
 
             while True:
-                obs_v = [obs]
-                out_v = self.net(obs_v)
+                # obs_v = [obs]
+                out_v = self.net(obs)
 
                 action_idx = out_v.max(dim=1)[1].item()
                 if np.random.random() < epsilon:
