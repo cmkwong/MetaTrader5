@@ -14,7 +14,7 @@ TIMEFRAME_DICT = {"M1": mt5.TIMEFRAME_M1, "M2": mt5.TIMEFRAME_M2, "M3": mt5.TIME
                   "MN1": mt5.TIMEFRAME_MN1}
 
 # Moving Average
-VERSION = 1
+VERSION = 2
 BROKER_TIME_BETWEEN_UTC = 2 # utc_diff: difference between broker (UTC+3) and UTC = 3 (see note 23a) and (note 56b)
 DOWNLOADED_MIN_DATA_TIME_BETWEEN_UTC = 5 # that is without daylight shift time (UTC+5)
 MAIN_PATH = "/production/docs"

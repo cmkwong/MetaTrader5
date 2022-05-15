@@ -37,11 +37,11 @@ data_options = {
 
 RL_options = {
     'load_net': False,
-    'lr': 0.009,
-    # 'net_file': '',
+    'lr': 0.001,
+    'net_file': 'checkpoint-300000.data',
     'batch_size': 128,
     'epsilon_start': 1.0,
-    'epsilon_end': 0.15,
+    'epsilon_end': 0.35,
     'gamma': 0.9,
     'reward_steps': 2,
     'net_saved_path': os.path.join(options['docs_path'], "net"),
@@ -50,12 +50,12 @@ RL_options = {
     'buffer_save_path': os.path.join(options['docs_path'], "buffer"),
     'replay_size': 100000,
     'monitor_buffer_size': 10000,
-    'replay_start': 10000,
+    'replay_start': 10000, # 10000
     'epsilon_step': 1000000,
     'target_net_sync': 1000,
-    'validation_step': 30000,
+    'validation_step': 50000,
     'checkpoint_step': 30000,
-    'weight_visualize_step': 50000,
+    'weight_visualize_step': 1000,
     'buffer_monitor_step': 100000,
     'validation_episodes': 5,
 }
@@ -120,12 +120,12 @@ with mt5Model.csv_Writer_Helper() as helper:
 
     # create the validator
     # TODO - need to modified the validator
-    validator = validation.validator(env_val, net, save_path=RL_options['val_save_path'], comission=0.1)
+    validator = validation.validator(env_val, agent, save_path=RL_options['val_save_path'], comission=0.1)
 
     # create the monitor
     monitor = common.monitor(buffer, RL_options['buffer_save_path'])
 
-    writer = SummaryWriter(log_dir=RL_options['runs_save_path'], comment="ForexRL")
+    writer = SummaryWriter(log_dir=os.path.join(RL_options['runs_save_path'], DT_STRING), comment="ForexRL")
     loss_tracker = common.lossTracker(writer, group_losses=100)
     with common.RewardTracker(writer, np.inf, group_rewards=100) as reward_tracker:
         while True:
@@ -150,6 +150,9 @@ with mt5Model.csv_Writer_Helper() as helper:
             optimizer.step()
             loss_value = loss_v.item()
             loss_tracker.loss(loss_value, step_idx)
+
+            if step_idx % 1000 == 0:
+                print(f"{step_idx}: {loss_v.item()}")
 
             if step_idx % RL_options['target_net_sync'] == 0:
                 agent.sync()

@@ -181,7 +181,7 @@ class monitor:
         rewards = []
         actions = []
         for exp in exps:
-            dates.append(exp.state.date)
+            dates.append(exp.state)
             actions.append(exp.action)
             rewards.append(exp.reward)
         return dates, actions, rewards

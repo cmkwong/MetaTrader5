@@ -40,6 +40,7 @@ class ExperienceSource:
         for env in self.pool:
             obs = env.reset()
             # if the environment is vectorized, all it's output is lists of results.
+            # The vectorized Gym API allows a single client-side environment to control a vector of remotes.
             # Details are here: https://github.com/openai/universe/blob/master/doc/env_semantics.rst
             if self.vectorized:
                 obs_len = len(obs)
@@ -67,7 +68,7 @@ class ExperienceSource:
                     states_input.append(state)
                     states_indices.append(idx)
             if states_input:
-                states_actions, new_agent_states = self.agent(states_input, agent_states)
+                states_actions, new_agent_states = self.agent.getActionIndex(states_input, agent_states)
                 for idx, action in enumerate(states_actions):
                     g_idx = states_indices[idx]
                     actions[g_idx] = action
@@ -159,12 +160,12 @@ class ExperienceSourceCMK:
             if state is None:
                 action = np.random.randint(self.env.get_action_space_size())
             else:
-                action, _ = self.agent([state])
-            next_state, r, is_done = self.env.step(action)
+                action, _ = self.agent.getActionIndex([state])
+            next_obs, r, is_done = self.env.step(action)
             cur_reward += r
             cur_step += 1
             history.append(Experience(state=state, action=action, reward=r, done=is_done))
-            state = next_state
+            state = next_obs
             if len(history) == self.steps_count:
                 yield history
                 history = []

@@ -1,6 +1,7 @@
 import copy
 import numpy as np
 import torch
+import torch.nn.functional as func
 
 class BaseAgent:
     """
@@ -26,17 +27,19 @@ class BaseAgent:
 
         raise NotImplementedError
 
-def default_states_preprocessor(states):
+def default_states_preprocessor(states, unitVector=True):
     """
     Convert list of states into the form suitable for model. By default we assume Variable
     :param states: list of numpy arrays with states
     :return: Variable
     """
+    assert isinstance(states, list)
     if len(states) == 1:
         np_states = np.expand_dims(states[0], 0)
     else:
         np_states = np.array([np.array(s, copy=False) for s in states], copy=False)
-    return torch.tensor(np_states)
+    t_v = func.normalize(torch.tensor(np_states), p=2, dim=1) if unitVector else torch.tensor(np_states)
+    return t_v
 
 def float32_preprocessor(states):
     np_states = np.array(states, dtype=np.float32)
@@ -53,7 +56,7 @@ class DQNAgent(BaseAgent):
         self.action_selector = action_selector
         self.preprocessor = preprocessor
 
-    def __call__(self, states, agent_states=None):
+    def getActionIndex(self, states, agent_states=None):
         """
         :param states: [state]
         :param agent_states:

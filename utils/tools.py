@@ -27,3 +27,4 @@ def find_required_path(path, target):
         if tail == target:
             return path
         path = head
+

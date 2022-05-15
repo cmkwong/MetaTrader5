@@ -2,9 +2,9 @@ import numpy as np
 import pandas as pd
 
 class validator:
-    def __init__(self, env, net, save_path, comission):
+    def __init__(self, env, agent, save_path, comission):
         self.env = env
-        self.net = net
+        self.agent = agent
         self.save_path = save_path
         self.comission = comission
 
@@ -25,6 +25,7 @@ class validator:
     def update_df_open(self):
         self.df.loc[self._total_count, 'open_date'] = self.date[self.env._state._offset]
         self.df.loc[self._total_count, 'open_position_price'] = self.openPos_price
+        # self.df = self.df.append({'open_date': self.date[self.env._state._offset], 'open_position_price': self.openPos_price})
 
     def update_df_close(self, episode):
         self.df.loc[self._total_count, 'episode'] = episode
@@ -48,21 +49,22 @@ class validator:
 
             while True:
                 # obs_v = [obs]
-                out_v = self.net(obs)
+                q_v = self.agent.get_Q_value([obs])
 
-                action_idx = out_v.max(dim=1)[1].item()
+                action_idx = q_v.max(dim=1)[1].item()
                 if np.random.random() < epsilon:
                     action_idx = np.random.randint(len(self.env._state.actions))
 
-                self.curr_action_price = self.env._state.action_price[self.env._state._offset]  # base_offset = 8308
+                self.curr_action_price = self.env._state.action_price.iloc[self.env._state._offset].values[0]  # base_offset = 8308
 
                 if (action_idx == self.env._state.actions['open']) and not self.have_position:
                     self.openPos_price = self.curr_action_price
                     # store the data
                     self.update_df_open()
+                    self.have_position = True
 
-                elif (action_idx == self.env._state.actions['close']) and self.have_position:
-                    self.order_profits = self.env._state.cal_profit(self.openPos_price, self.env._state.quote_exchg[self.env._state._offset])
+                elif ((action_idx == self.env._state.actions['close']) and self.have_position):
+                    self.order_profits = self.env._state.cal_profit(self.openPos_price, self.env._state.quote_exchg.iloc[self.env._state._offset].values)
                     self.stats['order_profits'].append(self.order_profits)
                     self.stats['order_steps'].append(self.order_steps)
                     # store the data
@@ -72,13 +74,13 @@ class validator:
                     self.order_steps = 0
                     self.have_position = False
 
-                obs, reward, done, _ = self.env.step(action_idx)
+                obs, reward, done = self.env.step(action_idx)
                 self.episode_reward += reward
                 self.episode_steps += 1
                 if self.have_position: self.order_steps += 1
                 if done:
                     if self.have_position:
-                        self.order_profits = self.env._state.cal_profit(self.openPos_price, self.env._state.quote_exchg[self.env._state._offset])
+                        self.order_profits = self.env._state.cal_profit(self.openPos_price, self.env._state.quote_exchg.iloc[self.env._state._offset].values)
                         self.stats['order_profits'].append(self.order_profits)
                         self.stats['order_steps'].append(self.order_steps)
 
