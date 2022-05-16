@@ -39,7 +39,7 @@ RL_options = {
     'load_net': False,
     'lr': 0.001,
     'net_file': 'checkpoint-300000.data',
-    'batch_size': 128,
+    'batch_size': 1024,
     'epsilon_start': 1.0,
     'epsilon_end': 0.35,
     'gamma': 0.9,

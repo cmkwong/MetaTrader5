@@ -31,7 +31,6 @@ class SimpleFFDQN(nn.Module):
             nn.Linear(64, 64),
             nn.ReLU(),
             nn.Linear(64, 1),
-            nn.Sigmoid()
         ).to(self.device)
 
         self.fc_adv = nn.Sequential(
@@ -56,11 +55,10 @@ class SimpleFFDQN(nn.Module):
             nn.Linear(64, 64),
             nn.ReLU(),
             nn.Linear(64, actions_n),
-            nn.Sigmoid()
         ).to(self.device)
 
     def forward(self, x):
         x = x.to(self.device)
         val = self.fc_val(x)
         adv = self.fc_adv(x)
-        return nn.Softmax(dim=1)(val + adv - adv.mean(dim=1, keepdim=True))
+        return val + adv - adv.mean(dim=1, keepdim=True)
