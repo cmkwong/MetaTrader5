@@ -128,7 +128,7 @@ def calc_loss(batch, agent, gamma, train_on_gpu):
     next_state_values[done_mask] = 0.0
 
     expected_state_action_values = next_state_values.detach() * gamma + rewards_v
-    return nn.MSELoss()(state_action_values, expected_state_action_values)
+    return nn.L1Loss()(state_action_values, expected_state_action_values)
 
 def find_stepidx(text, open_str, end_str):
     regex_open = re.compile(open_str)
