@@ -64,7 +64,7 @@ class validator:
                     self.have_position = True
 
                 elif ((action_idx == self.env._state.actions['close']) and self.have_position):
-                    self.order_profits = self.env._state.cal_profit(self.openPos_price, self.env._state.quote_exchg.iloc[self.env._state._offset].values)
+                    self.order_profits = self.env._state.cal_profit(self.env._state.action_price.iloc[self.env._state._offset,:].values, self.openPos_price, self.env._state.quote_exchg.iloc[self.env._state._offset].values)
                     self.stats['order_profits'].append(self.order_profits)
                     self.stats['order_steps'].append(self.order_steps)
                     # store the data
@@ -80,7 +80,7 @@ class validator:
                 if self.have_position: self.order_steps += 1
                 if done:
                     if self.have_position:
-                        self.order_profits = self.env._state.cal_profit(self.openPos_price, self.env._state.quote_exchg.iloc[self.env._state._offset].values)
+                        self.order_profits = self.env._state.cal_profit(self.env._state.action_price.iloc[self.env._state._offset,:].values, self.openPos_price, self.env._state.quote_exchg.iloc[self.env._state._offset].values)
                         self.stats['order_profits'].append(self.order_profits)
                         self.stats['order_steps'].append(self.order_steps)
 

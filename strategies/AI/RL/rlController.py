@@ -98,6 +98,7 @@ with mt5Model.csv_Writer_Helper() as helper:
         net.load_state_dict(checkpoint['state_dict'])
 
     # create buffer
+    net.to(torch.device("cuda")) # pass into gpu
     selector = actions.EpsilonGreedyActionSelector(RL_options['epsilon_start'])
     agent = agents.DQNAgent(net, selector)
     # agent = agents.Supervised_DQNAgent(net, selector, sample_sheet, assistance_ratio=0.2)

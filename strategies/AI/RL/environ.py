@@ -36,9 +36,9 @@ class State:
         self.action_space = list(self.actions.values())
         self.action_space_size = len(self.action_space)
 
-    def cal_profit(self, curr_action_price, q2d_at):
+    def cal_profit(self, curr_action_price, open_action_price, q2d_at):
         modified_coefficient_vector = coinModel.get_modified_coefficient_vector(np.array([]), self.long_mode, self.lot_times)
-        return returnModel.get_value_of_earning(self.symbol, curr_action_price, self._prev_action_price, q2d_at, self.all_symbols_info, modified_coefficient_vector)
+        return returnModel.get_value_of_earning(self.symbol, curr_action_price, open_action_price, q2d_at, self.all_symbols_info, modified_coefficient_vector)
     
     def encode(self):
         # encoded_data = collections.namedtuple('encoded_data', field_names=['date', 'open_price', 'dependent_datas'])
@@ -49,7 +49,7 @@ class State:
         earning = 0.0
         res.extend(list(self.dependent_datas.iloc[self._offset,:].values))
         if self.have_position:
-            earning = self.cal_profit(self.action_price.iloc[self._offset,:].values, self.quote_exchg.iloc[self._offset,:].values)
+            earning = self.cal_profit(self.action_price.iloc[self._offset,:].values, self._prev_action_price, self.quote_exchg.iloc[self._offset,:].values)
         res.extend([earning, float(self.have_position)])     # earning, have_position (True = 1.0, False = 0.0)
         return np.array(res, dtype=np.float32)
     
@@ -69,14 +69,14 @@ class State:
             self.have_position = True
 
         elif action == self.actions['close'] and self.have_position:
-            reward += self.cal_profit(curr_action_price, q2d_at)                                                        # calculate the profit
+            reward += self.cal_profit(curr_action_price, self._prev_action_price, q2d_at)                                                        # calculate the profit
             reward -= pointsModel.get_point_to_deposit(self.symbol, self.time_cost_pt, q2d_at, self.all_symbols_info)   # time cost
             reward -= pointsModel.get_point_to_deposit(self.symbol, self.spread_pt, q2d_at, self.all_symbols_info)      # spread cost
             reward -= pointsModel.get_point_to_deposit(self.symbol, self.commission_pt, q2d_at, self.all_symbols_info)  # commission cost
             self.have_position = False
 
         elif action == self.actions['skip'] and self.have_position:
-            reward += self.cal_profit(curr_action_price, q2d_at)
+            reward += self.cal_profit(curr_action_price, self._prev_action_price, q2d_at)
             reward -= pointsModel.get_point_to_deposit(self.symbol, self.time_cost_pt, q2d_at, self.all_symbols_info)   # time cost
             self.deal_step += 1
 
