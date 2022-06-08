@@ -115,8 +115,8 @@ def calc_loss(batch, agent, gamma, train_on_gpu):
 
     states_v = states
     next_states_v = next_states
-    actions_v = torch.tensor(actions, device=device)
-    rewards_v = torch.tensor(rewards, device=device)
+    actions_v = torch.from_numpy(actions).to(device)
+    rewards_v = torch.from_numpy(rewards).to(device)
     if train_on_gpu:
         done_mask = torch.cuda.BoolTensor(dones)
     else:

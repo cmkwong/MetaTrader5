@@ -27,23 +27,29 @@ class BaseAgent:
 
         raise NotImplementedError
 
-def default_states_preprocessor(states, unitVector=True):
+def default_states_preprocessor(states, unitVector=True, train_on_gpu=True):
     """
     Convert list of states into the form suitable for model. By default we assume Variable
     :param states: list of numpy arrays with states
     :return: Variable
     """
     assert isinstance(states, list)
+    # choose device
+    if train_on_gpu:
+        device = torch.device("cuda")
+    else:
+        device = torch.device("cpu")
+    # pre-process the states
     if len(states) == 1:
         np_states = np.expand_dims(states[0], 0)
     else:
         np_states = np.array([np.array(s, copy=False) for s in states], copy=False)
-    t_v = func.normalize(torch.tensor(np_states), p=2, dim=1) if unitVector else torch.tensor(np_states)
+    t_v = func.normalize(torch.from_numpy(np_states).to(device), p=2, dim=1) if unitVector else torch.from_numpy(np_states).to(device)
     return t_v
 
 def float32_preprocessor(states):
     np_states = np.array(states, dtype=np.float32)
-    return torch.tensor(np_states)
+    return torch.from_numpy(np_states)
 
 class DQNAgent(BaseAgent):
     """
