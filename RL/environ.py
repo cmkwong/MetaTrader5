@@ -1,6 +1,6 @@
-from production.codes.backtest import pointsModel, returnModel, techModel
-from production.codes.data import integration
-from production.codes.strategies.Cointegration import coinModel
+from backtest import pointsModel, returnModel, techModel
+from data import integration
+from strategies.Cointegration import coinModel
 
 import numpy as np
 import pandas as pd

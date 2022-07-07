@@ -1,8 +1,10 @@
-from production.codes import config
-from production.codes.executor import mt5Model
-from production.codes.backtest import timeModel
-from production.codes.strategies.MovingAverage import maModel
-from production.codes.data import prices
+import sys
+sys.path.append('C:/Users/Chris/projects/210215_mt5')
+import config
+from executor import mt5Model
+from backtest import timeModel
+from strategies.MovingAverage import maModel
+from data import prices
 from datetime import datetime
 import os
 now = datetime.now()

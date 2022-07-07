@@ -1,4 +1,4 @@
-from production.codes.backtest import timeModel, pointsModel, returnModel
+from backtest import timeModel, pointsModel, returnModel
 import csv
 import MetaTrader5 as mt5
 import numpy as np

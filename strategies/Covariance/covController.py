@@ -1,7 +1,9 @@
-from production.codes import config
-from production.codes.executor import mt5Model
-from production.codes.data import prices
-from production.codes.strategies.Covariance import covModel
+import sys
+sys.path.append('C:/Users/Chris/projects/210215_mt5')
+import config
+from executor import mt5Model
+from data import prices
+from strategies.Covariance import covModel
 import os
 
 options = {

@@ -1,5 +1,5 @@
-from production.codes import config
-from production.codes.backtest import indexModel
+import config
+from backtest import indexModel
 from datetime import datetime, timedelta
 import MetaTrader5 as mt5
 import pytz

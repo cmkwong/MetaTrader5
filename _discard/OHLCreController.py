@@ -1,7 +1,7 @@
-from production.codes.executor import mt5Model
-from production.codes.data import files, prices
-from production.codes.backtest import exchgModel, pointsModel, signalModel, returnModel
-from production.codes import config
+from executor import mt5Model
+from data import files, prices
+from backtest import exchgModel, pointsModel, signalModel, returnModel
+import config
 import os
 import numpy as np
 import pandas as pd

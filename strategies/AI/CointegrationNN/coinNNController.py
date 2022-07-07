@@ -1,9 +1,11 @@
-from production.codes.strategies.AI.CointegrationNN import coinNNModel
-from production.codes.executor import mt5Model
-from production.codes.backtest import plotPre
-from production.codes.data import batches, files, prices
-from production.codes.views import printStat, plotView
-from production.codes import config
+import sys
+sys.path.append('C:/Users/Chris/projects/210215_mt5')
+from strategies.AI.CointegrationNN import coinNNModel
+from executor import mt5Model
+from backtest import plotPre
+from data import batches, files, prices
+from views import printStat, plotView
+import config
 from torch import optim
 from torch.utils.tensorboard import SummaryWriter
 import os

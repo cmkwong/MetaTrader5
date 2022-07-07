@@ -1,10 +1,12 @@
+import sys
+sys.path.append('C:/Users/Chris/projects/210215_mt5')
 import numpy as np
-from production.codes import config
-from production.codes.executor import mt5Model
-from production.codes.strategies.Cointegration import coinModel
-from production.codes.backtest import plotPre
-from production.codes.data import prices
-from production.codes.views import plotView
+import config
+from executor import mt5Model
+from strategies.Cointegration import coinModel
+from backtest import plotPre
+from data import prices
+from views import plotView
 import os
 
 from datetime import datetime

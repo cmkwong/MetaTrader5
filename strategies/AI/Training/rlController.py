@@ -1,23 +1,20 @@
-import sys
-sys.path.append('C:/Users/Chris/projects/210215_mt5')
-from production.codes import config
-from production.codes.executor import mt5Model
-from production.codes.data import prices
-from production.codes.strategies.AI import common
+import config
+from executor import mt5Model
+from data import prices
+from strategies.AI import common
 from datetime import datetime
 from torch.utils.tensorboard import SummaryWriter
-from production.codes.views import plotView
-from production.codes.backtest import plotPre, techModel
+
 import os
 import torch
 import torch.optim as optim
 import numpy as np
-import environ
-import models
-import agents
-import actions
-import experience
-import validation
+from RL import environ
+from RL import models
+from RL import agents
+from RL import actions
+from RL import experience
+from RL import validation
 
 
 now = datetime.now()

@@ -1,4 +1,4 @@
-from production.codes.backtest import indexModel, signalModel
+from backtest import indexModel, signalModel
 import pandas as pd
 from datetime import timedelta
 

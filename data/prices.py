@@ -1,9 +1,9 @@
 import sys
-from production.codes import config
-from production.codes.executor import mt5Model
-from production.codes.backtest import timeModel, exchgModel, pointsModel
-from production.codes.data import files, segregation
-from production.codes.utils import tools
+import config
+from executor import mt5Model
+from backtest import timeModel, exchgModel, pointsModel
+from data import files, segregation
+from mt5utils import tools
 import collections
 import MetaTrader5 as mt5
 import pandas as pd

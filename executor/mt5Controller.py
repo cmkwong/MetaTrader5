@@ -1,8 +1,10 @@
-from production.codes.executor import mt5Model
-from production.codes.strategies.Cointegration import coinModel
-from production.codes.data import prices
-from production.codes.backtest import signalModel
-from production.codes import config
+import sys
+sys.path.append('C:/Users/Chris/projects/210215_mt5')
+from executor import mt5Model
+from strategies.Cointegration import coinModel
+from data import prices
+from backtest import signalModel
+import config
 import os
 import numpy as np
 import time

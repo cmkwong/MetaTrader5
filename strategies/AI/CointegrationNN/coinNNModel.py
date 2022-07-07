@@ -1,8 +1,8 @@
 import torch
 import numpy as np
 from torch import nn
-from production.codes.strategies.AI import criterionModel
-from production.codes.strategies.Cointegration import coinModel
+from strategies.AI import criterionModel
+from strategies.Cointegration import coinModel
 
 
 def get_coefficient_vector(model):

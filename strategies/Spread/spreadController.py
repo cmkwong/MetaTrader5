@@ -1,8 +1,10 @@
-from production.codes.executor import mt5Model
-from production.codes.backtest import plotPre
-from production.codes.strategies.Spread import spreadModel
-from production.codes.views import plotView
-from production.codes import config
+import sys
+sys.path.append('C:/Users/Chris/projects/210215_mt5')
+from executor import mt5Model
+from backtest import plotPre
+from strategies.Spread import spreadModel
+from views import plotView
+import config
 from datetime import datetime
 import os
 now = datetime.now()

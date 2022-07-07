@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import os
-from production.codes import config
+import config
 
 def _get_names_and_usecols(ohlc):
     """
