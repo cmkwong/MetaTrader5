@@ -170,9 +170,9 @@ class ExperienceSourceCMK:
                 yield history
                 history = []
             if is_done:
-                state, history, cur_reward, cur_step = self.init_source()
                 self.total_rewards = cur_reward
                 self.total_steps = cur_step
+                state, history, cur_reward, cur_step = self.init_source()
 
     def pop_rewards_steps(self):
         if self.total_rewards != None and self.total_steps != None:

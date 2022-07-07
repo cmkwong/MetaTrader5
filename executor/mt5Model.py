@@ -19,7 +19,15 @@ def disconnect_server():
     mt5.shutdown()
     print("MetaTrader Shutdown.")
 
-class csv_Writer_Helper:
+class BaseMt5:
+    def __enter__(self):
+        connect_server()
+        return self
+
+    def __exit__(self, *args):
+        disconnect_server()
+
+class csv_Writer_Helper(BaseMt5):
     def __init__(self, csv_save_path='', csv_file_names=None, append_checkpoint=None):
         # for output csv file
         self.csv_save_path = csv_save_path
@@ -27,10 +35,6 @@ class csv_Writer_Helper:
         self._register_csv_file_datas(csv_file_names) # store the text, if no need to store for specific data file, return empty dictionary
         self._register_csv_txt_append_count(csv_file_names) # store the appending count for specific data file, if no need to append, return empty dictionary
         self._appended_text = False # if this class have been appended text, then set as True
-
-    def __enter__(self):
-        connect_server()
-        return self
 
     def __exit__(self, *args):
         if self._appended_text: # if there is a appended text before, evacuate the rest of data before exit
@@ -114,7 +118,7 @@ class csv_Writer_Helper:
     #         f.write(csv_text)
     #     print("OK")
 
-class Trader:
+class Trader(BaseMt5):
     def __init__(self, dt_string, history_path, type_filling='ioc'):
         """
         :param type_filling: 'fok', 'ioc', 'return'
@@ -134,9 +138,6 @@ class Trader:
         connect_server()
         self.all_symbol_info = get_all_symbols_info()
         return self
-
-    def __exit__(self, *args):
-        disconnect_server()
 
     def append_history_csv(self, strategy_id):
         history_df = self.history[strategy_id]

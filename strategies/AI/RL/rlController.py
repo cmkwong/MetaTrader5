@@ -1,17 +1,24 @@
+import sys
+sys.path.append('C:/Users/Chris/projects/210215_mt5')
 from production.codes import config
 from production.codes.executor import mt5Model
 from production.codes.data import prices
 from production.codes.strategies.AI import common
-import environ, models, agents, actions, experience, validation
 from datetime import datetime
 from torch.utils.tensorboard import SummaryWriter
 from production.codes.views import plotView
 from production.codes.backtest import plotPre, techModel
-
 import os
 import torch
 import torch.optim as optim
 import numpy as np
+import environ
+import models
+import agents
+import actions
+import experience
+import validation
+
 
 now = datetime.now()
 DT_STRING = now.strftime("%y%m%d%H%M%S")
@@ -38,7 +45,7 @@ data_options = {
 RL_options = {
     'load_net': False,
     'lr': 0.001,
-    'net_file': 'checkpoint-300000.data',
+    'net_file': 'checkpoint-2970000.data',
     'batch_size': 1024,
     'epsilon_start': 1.0,
     'epsilon_end': 0.35,
@@ -50,7 +57,7 @@ RL_options = {
     'buffer_save_path': os.path.join(options['docs_path'], "buffer"),
     'replay_size': 100000,
     'monitor_buffer_size': 10000,
-    'replay_start': 10000, # 10000
+    'replay_start': 10000,  # 10000
     'epsilon_step': 1000000,
     'target_net_sync': 1000,
     'validation_step': 50000,
@@ -61,12 +68,12 @@ RL_options = {
 }
 
 tech_params = {
-    'ma': [5,10,25,50,100,150,200,250],
-    'bb': [(20,2,2,0),(20,3,3,0),(20,4,4,0),(40,2,2,0),(40,3,3,0),(40,4,4,0)],
-    'std': [(5,1),(20,1),(50,1),(100,1),(150,1),(250,1)],
-    'rsi': [5,15,25,50,100,150,250],
-    'stocOsci': [(5,3,3,0,0),(14,3,3,0,0),(21,14,14,0,0)],
-    'macd': [(12,26,9),(19,39,9)]
+    'ma': [5, 10, 25, 50, 100, 150, 200, 250],
+    'bb': [(20, 2, 2, 0), (20, 3, 3, 0), (20, 4, 4, 0), (40, 2, 2, 0), (40, 3, 3, 0), (40, 4, 4, 0)],
+    'std': [(5, 1), (20, 1), (50, 1), (100, 1), (150, 1), (250, 1)],
+    'rsi': [5, 15, 25, 50, 100, 150, 250],
+    'stocOsci': [(5, 3, 3, 0, 0), (14, 3, 3, 0, 0), (21, 14, 14, 0, 0)],
+    'macd': [(12, 26, 9), (19, 39, 9)]
 }
 
 with mt5Model.csv_Writer_Helper() as helper:
@@ -82,11 +89,14 @@ with mt5Model.csv_Writer_Helper() as helper:
     prices_loader.get_data(data_options['local'])
 
     # split into train set and test set
-    Train_Prices, Test_Prices = prices.split_Prices(prices_loader.Prices, percentage=data_options['trainTestSplit'])
+    Train_Prices, Test_Prices = prices.split_Prices(
+        prices_loader.Prices, percentage=data_options['trainTestSplit'])
 
     # build the env (long)
-    env = environ.TechicalForexEnv(data_options['symbols'][0], Train_Prices, tech_params, True, prices_loader.all_symbols_info, 0.05, 8, 15, 1, random_ofs_on_reset=True, reset_on_close=True)
-    env_val = environ.TechicalForexEnv(data_options['symbols'][0], Test_Prices, tech_params, True, prices_loader.all_symbols_info, 0.05, 8, 15, 1, random_ofs_on_reset=False, reset_on_close=False)
+    env = environ.TechicalForexEnv(data_options['symbols'][0], Train_Prices, tech_params, True,
+                                   prices_loader.all_symbols_info, 0.05, 8, 15, 1, random_ofs_on_reset=True, reset_on_close=True)
+    env_val = environ.TechicalForexEnv(data_options['symbols'][0], Test_Prices, tech_params, True,
+                                       prices_loader.all_symbols_info, 0.05, 8, 15, 1, random_ofs_on_reset=False, reset_on_close=False)
 
     net = models.SimpleFFDQN(env.get_obs_len(), env.get_action_space_size())
 
@@ -94,16 +104,19 @@ with mt5Model.csv_Writer_Helper() as helper:
     if RL_options['load_net'] is True:
         with open(os.path.join(RL_options['net_saved_path'], RL_options['net_file']), "rb") as f:
             checkpoint = torch.load(f)
-        net = models.SimpleFFDQN(env.get_obs_len(), env.get_action_space_size())
+        net = models.SimpleFFDQN(
+            env.get_obs_len(), env.get_action_space_size())
         net.load_state_dict(checkpoint['state_dict'])
 
     # create buffer
-    net.to(torch.device("cuda")) # pass into gpu
+    net.to(torch.device("cuda"))  # pass into gpu
     selector = actions.EpsilonGreedyActionSelector(RL_options['epsilon_start'])
     agent = agents.DQNAgent(net, selector)
     # agent = agents.Supervised_DQNAgent(net, selector, sample_sheet, assistance_ratio=0.2)
-    exp_source = experience.ExperienceSourceFirstLast(env, agent, RL_options['gamma'], steps_count=RL_options['reward_steps'])
-    buffer = experience.ExperienceReplayBuffer(exp_source, RL_options['replay_size'])
+    exp_source = experience.ExperienceSourceFirstLast(
+        env, agent, RL_options['gamma'], steps_count=RL_options['reward_steps'])
+    buffer = experience.ExperienceReplayBuffer(
+        exp_source, RL_options['replay_size'])
 
     # create optimizer
     optimizer = optim.Adam(net.parameters(), lr=RL_options['lr'])
@@ -121,19 +134,22 @@ with mt5Model.csv_Writer_Helper() as helper:
 
     # create the validator
     # TODO - need to modified the validator
-    validator = validation.validator(env_val, agent, save_path=RL_options['val_save_path'], comission=0.1)
+    validator = validation.validator(
+        env_val, agent, save_path=RL_options['val_save_path'], comission=0.1)
 
     # create the monitor
     monitor = common.monitor(buffer, RL_options['buffer_save_path'])
 
-    writer = SummaryWriter(log_dir=os.path.join(RL_options['runs_save_path'], DT_STRING), comment="ForexRL")
+    writer = SummaryWriter(log_dir=os.path.join(
+        RL_options['runs_save_path'], DT_STRING), comment="ForexRL")
     loss_tracker = common.lossTracker(writer, group_losses=100)
     with common.RewardTracker(writer, np.inf, group_rewards=100) as reward_tracker:
         while True:
             step_idx += 1
             net_processor.populate_mode(batch_size=1)
             buffer.populate(1)
-            selector.epsilon = max(RL_options['epsilon_end'], RL_options['epsilon_start'] - step_idx * 0.75 / RL_options['epsilon_step'])
+            selector.epsilon = max(
+                RL_options['epsilon_end'], RL_options['epsilon_start'] - step_idx * 0.75 / RL_options['epsilon_step'])
 
             new_rewards = exp_source.pop_rewards_steps()
             if new_rewards:
@@ -146,7 +162,8 @@ with mt5Model.csv_Writer_Helper() as helper:
 
             # init the hidden both in network and tgt network
             net_processor.train_mode(batch_size=RL_options['batch_size'])
-            loss_v = common.calc_loss(batch, agent, RL_options['gamma'] ** RL_options['reward_steps'], train_on_gpu=True)
+            loss_v = common.calc_loss(
+                batch, agent, RL_options['gamma'] ** RL_options['reward_steps'], train_on_gpu=True)
             loss_v.backward()
             optimizer.step()
             loss_value = loss_v.item()
@@ -170,8 +187,10 @@ with mt5Model.csv_Writer_Helper() as helper:
             if step_idx % RL_options['validation_step'] == 0:
                 net_processor.eval_mode(batch_size=1)
                 # writer.add_scalar("validation_episodes", validation_episodes, step_idx)
-                val_epsilon = max(0, RL_options['epsilon_start'] - step_idx * 0.75 / RL_options['epsilon_step'])
-                stats = validator.run(episodes=RL_options['validation_episodes'], step_idx=step_idx, epsilon=val_epsilon)
+                val_epsilon = max(
+                    0, RL_options['epsilon_start'] - step_idx * 0.75 / RL_options['epsilon_step'])
+                stats = validator.run(
+                    episodes=RL_options['validation_episodes'], step_idx=step_idx, epsilon=val_epsilon)
                 common.valid_result_visualize(stats, writer, step_idx)
 
             # TODO: how to visialize the weight better? eigenvector and eigenvalues?

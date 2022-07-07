@@ -47,7 +47,10 @@ class State:
         # encoded_data.dependent_datas = self.dependent_datas.iloc[self._offset].values
         res = []
         earning = 0.0
-        res.extend(list(self.dependent_datas.iloc[self._offset,:].values))
+        try:
+            res.extend(list(self.dependent_datas.iloc[self._offset,:].values))
+        except:
+            print('stop')
         if self.have_position:
             earning = self.cal_profit(self.action_price.iloc[self._offset,:].values, self._prev_action_price, self.quote_exchg.iloc[self._offset,:].values)
         res.extend([earning, float(self.have_position)])     # earning, have_position (True = 1.0, False = 0.0)
@@ -74,6 +77,8 @@ class State:
             reward -= pointsModel.get_point_to_deposit(self.symbol, self.spread_pt, q2d_at, self.all_symbols_info)      # spread cost
             reward -= pointsModel.get_point_to_deposit(self.symbol, self.commission_pt, q2d_at, self.all_symbols_info)  # commission cost
             self.have_position = False
+            if self.reset_on_close:
+                done = True
 
         elif action == self.actions['skip'] and self.have_position:
             reward += self.cal_profit(curr_action_price, self._prev_action_price, q2d_at)
@@ -115,7 +120,7 @@ class TechicalForexEnv:
         if not self.random_ofs_on_reset:
             self._state.reset(0)
         else:
-            random_offset = np.random.randint(len(self.Prices.o))
+            random_offset = np.random.randint(len(self.Prices.o) - 10) # minus a buffer, because draw at the end of data sometimes, then it will be bug
             self._state.reset(random_offset)
         obs = self._state.encode()
         return obs

@@ -15,14 +15,16 @@ TIMEFRAME_DICT = {"M1": mt5.TIMEFRAME_M1, "M2": mt5.TIMEFRAME_M2, "M3": mt5.TIME
 
 # Moving Average
 VERSION = 2
-BROKER_TIME_BETWEEN_UTC = 2 # utc_diff: difference between broker (UTC+3) and UTC = 3 (see note 23a) and (note 56b)
-DOWNLOADED_MIN_DATA_TIME_BETWEEN_UTC = 5 # that is without daylight shift time (UTC+5)
+# utc_diff: difference between broker (UTC+3) and UTC = 3 (see note 23a) and (note 56b)
+BROKER_TIME_BETWEEN_UTC = 2
+# that is without daylight shift time (UTC+5)
+DOWNLOADED_MIN_DATA_TIME_BETWEEN_UTC = 5
 MAIN_PATH = "/production/docs"
 
 TIMEZONE = "Etc/UTC"
 SYMBOL = "EURUSD"
-START = (2010,1,1,0,0)
-END = (2020,12,30,0,0)
+START = (2010, 1, 1, 0, 0)
+END = (2020, 12, 30, 0, 0)
 TIMEFRAME_TEXT = "H4"
 LONG_MODE = True
 LIMIT_UNIT = 10  # 0 is cancel; > 0 is activate

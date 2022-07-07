@@ -1,3 +1,4 @@
+import sys
 from production.codes import config
 from production.codes.executor import mt5Model
 from production.codes.backtest import timeModel, exchgModel, pointsModel
