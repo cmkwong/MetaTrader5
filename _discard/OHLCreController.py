@@ -1,4 +1,5 @@
 from executor import mt5Model
+from executor import common as mt5common
 from data import files, prices
 from backtest import exchgModel, pointsModel, signalModel, returnModel
 import config
@@ -43,7 +44,7 @@ with mt5Model.csv_Writer_Helper():
     resoluted_modified_short_q2d = exchgModel.get_resoluted_exchg(short_modified_q2d, short_signal, resoluted_index)
     
     # get points_dff_values_df
-    all_symbols_info = mt5Model.get_all_symbols_info()
+    all_symbols_info = mt5common.get_all_symbols_info()
     points_dff_values_df = pointsModel.get_points_dff_values_df(file_options['symbols'], symbols_min_prices, symbols_min_prices.shift(1), all_symbols_info)
     
     # get ret and earning

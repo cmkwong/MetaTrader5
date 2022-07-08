@@ -1,13 +1,20 @@
-import sys
 import config
-from executor import mt5Model
+from executor import common as mt5common
 from backtest import timeModel, exchgModel, pointsModel
-from data import files, segregation
-from mt5utils import tools
+from data import files
+from mt5utils import segregation
 import collections
 import MetaTrader5 as mt5
 import pandas as pd
 from datetime import datetime
+
+"""
+Price loader from:
+1. mt5 sql
+2. mysql
+
+Fianlly just one single point - mysql
+"""
 
 def _get_historical_data(symbol, timeframe, timezone, start, end=None):
     """
@@ -175,7 +182,7 @@ class Prices_Loader: # created note 86a
 
         # prepare
         self.symbols_total = len(symbols)
-        self.all_symbols_info = mt5Model.get_all_symbols_info()
+        self.all_symbols_info = mt5common.get_all_symbols_info()
         self.Prices_Collection = collections.namedtuple("Prices_Collection", ['o','h','l','c', 'cc', 'ptDv','quote_exchg','base_exchg'])
         self.latest_Prices_Collection = collections.namedtuple("latest_Prices_Collection", ['c', 'cc', 'ptDv', 'quote_exchg']) # for latest Prices
         self.q2d_exchg_symbols = exchgModel.get_exchange_symbols(self.symbols, self.all_symbols_info, self.deposit_currency, 'q2d')

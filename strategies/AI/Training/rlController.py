@@ -1,3 +1,6 @@
+import sys
+
+sys.path.append('C:/Users/Chris/projects/210215_mt5')
 import config
 from executor import mt5Model
 from data import prices
@@ -15,7 +18,6 @@ from RL import agents
 from RL import actions
 from RL import experience
 from RL import validation
-
 
 now = datetime.now()
 DT_STRING = now.strftime("%y%m%d%H%M%S")
@@ -42,6 +44,7 @@ data_options = {
 RL_options = {
     'load_net': False,
     'lr': 0.001,
+    'dt_str': '220515093044',  # time that program being run
     'net_file': 'checkpoint-2970000.data',
     'batch_size': 1024,
     'epsilon_start': 1.0,
@@ -99,7 +102,7 @@ with mt5Model.csv_Writer_Helper() as helper:
 
     # load the network
     if RL_options['load_net'] is True:
-        with open(os.path.join(RL_options['net_saved_path'], RL_options['net_file']), "rb") as f:
+        with open(os.path.join(*[RL_options['net_saved_path'], RL_options['dt_str'], RL_options['net_file']]), "rb") as f:
             checkpoint = torch.load(f)
         net = models.SimpleFFDQN(
             env.get_obs_len(), env.get_action_space_size())
@@ -132,10 +135,10 @@ with mt5Model.csv_Writer_Helper() as helper:
     # create the validator
     # TODO - need to modified the validator
     validator = validation.validator(
-        env_val, agent, save_path=RL_options['val_save_path'], comission=0.1)
+        env_val, agent, save_path=os.path.join(*[RL_options['val_save_path'], RL_options['dt_str']]), comission=0.1)
 
     # create the monitor
-    monitor = common.monitor(buffer, RL_options['buffer_save_path'])
+    monitor = common.monitor(buffer, os.path.join(*[RL_options['buffer_save_path'], RL_options['dt_str']]))
 
     writer = SummaryWriter(log_dir=os.path.join(
         RL_options['runs_save_path'], DT_STRING), comment="ForexRL")
@@ -177,7 +180,7 @@ with mt5Model.csv_Writer_Helper() as helper:
                 checkpoint = {
                     "state_dict": net.state_dict()
                 }
-                with open(os.path.join(RL_options['net_saved_path'], "checkpoint-{}.data".format(step_idx)), "wb") as f:
+                with open(os.path.join(*[RL_options['net_saved_path'], DT_STRING, f"checkpoint-{step_idx}.data"]), "wb") as f:
                     torch.save(checkpoint, f)
 
             # TODO: validation has something to changed
