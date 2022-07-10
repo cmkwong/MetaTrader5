@@ -5,5 +5,5 @@ def print_terminal_info():
     print(mt5.terminal_info())
     # request account info
     print(mt5.account_info())
-    # get data on MetaTrader 5 version
+    # get loader on MetaTrader 5 version
     print(mt5.version())

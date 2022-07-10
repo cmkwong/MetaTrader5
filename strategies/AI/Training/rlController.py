@@ -2,8 +2,8 @@ import sys
 
 sys.path.append('C:/Users/Chris/projects/210215_mt5')
 import config
-from executor import mt5Model
-from data import prices
+from mt5.executor import mt5Model
+from mt5.loader import MT5PricesLoader
 from strategies.AI import common
 from datetime import datetime
 from torch.utils.tensorboard import SummaryWriter
@@ -45,7 +45,7 @@ RL_options = {
     'load_net': False,
     'lr': 0.001,
     'dt_str': '220515093044',  # time that program being run
-    'net_file': 'checkpoint-2970000.data',
+    'net_file': 'checkpoint-2970000.loader',
     'batch_size': 1024,
     'epsilon_start': 1.0,
     'epsilon_end': 0.35,
@@ -78,25 +78,25 @@ tech_params = {
 
 with mt5Model.csv_Writer_Helper() as helper:
     # define loader
-    prices_loader = prices.Prices_Loader(symbols=data_options['symbols'],
-                                         timeframe=data_options['timeframe'],
-                                         data_path=data_options['local_min_path'],
-                                         start=data_options['start'],
-                                         end=data_options['end'],
-                                         timezone=data_options['timezone'],
-                                         deposit_currency=data_options['deposit_currency'])
-    # get the data
+    prices_loader = MT5PricesLoader.MT5PricesLoader(symbols=data_options['symbols'],
+                                                    timeframe=data_options['timeframe'],
+                                                    data_path=data_options['local_min_path'],
+                                                    start=data_options['start'],
+                                                    end=data_options['end'],
+                                                    timezone=data_options['timezone'],
+                                                    deposit_currency=data_options['deposit_currency'])
+    # get the loader
     prices_loader.get_data(data_options['local'])
 
     # split into train set and test set
-    Train_Prices, Test_Prices = prices.split_Prices(
+    Train_Prices, Test_Prices = prices_loader.split_Prices(
         prices_loader.Prices, percentage=data_options['trainTestSplit'])
 
     # build the env (long)
     env = environ.TechicalForexEnv(data_options['symbols'][0], Train_Prices, tech_params, True,
-                                   prices_loader.all_symbols_info, 0.05, 8, 15, 1, random_ofs_on_reset=True, reset_on_close=True)
+                                   prices_loader.all_symbol_info, 0.05, 8, 15, 1, random_ofs_on_reset=True, reset_on_close=True)
     env_val = environ.TechicalForexEnv(data_options['symbols'][0], Test_Prices, tech_params, True,
-                                       prices_loader.all_symbols_info, 0.05, 8, 15, 1, random_ofs_on_reset=False, reset_on_close=False)
+                                       prices_loader.all_symbol_info, 0.05, 8, 15, 1, random_ofs_on_reset=False, reset_on_close=False)
 
     net = models.SimpleFFDQN(env.get_obs_len(), env.get_action_space_size())
 
@@ -180,7 +180,7 @@ with mt5Model.csv_Writer_Helper() as helper:
                 checkpoint = {
                     "state_dict": net.state_dict()
                 }
-                with open(os.path.join(*[RL_options['net_saved_path'], DT_STRING, f"checkpoint-{step_idx}.data"]), "wb") as f:
+                with open(os.path.join(*[RL_options['net_saved_path'], DT_STRING, f"checkpoint-{step_idx}.loader"]), "wb") as f:
                     torch.save(checkpoint, f)
 
             # TODO: validation has something to changed

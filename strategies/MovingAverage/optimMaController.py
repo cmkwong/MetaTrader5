@@ -1,10 +1,10 @@
 import sys
 sys.path.append('C:/Users/Chris/projects/210215_mt5')
 import config
-from executor import mt5Model
+from mt5.executor import mt5Model
 from backtest import timeModel
 from strategies.MovingAverage import maModel
-from data import prices
+from mt5.loader import MT5PricesLoader
 from datetime import datetime
 import os
 now = datetime.now()
@@ -73,18 +73,18 @@ with mt5Model.csv_Writer_Helper(csv_save_path=data_options['csv_save_path'],
                                 csv_file_names=[train_long_stat_file_name, train_short_stat_file_name, test_long_stat_file_name, test_short_stat_file_name],
                                 append_checkpoint=data_options["append_checkpoint"]) as helper:
     # define loader
-    prices_loader = prices.Prices_Loader(symbols=data_options['symbols'],
-                                         timeframe=data_options['timeframe'],
-                                         data_path=data_options['local_min_path'],
-                                         start=data_options['start'],
-                                         end=data_options['end'],
-                                         timezone=data_options['timezone'],
-                                         deposit_currency=data_options['deposit_currency'])
-    # get the data
+    prices_loader = MT5PricesLoader.MT5PricesLoader(symbols=data_options['symbols'],
+                                                    timeframe=data_options['timeframe'],
+                                                    data_path=data_options['local_min_path'],
+                                                    start=data_options['start'],
+                                                    end=data_options['end'],
+                                                    timezone=data_options['timezone'],
+                                                    deposit_currency=data_options['deposit_currency'])
+    # get the loader
     prices_loader.get_data(data_options['local'])
 
     # split into train set and test set
-    Train_Prices, Test_Prices = prices.split_Prices(prices_loader.Prices, percentage=data_options['trainTestSplit'])
+    Train_Prices, Test_Prices = prices_loader.split_Prices(prices_loader.Prices, percentage=data_options['trainTestSplit'])
 
     for limit_unit in range(data_options['max_limit_range'][0], data_options['max_limit_range'][1]):
         # optimizing the training set

@@ -1,8 +1,8 @@
 import sys
 sys.path.append('C:/Users/Chris/projects/210215_mt5')
 import config
-from executor import mt5Model
-from data import prices
+from mt5.executor import mt5Model
+from mt5.loader import MT5PricesLoader
 from strategies.Covariance import covModel
 import os
 
@@ -37,13 +37,13 @@ def get_cor_matrix(prices_loader, local):
 
 with mt5Model.csv_Writer_Helper():
     symbols = sorted(data_options['symbols'], reverse=False)  # sorting the symbols
-    prices_loader = prices.Prices_Loader(symbols=symbols,
-                                         timeframe=data_options['timeframe'],
-                                         start=data_options['start'],
-                                         end=data_options['end'],
-                                         timezone=data_options['timezone'],
-                                         data_path=data_options['local_min_path'],
-                                         deposit_currency=data_options['deposit_currency'])
+    prices_loader = MT5PricesLoader.MT5PricesLoader(symbols=symbols,
+                                                    timeframe=data_options['timeframe'],
+                                                    start=data_options['start'],
+                                                    end=data_options['end'],
+                                                    timezone=data_options['timezone'],
+                                                    data_path=data_options['local_min_path'],
+                                                    deposit_currency=data_options['deposit_currency'])
 
     cor_matrix, cor_table = get_cor_matrix(prices_loader, options['local'])
 print()

@@ -40,7 +40,7 @@ def _get_graph_data(Prices, long_signal, short_signal, coefficient_vector):
     long_modify_exchg_q2d = exchgModel.get_exchg_by_signal(Prices.quote_exchg, long_signal)
     short_modify_exchg_q2d = exchgModel.get_exchg_by_signal(Prices.quote_exchg, short_signal)
 
-    # prepare data for graph ret and earning
+    # prepare loader for graph ret and earning
     long_ret, long_earning = returnModel.get_ret_earning(Prices.c, Prices.c.shift(1), long_modify_exchg_q2d, Prices.ptDv, coefficient_vector, long_mode=True)
     long_ret_by_signal, long_earning_by_signal = returnModel.get_ret_earning_by_signal(long_ret, long_earning, long_signal)
     long_accum_ret, long_accum_earning = returnModel.get_accum_ret_earning(long_ret_by_signal, long_earning_by_signal)
@@ -49,7 +49,7 @@ def _get_graph_data(Prices, long_signal, short_signal, coefficient_vector):
     short_ret_by_signal, short_earning_by_signal = returnModel.get_ret_earning_by_signal(short_ret, short_earning, short_signal)
     short_accum_ret, short_accum_earning = returnModel.get_accum_ret_earning(short_ret_by_signal, short_earning_by_signal)
 
-    # prepare data for graph histogram
+    # prepare loader for graph histogram
     long_ret_list, long_earning_list = returnModel.get_ret_earning_list(long_ret_by_signal, long_earning_by_signal, long_signal)
     short_ret_list, short_earning_list = returnModel.get_ret_earning_list(short_ret_by_signal, short_earning_by_signal, short_signal)
 
@@ -167,20 +167,20 @@ def get_coin_NN_plt_datas(Prices, min_Prices, coefficient_vector, upper_th, lowe
 
     # -------------------------------------------------------------------- slsp --------------------------------------------------------------------
     if len(min_Prices) != 0:
-        # prepare minute data for slsp part
+        # prepare minute loader for slsp part
         long_min_signal, short_min_signal = signalModel.get_resoluted_signal(long_signal, min_Prices.quote_exchg.index), signalModel.get_resoluted_signal(short_signal, min_Prices.quote_exchg.index)
         long_modify_min_exchg_q2d = exchgModel.get_exchg_by_signal(min_Prices.quote_exchg, long_signal)
         short_modify_min_exchg_q2d = exchgModel.get_exchg_by_signal(min_Prices.quote_exchg, short_signal)
         long_min_ret, long_min_earning = returnModel.get_ret_earning(min_Prices.c, min_Prices.c.shift(1), long_modify_min_exchg_q2d, min_Prices.ptDv, coefficient_vector, long_mode=True)
         short_min_ret, short_min_earning = returnModel.get_ret_earning(min_Prices.c, min_Prices.c.shift(1), short_modify_min_exchg_q2d, min_Prices.ptDv, coefficient_vector, long_mode=False)
 
-        # prepare data for graph 8 and 9: ret and earning with stop-loss and stop-profit
+        # prepare loader for graph 8 and 9: ret and earning with stop-loss and stop-profit
         long_ret_by_signal_slsp, long_earning_by_signal_slsp = returnModel.get_ret_earning_by_signal(Graph_Data.long_ret, Graph_Data.long_earning, long_signal, long_min_ret, long_min_earning, slsp, timeframe)
         long_accum_ret_slsp, long_accum_earning_slsp = returnModel.get_accum_ret_earning(long_ret_by_signal_slsp, long_earning_by_signal_slsp)
         short_ret_by_signal_slsp, short_earning_by_signal_slsp = returnModel.get_ret_earning_by_signal(Graph_Data.short_ret, Graph_Data.short_earning, short_signal, short_min_ret, short_min_earning, slsp, timeframe)
         short_accum_ret_slsp, short_accum_earning_slsp = returnModel.get_accum_ret_earning(short_ret_by_signal_slsp, short_earning_by_signal_slsp)
 
-        # prepare data for graph 10 and 11
+        # prepare loader for graph 10 and 11
         long_ret_list_slsp, long_earning_list_slsp = returnModel.get_ret_earning_list(long_ret_by_signal_slsp, long_earning_by_signal_slsp, long_signal)
         short_ret_list_slsp, short_earning_list_slsp = returnModel.get_ret_earning_list(short_ret_by_signal_slsp, short_earning_by_signal_slsp, short_signal)
 
@@ -209,11 +209,11 @@ def get_coin_NN_plt_datas(Prices, min_Prices, coefficient_vector, upper_th, lowe
         plt_datas[10] = _get_format_plot_data(hist=pd.Series(short_earning_list_slsp, name='short earning slsp'))
 
         # ------------ slsp DEBUG -------------
-        # concat more data if slsp available
+        # concat more loader if slsp available
         df_debug = pd.concat([df_debug,
                               long_accum_ret_slsp, short_accum_ret_slsp,
                               long_accum_earning_slsp, short_accum_earning_slsp], axis=1)
-        # for minute data
+        # for minute loader
         range = [150000, 200000]
         df_min_debug = pd.DataFrame(index=min_Prices.o.iloc[range[0]:range[1]].index)
         df_min_debug = pd.concat([df_min_debug, min_Prices.o.iloc[range[0]:range[1]], long_modify_min_exchg_q2d.iloc[range[0]:range[1]],

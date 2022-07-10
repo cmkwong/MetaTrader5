@@ -1,11 +1,11 @@
-from executor import common as mt5common
+from mt5.executor import common as mt5common
 import pandas as pd
 
 def get_spreads(symbols, start, end, timezone):
     """
     :param symbols: [str]
     :param start (local time): tuple (year, month, day, hour, mins) eg: (2010, 10, 30, 0, 0)
-    :param end (local time): tuple (year, month, day, hour, mins), if None, then take data until present
+    :param end (local time): tuple (year, month, day, hour, mins), if None, then take loader until present
     :param timezone: 'HongKong'
     :return: pd.DataFrame
     """

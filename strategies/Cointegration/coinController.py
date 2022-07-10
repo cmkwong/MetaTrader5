@@ -2,10 +2,10 @@ import sys
 sys.path.append('C:/Users/Chris/projects/210215_mt5')
 import numpy as np
 import config
-from executor import mt5Model
+from mt5.executor import mt5Model
 from strategies.Cointegration import coinModel
 from backtest import plotPre
-from data import prices
+from mt5.loader import MT5PricesLoader
 from views import plotView
 import os
 
@@ -47,18 +47,18 @@ print(data_options['debug_path'])
 with mt5Model.csv_Writer_Helper():
 
     # define loader
-    prices_loader = prices.Prices_Loader(symbols=data_options['symbols'],
-                                         timeframe=data_options['timeframe'],
-                                         data_path=data_options['local_min_path'],
-                                         start=data_options['start'],
-                                         end=data_options['end'],
-                                         timezone=data_options['timezone'],
-                                         deposit_currency=data_options['deposit_currency'])
-    # get the data
+    prices_loader = MT5PricesLoader.MT5PricesLoader(symbols=data_options['symbols'],
+                                                    timeframe=data_options['timeframe'],
+                                                    data_path=data_options['local_min_path'],
+                                                    start=data_options['start'],
+                                                    end=data_options['end'],
+                                                    timezone=data_options['timezone'],
+                                                    deposit_currency=data_options['deposit_currency'])
+    # get the loader
     prices_loader.get_data(data_options['local'])
 
     # split into train set and test set
-    Train_Prices, Test_Prices = prices.split_Prices(prices_loader.Prices, percentage=data_options['trainTestSplit'])
+    Train_Prices, Test_Prices = prices_loader.split_Prices(prices_loader.Prices, percentage=data_options['trainTestSplit'])
 
     # get Linear Regression coefficients (independent variable and dependent variable)
     dependent_variable = Train_Prices.c

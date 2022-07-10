@@ -1,8 +1,8 @@
 import sys
-sys.path.append('C:/Users/Chris/projects/210215_mt5')
-from executor import mt5Model
+sys.path.append('/')
+from mt5.executor import mt5Model
 from strategies.Cointegration import coinModel
-from data import prices
+from mt5.loader import MT5PricesLoader
 from backtest import signalModel
 import config
 import os
@@ -41,11 +41,11 @@ coin_option = {
 
 with mt5Model.Trader(dt_string=options['dt'], history_path=trader_options["history_path"], type_filling=trader_options['type_filling']) as trader:
 
-    prices_loader = prices.Prices_Loader(symbols=trader_options['symbols'],
-                                         timeframe=trader_options['timeframe'],
-                                         count=trader_options['count'],
-                                         timezone=trader_options['timezone'],
-                                         deposit_currency=trader_options['deposit_currency'])
+    prices_loader = MT5PricesLoader.MT5PricesLoader(symbols=trader_options['symbols'],
+                                                    timeframe=trader_options['timeframe'],
+                                                    count=trader_options['count'],
+                                                    timezone=trader_options['timezone'],
+                                                    deposit_currency=trader_options['deposit_currency'])
 
     long_lots = [round(i, 2) for i in coinModel.get_modified_coefficient_vector(coin_option['coefficient_vector'], long_mode=True, lot_times=trader_options['lot_times'])]
     short_lots = [round(i, 2) for i in coinModel.get_modified_coefficient_vector(coin_option['coefficient_vector'], long_mode=False, lot_times=trader_options['lot_times'])]

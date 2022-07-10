@@ -1,6 +1,7 @@
 import numpy as np
 import collections
-from mt5utils import tools
+from mt5.mt5utils import tools
+
 
 def create_indexes(batch_size, seq_len, data_total, shuffle=True):
     """
@@ -22,7 +23,7 @@ def create_indexes(batch_size, seq_len, data_total, shuffle=True):
     return batch_indexes
 
 def get_target_batches(arr, batch_indexes):
-    target_size = batch_indexes.shape[1] # whole data length
+    target_size = batch_indexes.shape[1] # whole loader length
     target_batches = []
     for t in range(target_size):
         batch_index = batch_indexes[:, t]
@@ -48,7 +49,7 @@ def get_batches(prices_matrix, seq_len, batch_size, shuffle):
     :return: collection batches
     """
     batches = collections.namedtuple("batches", ["input", "target"])
-    input_matrix, target_matrix = prices_matrix[:, :-1], prices_matrix[:, -1] # split the data along column, last column is target
+    input_matrix, target_matrix = prices_matrix[:, :-1], prices_matrix[:, -1] # split the loader along column, last column is target
     batch_indexes = create_indexes(batch_size, seq_len, len(input_matrix), shuffle=shuffle)
 
     # input batch

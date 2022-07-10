@@ -1,9 +1,9 @@
 import sys
 sys.path.append('C:/Users/Chris/projects/210215_mt5')
 from strategies.AI.CointegrationNN import coinNNModel
-from executor import mt5Model
+from mt5.executor import mt5Model
 from backtest import plotPre
-from data import batches, files, prices
+from mt5.loader import MT5PricesLoader, batches, files
 from views import printStat, plotView
 import config
 from torch import optim
@@ -61,19 +61,19 @@ train_options = {
 # tensorboard --logdir C:\Users\Chris\projects\210215_mt5\production\docs\1\runs --host localhost
 
 with mt5Model.csv_Writer_Helper():
-    prices_loader = prices.Prices_Loader(symbols=data_options['symbols'],
-                                         timeframe=data_options['timeframe'],
-                                         start=data_options['start'],
-                                         end=data_options['end'],
-                                         timezone=data_options['timezone'],
-                                         data_path=data_options['local_min_path'],
-                                         deposit_currency=data_options['deposit_currency'])
-    # get the data
+    prices_loader = MT5PricesLoader.MT5PricesLoader(symbols=data_options['symbols'],
+                                                    timeframe=data_options['timeframe'],
+                                                    start=data_options['start'],
+                                                    end=data_options['end'],
+                                                    timezone=data_options['timezone'],
+                                                    data_path=data_options['local_min_path'],
+                                                    deposit_currency=data_options['deposit_currency'])
+    # get the loader
     prices_loader.get_data(data_options['local'])
     # Prices = prices_loader.get_Prices_format(options['local'])
 
     # split into train set and test set
-    Train_Prices, Test_Prices = prices.split_Prices(prices_loader.Prices, percentage=data_options['trainTestSplit'])
+    Train_Prices, Test_Prices = prices_loader.split_Prices(prices_loader.Prices, percentage=data_options['trainTestSplit'])
     dependent_variable = Train_Prices.c
     if train_options['close_change'] == 1:
         dependent_variable = Train_Prices.cc

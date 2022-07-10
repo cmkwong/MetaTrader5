@@ -19,7 +19,7 @@ def get_predicted_arr(model, input_arr, seq_len):
     """
     :param model: nn.Model
     :param input: array, size = (total_len, input_size)
-    :param seq_len: int, the data length needed to feed into model
+    :param seq_len: int, the loader length needed to feed into model
     :return: array, size = (total_len, 1)
     """
     input = torch.FloatTensor(input_arr)

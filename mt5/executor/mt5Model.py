@@ -1,5 +1,5 @@
 from backtest import timeModel, pointsModel, returnModel
-from executor import common as mt5common
+from mt5.executor import common as mt5common
 
 import MetaTrader5 as mt5
 import numpy as np
@@ -11,12 +11,12 @@ class csv_Writer_Helper(mt5common.BaseMt5):
         # for output csv file
         self.csv_save_path = csv_save_path
         self.append_checkpoint = append_checkpoint
-        self._register_csv_file_datas(csv_file_names) # store the text, if no need to store for specific data file, return empty dictionary
-        self._register_csv_txt_append_count(csv_file_names) # store the appending count for specific data file, if no need to append, return empty dictionary
+        self._register_csv_file_datas(csv_file_names) # store the text, if no need to store for specific loader file, return empty dictionary
+        self._register_csv_txt_append_count(csv_file_names) # store the appending count for specific loader file, if no need to append, return empty dictionary
         self._appended_text = False # if this class have been appended text, then set as True
 
     def __exit__(self, *args):
-        if self._appended_text: # if there is a appended text before, evacuate the rest of data before exit
+        if self._appended_text: # if there is a appended text before, evacuate the rest of loader before exit
             self.evacuate_csv_file_datas()
         mt5common.disconnect_server()
 
@@ -47,7 +47,7 @@ class csv_Writer_Helper(mt5common.BaseMt5):
         # append the text
         self._csv_file_datas[csv_file_name] += csv_text
 
-        # if reach the checkpoint, write and empty the data as csv
+        # if reach the checkpoint, write and empty the loader as csv
         if self._csv_txt_append_count[csv_file_name] % self.append_checkpoint == 0:
             self.evacuate_csv_file_datas()
         self._csv_txt_append_count[csv_file_name] += 1
@@ -70,7 +70,7 @@ class Trader(mt5common.BaseMt5):
         :param type_filling: 'fok', 'ioc', 'return'
         :param deviation: int
         """
-        super().__init__(type_filling)
+        self.type_filling = type_filling
         self.history_path = history_path
         self.dt_string = dt_string
         self.history, self.status, self.strategy_symbols, \

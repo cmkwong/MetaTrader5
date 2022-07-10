@@ -37,8 +37,8 @@ def read_MyCSV(symbol_path, file_name, data_time_difference_to_UTC, names, useco
 
 def read_symbol_price(data_path, symbol, data_time_difference_to_UTC, ohlc='1001'):
     """
-    :param main_path: str, file path that contains several minute excel data
-    :param data_time_difference_to_UTC: int, the time difference between downloaded data and broker
+    :param main_path: str, file path that contains several minute excel loader
+    :param data_time_difference_to_UTC: int, the time difference between downloaded loader and broker
     :param timeframe: str, '1H'
     :param ohlc: str, '1001'
     :return: pd.DataFrame, symbol_prices
@@ -86,7 +86,7 @@ def write_min_extra_info(main_path, file_name, symbols, long_signal, short_signa
     :param short_modify_exchg_q2d: pd.DataFrame
     :return: None
     """
-    # concat the data axis=1
+    # concat the loader axis=1
     df_for_min = pd.concat([long_signal, short_signal, long_modify_exchg_q2d, short_modify_exchg_q2d], axis=1)
     # re-name
     level_2_arr = np.array(['long', 'short'] + symbols * 2)

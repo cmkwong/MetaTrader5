@@ -1,5 +1,5 @@
 from backtest import pointsModel, returnModel, techModel
-from data import integration
+from mt5.mt5utils import integration
 from strategies.Cointegration import coinModel
 
 import numpy as np
@@ -120,7 +120,7 @@ class TechicalForexEnv:
         if not self.random_ofs_on_reset:
             self._state.reset(0)
         else:
-            random_offset = np.random.randint(len(self.Prices.o) - 10) # minus a buffer, because draw at the end of data sometimes, then it will be bug
+            random_offset = np.random.randint(len(self.Prices.o) - 10) # minus a buffer, because draw at the end of loader sometimes, then it will be bug
             self._state.reset(random_offset)
         obs = self._state.encode()
         return obs

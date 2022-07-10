@@ -78,7 +78,7 @@ def save_plot(train_plt_data, test_plt_data, symbols, episode, saved_path, dt_st
 
     full_path = os.path.join(saved_path, plotPre.get_coin_NN_plot_image_name(dt_str, symbols, episode))
     plt.savefig(full_path)  # save in higher resolution image
-    plt.clf()                                                                              # clear the plot data
+    plt.clf()                                                                              # clear the plot loader
 
 def density(ret_list, bins=50, color="darkblue", linewidth=1):
     """
