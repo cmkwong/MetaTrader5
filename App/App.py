@@ -29,13 +29,19 @@ class MainPage(TkWindow):
                 'label': "Please select the operation",
                 'value': self.operations,
                 'variable': self.operationSelected,
-                "pos": (0, 0, 0)
+                "pos": (0, 0, 1)
             },
             "operationSubmit": {
                 'wtype': "Button",
                 "label": "Submit",
                 "value": self.onOperationClicked,
-                "pos": (0, 1, 0)
+                "pos": (0, 1, 1)
+            },
+            "operationStatus": {
+                "wtype": "Label",
+                "label": "Now the operation is running: ",
+                "value": "",
+                "pos": (1, 0, 2)
             }
         })
 
@@ -54,10 +60,9 @@ class MainPage(TkWindow):
     def onOperationClicked(self):
         operation = self.operationSelected.get()
         print(operation)
-        # self.label['text'] = f"Now the operation is running: {operation}"
+        self.widgets['operationStatus']['text'] = operation
         # if operation == "MT5":
         #     MT5Page()
-
 
 class MT5Page:
     def inputParam(self):

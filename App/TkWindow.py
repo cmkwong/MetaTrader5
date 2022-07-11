@@ -57,7 +57,7 @@ class TkWindow:
         """
         # create frame
         frame = tk.LabelFrame(self.root, text=frameLabel)
-        # assign the widget
+        # assign the widget onto frame
         for id, elementProperty in elementsDict.items():
             self.displayWidget(frame, id, elementProperty)
         return frame
