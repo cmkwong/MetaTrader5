@@ -7,6 +7,12 @@ import pandas as pd
 
 class BaseMt5:
     def __init__(self):
+        self.timeframe_dict = {"M1": mt5.TIMEFRAME_M1, "M2": mt5.TIMEFRAME_M2, "M3": mt5.TIMEFRAME_M3, "M4": mt5.TIMEFRAME_M4,
+                          "M5": mt5.TIMEFRAME_M5, "M6": mt5.TIMEFRAME_M6, "M10": mt5.TIMEFRAME_M10, "M12": mt5.TIMEFRAME_M12,
+                          "M15": mt5.TIMEFRAME_M15, "M20": mt5.TIMEFRAME_M20, "M30": mt5.TIMEFRAME_M30, "H1": mt5.TIMEFRAME_H1,
+                          "H2": mt5.TIMEFRAME_H2, "H3": mt5.TIMEFRAME_H3, "H4": mt5.TIMEFRAME_H4, "H6": mt5.TIMEFRAME_H6,
+                          "H8": mt5.TIMEFRAME_H8, "H12": mt5.TIMEFRAME_H12, "D1": mt5.TIMEFRAME_D1, "W1": mt5.TIMEFRAME_W1,
+                          "MN1": mt5.TIMEFRAME_MN1}
         self.all_symbol_info = self.get_all_symbols_info()
 
     def get_symbol_total(self):
@@ -111,8 +117,7 @@ class BaseMt5:
         print("MetaTrader 5 is disconnected. ")
 
 class MT5Controller(BaseMt5):
-    def __init__(self, symbols, timeframe, data_path='', start=None, end=None,
-                 count=10, timezone='Hongkong', deposit_currency='USD', type_filling='ioc'):
+    def __init__(self, data_path='', timezone='Hongkong', deposit_currency='USD', type_filling='ioc'):
         super().__init__()
         self.MT5Executor = MT5Executor(type_filling) # execute the request (buy/sell)
-        self.MT5PricesLoader = MT5PricesLoader(symbols, timeframe, self.all_symbol_info, data_path, start, end, count, timezone, deposit_currency) # loading the loader
+        self.MT5PricesLoader = MT5PricesLoader(self.all_symbol_info, data_path, timezone, deposit_currency) # loading the loader
