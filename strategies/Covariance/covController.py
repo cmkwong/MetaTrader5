@@ -1,8 +1,8 @@
 import sys
 sys.path.append('C:/Users/Chris/projects/210215_mt5')
 import config
-from mt5.executor import mt5Model
-from mt5.loader import MT5PricesLoader
+from mt5f.executor import mt5Model
+from mt5f.loader import MT5PricesLoader
 from strategies.Covariance import covModel
 import os
 

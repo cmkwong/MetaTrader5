@@ -1,5 +1,5 @@
 from backtest import timeModel, pointsModel, returnModel
-from mt5.executor import common as mt5common
+from mt5f.executor import common as mt5common
 
 import MetaTrader5 as mt5
 import numpy as np
@@ -106,7 +106,7 @@ class Trader(mt5common.BaseMt5):
         symbols = self.strategy_symbols[strategy_id]
         level_2_arr = np.array(['ret', 'earning'] * 2 + ['commission', 'swap', 'fee', 'earning', 'balanced', 'diff', 'open_date', 'closed_date']
                                + symbols * 6)  # Asterisk * unpacking the list, Programming/Python note 14
-        level_1_arr = np.array(['expected'] * 2 + ['real'] * 2 + ['mt5'] * 8 +
+        level_1_arr = np.array(['expected'] * 2 + ['real'] * 2 + ['mt5f'] * 8 +
                                ['open_real'] * len(symbols) + ['close_real'] * len(symbols) +
                                ['open_expected'] * len(symbols) + ['close_expected'] * len(symbols) +
                                ['open_spread']*len(symbols) + ['close_spread']*len(symbols))
@@ -128,8 +128,8 @@ class Trader(mt5common.BaseMt5):
         """
         initialize the container dictionary, note 59b
         :param strategy_id: str
-        :param requests: [request], mt5 request: https://www.mql5.com/en/docs/constants/structures/mqltraderequest
-        :param results: [result], mt5 result: https://www.mql5.com/en/docs/constants/structures/mqltraderesult
+        :param requests: [request], mt5f request: https://www.mql5.com/en/docs/constants/structures/mqltraderequest
+        :param results: [result], mt5f result: https://www.mql5.com/en/docs/constants/structures/mqltraderesult
         :return:
         """
         symbols = self.strategy_symbols[strategy_id]
@@ -145,16 +145,16 @@ class Trader(mt5common.BaseMt5):
         # real
         self.history[strategy_id].loc[dt, ('real', 'ret')] = self.rets[strategy_id]['real']
         self.history[strategy_id].loc[dt, ('real', 'earning')] = self.earnings[strategy_id]['real']
-        # mt5 deal details
-        self.history[strategy_id].loc[dt, ('mt5', 'commission')] = self.mt5_deal_details[strategy_id]['commission']
-        self.history[strategy_id].loc[dt, ('mt5', 'swap')] = self.mt5_deal_details[strategy_id]['swap']
-        self.history[strategy_id].loc[dt, ('mt5', 'fee')] = self.mt5_deal_details[strategy_id]['fee']
-        self.history[strategy_id].loc[dt, ('mt5', 'earning')] = self.mt5_deal_details[strategy_id]['earning']
-        self.history[strategy_id].loc[dt, ('mt5', 'balanced')] = self.mt5_deal_details[strategy_id]['balanced']
-        self.history[strategy_id].loc[dt, ('mt5', 'diff')] = self.mt5_deal_details[strategy_id]['balanced'] - self.earnings[strategy_id]['expected']
+        # mt5f deal details
+        self.history[strategy_id].loc[dt, ('mt5f', 'commission')] = self.mt5_deal_details[strategy_id]['commission']
+        self.history[strategy_id].loc[dt, ('mt5f', 'swap')] = self.mt5_deal_details[strategy_id]['swap']
+        self.history[strategy_id].loc[dt, ('mt5f', 'fee')] = self.mt5_deal_details[strategy_id]['fee']
+        self.history[strategy_id].loc[dt, ('mt5f', 'earning')] = self.mt5_deal_details[strategy_id]['earning']
+        self.history[strategy_id].loc[dt, ('mt5f', 'balanced')] = self.mt5_deal_details[strategy_id]['balanced']
+        self.history[strategy_id].loc[dt, ('mt5f', 'diff')] = self.mt5_deal_details[strategy_id]['balanced'] - self.earnings[strategy_id]['expected']
         # open date and closed date
-        self.history[strategy_id].loc[dt, ('mt5', 'open_date')] = self.open_postions_date[strategy_id]
-        self.history[strategy_id].loc[dt, ('mt5', 'closed_date')] = self.close_postions_date[strategy_id]
+        self.history[strategy_id].loc[dt, ('mt5f', 'open_date')] = self.open_postions_date[strategy_id]
+        self.history[strategy_id].loc[dt, ('mt5f', 'closed_date')] = self.close_postions_date[strategy_id]
 
         # update spreads, note 74a
         for i, symbol in enumerate(self.strategy_symbols[strategy_id]):
@@ -295,7 +295,7 @@ class Trader(mt5common.BaseMt5):
     def strategy_open_update(self, strategy_id, results, requests, expected_prices, q2d_at, open_position_date):
         """
         :param strategy_id: str
-        :param results: mt5 results
+        :param results: mt5f results
         :param requests: request dict
         :param expected_prices: np.array, size = (len(symbols), )
         :param q2d_at: np.array
@@ -318,7 +318,7 @@ class Trader(mt5common.BaseMt5):
     def strategy_close_update(self, strategy_id, results, requests, coefficient_vector, expected_prices, expected_ret, expected_earning, close_position_date):
         """
         :param strategy_id: str
-        :param results: mt5 results
+        :param results: mt5f results
         :param coefficient_vector: np.array
         :param expected_prices: np.array, size = (len(symbols), )
         :param expected_ret: float

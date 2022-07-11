@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from mt5.mt5utils import maths
+from mt5f.mt5utils import maths
 
 
 def get_modified_coefficient_vector(coefficient_vector, long_mode, lot_times=1):

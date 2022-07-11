@@ -1,9 +1,9 @@
 import sys
 sys.path.append('C:/Users/Chris/projects/210215_mt5')
 from strategies.AI.CointegrationNN import coinNNModel
-from mt5.executor import mt5Model
+from mt5f.executor import mt5Model
 from backtest import plotPre
-from mt5.loader import MT5PricesLoader, batches, files
+from mt5f.loader import MT5PricesLoader, batches, files
 from views import printStat, plotView
 import config
 from torch import optim

@@ -1,6 +1,6 @@
 import sys
 sys.path.append('C:/Users/Chris/projects/210215_mt5')
-from mt5.executor import mt5Model
+from mt5f.executor import mt5Model
 from backtest import plotPre
 from strategies.Spread import spreadModel
 from views import plotView

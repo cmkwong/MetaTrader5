@@ -22,7 +22,7 @@ def get_points_dff_values_df(symbols, new_prices, old_prices, all_symbols_info, 
     """
     :param symbols: [str]
     :param new_prices: pd.Dataframe with open price
-    :param all_symbols_info: tuple, mt5.symbols_get(). The info including the digits.
+    :param all_symbols_info: tuple, mt5f.symbols_get(). The info including the digits.
     :param col_names: list, set None to use the symbols as column names. Otherwise, rename as fake column name
     :return: points_dff_values_df, new pd.Dataframe
     take the difference from open price

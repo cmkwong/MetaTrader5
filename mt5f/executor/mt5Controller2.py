@@ -1,8 +1,8 @@
 import sys
 sys.path.append('/')
-from mt5.executor import mt5Model
+from mt5f.executor import mt5Model
 from strategies.Cointegration import coinModel
-from mt5.loader import MT5PricesLoader
+from mt5f.loader import MT5PricesLoader
 from backtest import signalModel
 import config
 import os

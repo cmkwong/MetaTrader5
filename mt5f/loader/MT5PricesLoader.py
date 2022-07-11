@@ -1,8 +1,8 @@
 import config
-from mt5.executor import common as mt5common
+from mt5f.executor import common as mt5common
 from backtest import timeModel, exchgModel, pointsModel
-from mt5.loader import files
-from mt5.mt5utils import segregation
+from mt5f.loader import files
+from mt5f.mt5utils import segregation
 import collections
 import MetaTrader5 as mt5
 import pandas as pd
@@ -10,7 +10,7 @@ from datetime import datetime
 
 """
 Price loader from:
-1. mt5 sql
+1. mt5f sql
 2. mysql
 
 Fianlly just one single point - mysql
@@ -193,7 +193,7 @@ class BaseMT5PricesLoader:
             raise Exception("The DataFrame columns is exceeding 4")
         return ohlc_rule
 
-# mt5 loader price loader
+# mt5f loader price loader
 class MT5PricesLoader(BaseMT5PricesLoader): # created note 86a
     def __init__(self, all_symbol_info, data_path='', timezone='Hongkong', deposit_currency='USD'):
         self.all_symbol_info = all_symbol_info
@@ -206,7 +206,7 @@ class MT5PricesLoader(BaseMT5PricesLoader): # created note 86a
         self.Prices = {}
         self.min_Prices = {}
 
-        # for mt5
+        # for mt5f
         self.timezone = timezone
         self.deposit_currency = deposit_currency
 
@@ -328,7 +328,7 @@ class MT5PricesLoader(BaseMT5PricesLoader): # created note 86a
 
     def get_data(self, symbols, start, end, timeframe, local=False, latest=False, count=10):
         """
-        :param local: if getting from local or from mt5
+        :param local: if getting from local or from mt5f
         :param latest: if getting loader from past to now or from start to end
         """
         q2d_exchg_symbols = exchgModel.get_exchange_symbols(symbols, self.all_symbol_info, self.deposit_currency, 'q2d')

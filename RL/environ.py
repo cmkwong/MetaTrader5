@@ -1,5 +1,5 @@
 from backtest import pointsModel, returnModel, techModel
-from mt5.mt5utils import integration
+from mt5f.mt5utils import integration
 from strategies.Cointegration import coinModel
 
 import numpy as np

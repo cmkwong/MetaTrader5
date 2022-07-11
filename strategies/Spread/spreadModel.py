@@ -1,4 +1,4 @@
-from mt5.executor import common as mt5common
+from mt5f.executor import common as mt5common
 import pandas as pd
 
 def get_spreads(symbols, start, end, timezone):

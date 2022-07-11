@@ -1,6 +1,6 @@
 from backtest import timeModel
-from loader.MT5PricesLoader import MT5PricesLoader
-from executor.MT5Executor import MT5Executor
+from mt5f.loader.MT5PricesLoader import MT5PricesLoader
+from mt5f.executor.MT5Executor import MT5Executor
 import MetaTrader5 as mt5
 import collections
 import pandas as pd

@@ -81,11 +81,11 @@ def get_plot_title(start, end, timeframe_str, local):
         end_str = timeModel.get_time_string(end)
     else:
         end_str = timeModel.get_current_time_string()
-    # local/mt5
+    # local/mt5f
     if local:
         source = 'local'
     else:
-        source = 'mt5'
+        source = 'mt5f'
     title = "{} : {}, timeframe={}, source={}".format(start_str, end_str, timeframe_str, source)
     return title
 
