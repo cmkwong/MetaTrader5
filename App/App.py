@@ -47,16 +47,6 @@ class MainPage(TkWindow):
 
         operationFrame.pack()
 
-        # widget defined
-        # self.label = Label(self.root, text=self.operations[0])
-        # self.dropDown = OptionMenu(self.root, self.operationSelected, *self.operations)
-        # self.okBtn = Button(self.root, text="Open", command=self.onOperationClicked)
-
-        # interface display
-        # self.label.grid(row=1, column=0, columnspan=2)
-        # self.dropDown.grid(row=0, column=0)
-        # self.okBtn.grid(row=0, column=1)
-
     def onOperationClicked(self):
         operation = self.operationSelected.get()
         print(operation)

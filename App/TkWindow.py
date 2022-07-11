@@ -47,11 +47,11 @@ class TkWindow:
 
     def createFrame(self, frameLabel, elementsDict):
         """
-        :param widgetDict: {'id': {'myCalendar', wtype: 'Calendar', label: 'Start', 'value': '2022-01-02', 'pos': (0,0,0) },
-                            'id': {'myLabel', wtype: 'Label', label: 'Status', 'value': 'Error Occurred', 'pos': (0,1,0) },
-                            'id': {'inputField1', wtype: 'Entry', label: 'MyAge', value: '', 'style': { width: 50, borderwidth: 3}, 'pos': (0,0,0) },
-                            'id': {'dropdown1', wtype: 'OptionMenu', label: 'This is my Dropdown', value: [], variable: tkVar, 'pos': (0,0,0) },
-                            'id': {'button1', wtype: 'Button', label: 'Click Me', value: fn, 'style': {width: 20}, 'pos': (0,0,0) }
+        :param widgetDict: {'id1': {'myCalendar', wtype: 'Calendar', label: 'Start', 'value': '2022-01-02', 'pos': (0,0,0) },
+                            'id2': {'myLabel', wtype: 'Label', label: 'Status', 'value': 'Error Occurred', 'pos': (0,1,0) },
+                            'id3': {'inputField1', wtype: 'Entry', label: 'MyAge', value: '', 'style': { width: 50, borderwidth: 3}, 'pos': (0,0,0) },
+                            'id4': {'dropdown1', wtype: 'OptionMenu', label: 'This is my Dropdown', value: [], variable: tkVar, 'pos': (0,0,0) },
+                            'id5': {'button1', wtype: 'Button', label: 'Click Me', value: fn, 'style': {width: 20}, 'pos': (0,0,0) }
                            }
         :return: frame
         """
