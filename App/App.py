@@ -39,9 +39,7 @@ class MainPage(TkWindow):
         label = InitWidget('operationStatus', type=self.LABEL,
                            label='Now the operation is running: ', pos=(1, 0, 2))
 
-        operationFrame = self.createFrame(self.root, "Operation Selection",
-                                          [dropdown, btn, label]
-                                          )
+        operationFrame = self.createFrame(self.root, "Operation Selection", [dropdown, btn, label])
 
         # pack the frame
         operationFrame.pack()

@@ -35,7 +35,10 @@ class MT5ControlPage(TkWindow):
 
     def getControlFrame(self, window):
         # upload/get data
-        frame = self.createFrame(window, "Control Panel", [])
+        frame = self.createFrame(window, "Operation Panel", [
+            InitWidget(id='getData', type=self.BUTTON, label='Get Data From MT5', pos=(0, 1, 1), command=None),
+        ])
+        return frame
 
     def onClickSettingOk(self, window):
         print('Run Clicked')
@@ -59,27 +62,6 @@ class MT5ControlPage(TkWindow):
                        pos=(4, 0, 1))
         ])
         return frame
-        # Button(text='Run', command=lambda: self.onClickSettingOk(settingWindow)).pack()
-        # Label(self.settingWindow, text="Local Data Path").grid(row=0, column=0)
-        # self.e_dataPath = Entry(self.settingWindow, width=50, borderwidth=3).insert(0, '').grid(row=0, column=1)  # local data path
-        # Label(self.settingWindow, text="Timezone").grid(row=0, column=0)
-        # self.e_timezone = Entry(self.settingWindow, width=50, borderwidth=3).insert(0, 'Hongkong').grid(row=1, column=1)
-        # Label(self.settingWindow, text="Deposit").grid(row=0, column=0)
-        # self.e_deposit = Entry(self.settingWindow, width=50, borderwidth=3).insert(0, 'USD').grid(row=2, column=1)
-        # Label(self.settingWindow, text="Type Filling").grid(row=0, column=0)
-        # self.e_typeFilling = Entry(self.settingWindow, width=50, borderwidth=3).insert(0, 'ioc').grid(row=3, column=1)
-
-        # self.okBtn = Button(self.settingWindow, text='RUN', command=self.setParam).grid(row=3, column=0, columnspan=2)
-
-    def setParam(self):
-        # self.dataPath = self.e_dataPath.get()
-        # self.timezone = self.e_timezone.get()
-        # self.deposit = self.e_deposit.get()
-        # self.typeFilling = self.e_typeFilling.get()
-        # self.mt5Controller = MT5Controller(self.dataPath, self.timezone, self.deposit, self.typeFilling)
-        # self.settingWindow.destroy()
-        # popup control panel
-        pass
 
     def run2(self):
         self.controlWindow = Toplevel()

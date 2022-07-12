@@ -49,7 +49,7 @@ class TkWindow:
         widget.grid(row=row, column=column + 1)
         return widget
 
-    def createFrame(self, parent, frameLabel, Elements):
+    def createFrame(self, parent, label, Elements):
         """
         :param widgetDict: {'myCalendar': {'wtype': 'Calendar', label: 'Start', 'value': '2022-01-02', 'pos': (0,0,0) },
                             'myLabel': {'wtype': 'Label', label: 'Status', 'value': 'Error Occurred', 'pos': (0,1,0) },
@@ -60,7 +60,7 @@ class TkWindow:
         :return: frame
         """
         # create frame
-        frame = tk.LabelFrame(parent, text=frameLabel)
+        frame = tk.LabelFrame(parent, text=label)
         # assign the widget onto frame
         for ele in Elements:
             id = ele.id
