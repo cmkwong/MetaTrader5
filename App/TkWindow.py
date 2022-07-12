@@ -66,3 +66,11 @@ class TkWindow:
             id = ele.id
             self.widgets[id] = self.getWidget(frame, ele)
         return frame
+
+    def openWindow(self, parent, getFrameCallbacks:list, windowSize='400x200'):
+        window = tk.Toplevel(parent)
+        window.geometry(windowSize)
+        for getFrameCallback in getFrameCallbacks:
+            frame = getFrameCallback(window)
+            frame.pack()
+        return window
