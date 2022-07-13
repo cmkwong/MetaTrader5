@@ -10,6 +10,7 @@ class InitWidget:
     var: any = None
     command: any = None
     label: str = ''
+    default: any = None
     pos: tuple = (0, 0, 0)
     style: dict = None
 

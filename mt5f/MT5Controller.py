@@ -13,6 +13,8 @@ class BaseMt5:
                           "H2": mt5.TIMEFRAME_H2, "H3": mt5.TIMEFRAME_H3, "H4": mt5.TIMEFRAME_H4, "H6": mt5.TIMEFRAME_H6,
                           "H8": mt5.TIMEFRAME_H8, "H12": mt5.TIMEFRAME_H12, "D1": mt5.TIMEFRAME_D1, "W1": mt5.TIMEFRAME_W1,
                           "MN1": mt5.TIMEFRAME_MN1}
+        self.connect_server()
+        print("MetaTrader 5 is connected. ")
         self.all_symbol_info = self.get_all_symbols_info()
 
     def get_symbol_total(self):

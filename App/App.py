@@ -17,14 +17,15 @@ class MainPage(TkWindow):
         self.root.geometry("400x100")
         self.operations = ['MT5', 'Data', 'Strategies', 'Setting']
         self.operationSelected = StringVar()
+        # define subpage controller
+        self.mt5ControlPage = MT5ControlPage()
 
     def onOperationClicked(self):
         operation = self.operationSelected.get()
         print(operation)
         self.widgets['operationStatus']['text'] = operation
         if operation == "MT5":
-            mt5ControlPage = MT5ControlPage()
-            mt5ControlPage.run(self.root)
+            self.mt5ControlPage.run(self.root)
 
     def run(self):
         # set default variable
@@ -39,7 +40,7 @@ class MainPage(TkWindow):
         label = InitWidget('operationStatus', type=self.LABEL,
                            label='Now the operation is running: ', pos=(1, 0, 2))
 
-        operationFrame = self.createFrame(self.root, "Operation Selection", [dropdown, btn, label])
+        operationFrame = self.createFrame(self.root, [dropdown, btn, label], "Operation Selection")
 
         # pack the frame
         operationFrame.pack()

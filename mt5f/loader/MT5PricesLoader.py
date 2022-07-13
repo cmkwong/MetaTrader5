@@ -326,7 +326,7 @@ class MT5PricesLoader(BaseMT5PricesLoader): # created note 86a
 
         return Prices
 
-    def get_data(self, symbols, start, end, timeframe, local=False, latest=False, count=10):
+    def get_data(self, symbols:list, start, end, timeframe, local=False, latest=False, count=10):
         """
         :param local: if getting from local or from mt5f
         :param latest: if getting loader from past to now or from start to end
