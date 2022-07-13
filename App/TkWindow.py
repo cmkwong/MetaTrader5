@@ -1,61 +1,17 @@
 import tkinter as tk
-from datetime import datetime, date
 from tkcalendar import Calendar
+from datetime import datetime, date
+import inspect
 
-class TkWindow:
+from common import InitWidget
+from TkWidget import TkWidget
+
+class TkWindow(TkWidget):
     def __init__(self):
-        self.widgets = {}
-        # constant
-        self.DROPDOWN = 'dropdown'
-        self.LABEL = 'label'
-        self.TEXTFIELD = 'textfield'
-        self.BUTTON = 'button'
-        self.CALENDAR = 'calendar'
+        super(TkWindow, self).__init__()
+        self.windowVarible = {}
 
-    def getWidget(self, frame, ele):
-        """
-        display widget onto frame, and save the widget into widgets = {}
-        :param frame: tk.Frame
-        :param ele:
-        :return:
-        """
-        # get the element type
-        elementType = ele.type
-        # get the position
-        row, column, columnspan = ele.pos
-        # display label
-        if elementType != self.BUTTON:
-            tk.Label(frame, text=ele.label).grid(row=row, column=column)  # label field
-        # get the style
-        style = ele.style
-        if not style:
-            style = {}
-        # define widget
-        widget = None
-        if elementType == self.CALENDAR:
-            if ele.default:
-                d = datetime.strptime(ele.default, '%Y-%m-%d')  # date value
-            else:
-                d = date.today()
-            widget = Calendar(frame, selectmode='day', year=d.year, month=d.month, day=d.day, **style)
-        elif elementType == self.LABEL:
-            widget = tk.Label(frame, text=ele.value, **style)
-        elif elementType == self.TEXTFIELD:
-            widget = tk.Entry(frame, **style)
-            if ele.default:
-                widget.insert(tk.END, ele.default)
-        elif elementType == self.DROPDOWN:
-            widget = tk.OptionMenu(frame, ele.var, *ele.value)
-            if ele.default:
-                ele.var.set(ele.default)
-        elif elementType == self.BUTTON:
-            widget = tk.Button(frame, text=ele.label, command=ele.command, **style)
-
-        # display the widget
-        widget.grid(row=row, column=column + 1)
-        return widget
-
-    def createFrame(self, parent, Elements, label=None):
+    def createFrame(self, parent, Widgets, label=None):
         """
         :param widgetDict: {'myCalendar': {'wtype': 'Calendar', label: 'Start', 'value': '2022-01-02', 'pos': (0,0,0) },
                             'myLabel': {'wtype': 'Label', label: 'Status', 'value': 'Error Occurred', 'pos': (0,1,0) },
@@ -71,9 +27,13 @@ class TkWindow:
         else:
             frame = tk.Frame(parent)
         # assign the widget onto frame
-        for ele in Elements:
+        for ele in Widgets:
+            cat = ele.cat
+            # define the new widget category
+            if cat not in self.widgets.keys():
+                self.widgets[cat] = {}
             id = ele.id
-            self.widgets[id] = self.getWidget(frame, ele)
+            self.widgets[cat][id] = self.getWidget(frame, ele)
         return frame
 
     def openWindow(self, parent, getFrameCallbacks:list, windowSize='400x400'):

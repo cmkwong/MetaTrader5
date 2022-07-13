@@ -30,35 +30,49 @@ class MT5ControlPage(TkWindow):
     def getControlFrame(self, window):
         # upload/get data
         frame = self.createFrame(window, [
-            InitWidget(id='getData', type=self.BUTTON, label='Get Data From MT5', pos=(0, 1, 1), command=lambda: self.openWindow(window, [self.getGetDataFrame])),
+            InitWidget(id='getData', type=self.BUTTON, label='Get Data From MT5', pos=(0, 1, 1),
+                       command=lambda: self.openWindow(window, [self.getGetDataFrame])),
             InitWidget(id='uploadData', type=self.BUTTON, label='Upload DB', pos=(1, 1, 1), command=None),
-            InitWidget(id='Setting', type=self.BUTTON, label='Setting', pos=(2, 1, 1), command=lambda: self.openWindow(window, [self.getInputParamFrame])),
+            InitWidget(id='Setting', type=self.BUTTON, label='Setting', pos=(2, 1, 1),
+                       command=lambda: self.openWindow(window, [self.getInputParamFrame])),
         ], "Operation Panel")
         return frame
 
-    def onClickSettingOk(self, window):
-        if (self.widgets['dataPath'].get() and self.var_timezone.get() and self.var_ccy.get() and self.var_typeFilling.get()):
-            self.mt5Controller = MT5Controller(self.widgets['dataPath'].get(), self.var_timezone.get(), self.var_ccy.get(), self.var_typeFilling.get())
+    def onClickSettingOk(self, window, cat):
+        allParamFilled = True
+        params = []
+        for id, widget in self.widgets[cat].items():
+            param = widget.get()
+            allParamFilled = allParamFilled and bool(widget.get())
+            params.append(param)
+        if (allParamFilled):
+            self.mt5Controller = MT5Controller(*params)
             self.isSetParam = True
             print('Param set')
             window.destroy()
 
     def getInputParamFrame(self, window):
-        frame = self.createFrame(window, [
-            InitWidget(id='dataPath', type=self.TEXTFIELD, label='Local Data Path', default='C:/Users/Chris/projects/210215_mt5/docs',
-                       pos=(0, 0, 1), style={'width': 50, 'borderwidth': 3}),
-            InitWidget(id='timezone', type=self.DROPDOWN, var=self.var_timezone, label='TimeZone',
-                       value=['Hongkong', 'en_US'], default='Hongkong',
-                       pos=(1, 0, 1), style={'width': 50}),
-            InitWidget(id='deposit', type=self.DROPDOWN, var=self.var_ccy, label='Deposit CCY',
-                       value=['USD', 'GBP', 'EUR'], default='USD',
-                       pos=(2, 0, 1), style={'width': 50}),
-            InitWidget(id='typeFilling', type=self.DROPDOWN, var=self.var_typeFilling, label='Type Filling',
-                       value=['ioc', 'fok', 'return'], default='ioc',
-                       pos=(3, 0, 1), style={'width': 50}),
-            InitWidget(id='saveSetting', type=self.BUTTON, label="Save", command=lambda: self.onClickSettingOk(window),
-                       pos=(4, 0, 1))
-        ], 'MT5 Setting')
+        cat = MT5Controller.__name__
+        initWidgets = self.get_params_initWidgets(MT5Controller, cat)
+        # append save button
+        initWidgets.append(InitWidget(cat=cat, id='saveSetting', type=self.BUTTON, label="Save", command=lambda: self.onClickSettingOk(window, cat), pos=(4, 0, 1)))
+        frame = self.createFrame(window, initWidgets, 'MT5Controller')
+        # frame = self.createFrame(window, [
+        #     InitWidget(id='dataPath', type=self.TEXTFIELD, label='Local Data Path',
+        #                default='C:/Users/Chris/projects/210215_mt5/docs',
+        #                pos=(0, 0, 1), style={'width': 50, 'borderwidth': 3}),
+        #     InitWidget(id='timezone', type=self.DROPDOWN, var=self.var_timezone, label='TimeZone',
+        #                value=['Hongkong', 'en_US'], default='Hongkong',
+        #                pos=(1, 0, 1), style={'width': 50}),
+        #     InitWidget(id='deposit', type=self.DROPDOWN, var=self.var_ccy, label='Deposit CCY',
+        #                value=['USD', 'GBP', 'EUR'], default='USD',
+        #                pos=(2, 0, 1), style={'width': 50}),
+        #     InitWidget(id='typeFilling', type=self.DROPDOWN, var=self.var_typeFilling, label='Type Filling',
+        #                value=['ioc', 'fok', 'return'], default='ioc',
+        #                pos=(3, 0, 1), style={'width': 50}),
+        #     InitWidget(id='saveSetting', type=self.BUTTON, label="Save", command=lambda: self.onClickSettingOk(window),
+        #                pos=(4, 0, 1))
+        # ], 'MT5 Setting')
         return frame
 
     def getGetDataFrame(self, window):
@@ -66,7 +80,9 @@ class MT5ControlPage(TkWindow):
             InitWidget(id='symbols', type=self.TEXTFIELD, label='Symbols', default='USDJPY', pos=(0, 0, 1)),
             InitWidget(id='start', type=self.CALENDAR, label='Start', default='2010-01-01', pos=(1, 0, 1)),
             InitWidget(id='end', type=self.CALENDAR, label='End', default='2022-01-01', pos=(2, 0, 1)),
-            InitWidget(id='timeframe', type=self.DROPDOWN, label='Time Frame', value=list(timeModel.timeframe_ftext_dicts.keys()), pos=(3, 0, 1)),
+            InitWidget(id='timeframe', type=self.DROPDOWN, label='Time Frame',
+                       value=list(timeModel.timeframe_ftext_dicts.keys()), pos=(3, 0, 1)),
+
         ], 'Get Data Setting')
         return frame
 

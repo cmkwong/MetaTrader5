@@ -23,21 +23,23 @@ class MainPage(TkWindow):
     def onOperationClicked(self):
         operation = self.operationSelected.get()
         print(operation)
-        self.widgets['operationStatus']['text'] = operation
+        self.widgets['main']['operationStatus']['text'] = operation
         if operation == "MT5":
             self.mt5ControlPage.run(self.root)
 
     def run(self):
+        cat = 'main'
+
         # set default variable
         self.operationSelected.set(self.operations[0])
 
         # define element
-        dropdown = InitWidget('operationDropdown', type=self.DROPDOWN,
+        dropdown = InitWidget(cat=cat, id='operationDropdown', type=self.DROPDOWN,
                               label="Please select the operation: ", value=self.operations,
                               var=self.operationSelected, pos=(0, 0, 1))
-        btn = InitWidget('operationSubmit', type=self.BUTTON, label="Submit",
+        btn = InitWidget(cat=cat, id='operationSubmit', type=self.BUTTON, label="Submit",
                          command=self.onOperationClicked, pos=(0, 1, 1))
-        label = InitWidget('operationStatus', type=self.LABEL,
+        label = InitWidget(cat=cat, id='operationStatus', type=self.LABEL,
                            label='Now the operation is running: ', pos=(1, 0, 2))
 
         operationFrame = self.createFrame(self.root, [dropdown, btn, label], "Operation Selection")
