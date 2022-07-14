@@ -42,7 +42,7 @@ class MT5ControlPage(TkWindow):
         allParamFilled = True
         params = []
         for id, widget in self.widgets[cat].items():
-            param = widget.get()
+            param = self.getWidgetValue(cat, id)
             allParamFilled = allParamFilled and bool(widget.get())
             params.append(param)
         if (allParamFilled):

@@ -17,7 +17,7 @@ class MainPage(TkWindow):
         self.root.title('Forex App')
         self.root.geometry("400x100")
         self.operations = ['MT5', 'Data', 'Strategies', 'Setting']
-        self.operationSelected = StringVar()
+        # self.operationSelected = StringVar()
         # define subpage controller
         self.mt5ControlPage = MT5ControlPage()
 
@@ -32,10 +32,10 @@ class MainPage(TkWindow):
         cat = 'main'
 
         # set default variable
-        self.operationSelected.set(self.operations[0])
+        # self.operationSelected.set(self.operations[0])
 
         # define element
-        dropdown = InitWidget(cat=cat, id='operationDropdown', type=self.DROPDOWN,
+        dropdown = InitWidget(cat=cat, id='operationDropdown', type=self.DROPDOWN, default=self.operations[0],
                               label="Please select the operation: ", value=self.operations,
                               pos=(0, 0, 1))
         btn = InitWidget(cat=cat, id='operationSubmit', type=self.BUTTON, label="Submit",

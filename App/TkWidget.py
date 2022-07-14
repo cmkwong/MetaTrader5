@@ -10,9 +10,9 @@ class TkWidget:
         self.widgets = {}  # widgets[category][id] => widget
         self.variables = {}
         # constant
-        self.DROPDOWN = 'dropdown'
+        self.DROPDOWN = 'optionMenu'
         self.LABEL = 'label'
-        self.TEXTFIELD = 'textfield'
+        self.TEXTFIELD = 'entry'
         self.BUTTON = 'button'
         self.CALENDAR = 'calendar'
 
@@ -52,10 +52,10 @@ class TkWidget:
                 widget.insert(tk.END, ele.default)
             variable = widget
         elif elementType == self.DROPDOWN:
-            widget = tk.OptionMenu(frame, ele.var, *ele.value)
+            variable = tk.StringVar(frame)
+            widget = tk.OptionMenu(frame, variable, *ele.value)
             if ele.default:
-                ele.var.set(ele.default)
-            widget = ele.var
+                variable.set(ele.default)
         elif elementType == self.BUTTON:
             widget = tk.Button(frame, text=ele.label, command=ele.command, **style)
             variable = widget
@@ -77,4 +77,17 @@ class TkWidget:
         return initWidgets
 
     def getWidgetValue(self, cat, id):
-        pass
+        value = None
+        widgetType = self.widgets[cat][id].widgetName
+        if widgetType == self.CALENDAR:
+            pass
+        elif widgetType == self.LABEL:
+            pass
+        elif widgetType == self.TEXTFIELD:
+            value = self.variables[cat][id].get()
+        elif widgetType == self.DROPDOWN:
+            pass
+        elif widgetType == self.BUTTON:
+            pass
+        return value
+

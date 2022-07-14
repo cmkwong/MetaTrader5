@@ -8,8 +8,8 @@ class InitWidget:
     cat: str    # widget category
     id: str     # widget id
     type: str   # widget type: button, textfield, ...
+    # root: any = None   # the widget belong to
     value: any = None   # widget value
-    var: any = StringVar()     # variable is needed, mainly for dropdown
     command: any = None # fn for button click, if widget type is button
     label: str = ''     # label beside to widget
     default: any = None # default value, for textfield and dropdown
