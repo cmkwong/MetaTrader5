@@ -9,7 +9,6 @@ from TkWidget import TkWidget
 class TkWindow(TkWidget):
     def __init__(self):
         super(TkWindow, self).__init__()
-        self.windowVarible = {}
 
     def createFrame(self, parent, Widgets, label=None):
         """
@@ -32,8 +31,9 @@ class TkWindow(TkWidget):
             # define the new widget category
             if cat not in self.widgets.keys():
                 self.widgets[cat] = {}
+                self.variables[cat] = {}
             id = ele.id
-            self.widgets[cat][id] = self.getWidget(frame, ele)
+            self.widgets[cat][id], self.variables[cat][id] = self.getWidget(frame, ele)
         return frame
 
     def openWindow(self, parent, getFrameCallbacks:list, windowSize='400x400'):

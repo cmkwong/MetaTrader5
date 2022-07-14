@@ -1,6 +1,7 @@
 import collections
 from dataclasses import dataclass
 from typing import Union
+from tkinter import *
 
 @dataclass
 class InitWidget:
@@ -8,7 +9,7 @@ class InitWidget:
     id: str     # widget id
     type: str   # widget type: button, textfield, ...
     value: any = None   # widget value
-    var: any = None     # variable is needed, mainly for dropdown
+    var: any = StringVar()     # variable is needed, mainly for dropdown
     command: any = None # fn for button click, if widget type is button
     label: str = ''     # label beside to widget
     default: any = None # default value, for textfield and dropdown
