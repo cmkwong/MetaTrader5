@@ -23,7 +23,7 @@ class MT5PricesLoaderWindow(TkWindow):
             pass
 
     def settingFrame(self, root):
-
+        cat = 'getDataSetting'
         self.createFrame(root, [
-            TkInitWidget()
+            TkInitWidget(cat=cat, id='symbols', )
         ])

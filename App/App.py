@@ -7,7 +7,7 @@ from tkcalendar import Calendar
 from AppSetting import AppSetting
 from TkWindow import TkWindow
 from TkInitWidget import TkInitWidget
-from MT5ControlWindow import MT5ControlWindow
+from MT5ControllerWindow import MT5ControllerWindow
 
 
 class MainPage(TkWindow):
@@ -18,7 +18,7 @@ class MainPage(TkWindow):
         self.root.geometry("400x100")
         # self.operationSelected = StringVar()
         # define subpage controller
-        self.mt5ControlPage = MT5ControlWindow()
+        self.mt5ControlPage = MT5ControllerWindow()
 
     def onOperationClicked(self):
         operation = self.variables['main']['operationDropdown'].get()

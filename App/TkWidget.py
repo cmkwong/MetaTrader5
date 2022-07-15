@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkcalendar import Calendar
+from tkcalendar import Calendar, DateEntry
 from datetime import datetime, date
 import inspect
 
@@ -7,11 +7,11 @@ from TkInitWidget import TkInitWidget
 
 class TkWidgetLabel:
     # constant
-    DROPDOWN = 'optionMenu'
-    LABEL = 'label'
-    TEXTFIELD = 'entry'
-    BUTTON = 'button'
-    CALENDAR = 'calendar'
+    DROPDOWN = 'OptionMenu'
+    LABEL = 'Label'
+    TEXTFIELD = 'Entry'
+    BUTTON = 'Button'
+    CALENDAR = 'DateEntry'
 
 class TkWidget(TkWidgetLabel):
     def __init__(self):
@@ -52,7 +52,7 @@ class TkWidget(TkWidgetLabel):
                 d = datetime.strptime(ele.default, '%Y-%m-%d')  # date value
             else:
                 d = date.today()
-            widget = Calendar(root, selectmode='day', year=d.year, month=d.month, day=d.day, **style)
+            widget = DateEntry(root, selectmode='day', year=d.year, month=d.month, day=d.day, **style)
             variable = widget
         elif elementType == self.LABEL:
             widget = tk.Label(root, text=ele.value, **style)
@@ -89,7 +89,7 @@ class TkWidget(TkWidgetLabel):
 
     def getWidgetValue(self, cat, id):
         value = None
-        widgetType = self.widgets[cat][id].widgetName
+        widgetType = type(self.widgets[cat][id]).__name__
         if widgetType == self.CALENDAR:
             pass
         elif widgetType == self.LABEL:
