@@ -3,7 +3,7 @@ from tkcalendar import Calendar
 from datetime import datetime, date
 import inspect
 
-from common import InitWidget
+from TkInitWidget import TkInitWidget
 from TkWidget import TkWidget
 
 class TkWindow(TkWidget):

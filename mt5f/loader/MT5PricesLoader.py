@@ -8,6 +8,10 @@ import MetaTrader5 as mt5
 import pandas as pd
 from datetime import datetime
 
+# from dataclasses import dataclass, field
+# from typing import List, Tuple, Dict
+# from App.TkWidget import TkWidgetLabel
+# from App.TkInitWidget import TkInitWidget
 """
 Price loader from:
 1. mt5f sql
@@ -352,3 +356,19 @@ class MT5PricesLoader(BaseMT5PricesLoader): # created note 86a
         else:
             prices = self._get_mt5_prices(required_symbols, timeframe, self.timezone, start, end, '1111', count)
             self.Prices = self.get_latest_Prices_format(symbols, prices, q2d_exchg_symbols, count)
+
+
+
+# @dataclass
+# class get_data_TKPARAM(TkWidgetLabel):
+#     symbols: dataclass = TkInitWidget(cat='get_data', id='1', type=TkWidgetLabel.DROPDOWN, value=['EURUSD', 'GBPUSD', 'USDJPY'])
+#     start: Tuple[int] = field(default_factory=lambda: (2010, 1, 1))
+#     end: Tuple[int] = field(default_factory=lambda: (2022, 1, 1))
+#
+#     def __init__(self):
+#         super(get_data_TKPARAM, self).__init__()
+#
+# d = get_data_TKPARAM()
+# print()
+
+

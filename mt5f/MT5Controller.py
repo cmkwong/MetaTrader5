@@ -5,14 +5,15 @@ import MetaTrader5 as mt5
 import collections
 import pandas as pd
 
+
 class BaseMt5:
     def __init__(self):
         self.timeframe_dict = {"M1": mt5.TIMEFRAME_M1, "M2": mt5.TIMEFRAME_M2, "M3": mt5.TIMEFRAME_M3, "M4": mt5.TIMEFRAME_M4,
-                          "M5": mt5.TIMEFRAME_M5, "M6": mt5.TIMEFRAME_M6, "M10": mt5.TIMEFRAME_M10, "M12": mt5.TIMEFRAME_M12,
-                          "M15": mt5.TIMEFRAME_M15, "M20": mt5.TIMEFRAME_M20, "M30": mt5.TIMEFRAME_M30, "H1": mt5.TIMEFRAME_H1,
-                          "H2": mt5.TIMEFRAME_H2, "H3": mt5.TIMEFRAME_H3, "H4": mt5.TIMEFRAME_H4, "H6": mt5.TIMEFRAME_H6,
-                          "H8": mt5.TIMEFRAME_H8, "H12": mt5.TIMEFRAME_H12, "D1": mt5.TIMEFRAME_D1, "W1": mt5.TIMEFRAME_W1,
-                          "MN1": mt5.TIMEFRAME_MN1}
+                               "M5": mt5.TIMEFRAME_M5, "M6": mt5.TIMEFRAME_M6, "M10": mt5.TIMEFRAME_M10, "M12": mt5.TIMEFRAME_M12,
+                               "M15": mt5.TIMEFRAME_M15, "M20": mt5.TIMEFRAME_M20, "M30": mt5.TIMEFRAME_M30, "H1": mt5.TIMEFRAME_H1,
+                               "H2": mt5.TIMEFRAME_H2, "H3": mt5.TIMEFRAME_H3, "H4": mt5.TIMEFRAME_H4, "H6": mt5.TIMEFRAME_H6,
+                               "H8": mt5.TIMEFRAME_H8, "H12": mt5.TIMEFRAME_H12, "D1": mt5.TIMEFRAME_D1, "W1": mt5.TIMEFRAME_W1,
+                               "MN1": mt5.TIMEFRAME_MN1}
         self.connect_server()
         print("MetaTrader 5 is connected. ")
         self.all_symbol_info = self.get_all_symbols_info()
@@ -48,7 +49,7 @@ class BaseMt5:
         spread = spread.groupby(spread.index).mean()  # groupby() note 56b
         return spread
 
-    def get_ticks_range(self,symbol, start, end, timezone):
+    def get_ticks_range(self, symbol, start, end, timezone):
         """
         :param symbol: str, symbol
         :param start: tuple, (2019,1,1)
@@ -64,7 +65,7 @@ class BaseMt5:
         ticks_frame = ticks_frame.set_index('time')  # set the index
         return ticks_frame
 
-    def get_last_tick(self,symbol):
+    def get_last_tick(self, symbol):
         """
         :param symbol: str
         :return: dict: symbol info
@@ -118,8 +119,9 @@ class BaseMt5:
         self.disconnect_server()
         print("MetaTrader 5 is disconnected. ")
 
+
 class MT5Controller(BaseMt5):
     def __init__(self, data_path='C:/Users/Chris/projects/210215_mt5/docs', timezone='Hongkong', deposit_currency='USD', type_filling='ioc'):
         super().__init__()
-        self.mt5Executor = MT5Executor(type_filling) # execute the request (buy/sell)
-        self.mt5PricesLoader = MT5PricesLoader(self.all_symbol_info, data_path, timezone, deposit_currency) # loading the loader
+        self.mt5Executor = MT5Executor(type_filling)  # execute the request (buy/sell)
+        self.mt5PricesLoader = MT5PricesLoader(self.all_symbol_info, data_path, timezone, deposit_currency)  # loading the loader

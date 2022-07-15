@@ -3,18 +3,21 @@ from tkcalendar import Calendar
 from datetime import datetime, date
 import inspect
 
-from common import InitWidget
+from TkInitWidget import TkInitWidget
 
-class TkWidget:
+class TkWidgetLabel:
+    # constant
+    DROPDOWN = 'optionMenu'
+    LABEL = 'label'
+    TEXTFIELD = 'entry'
+    BUTTON = 'button'
+    CALENDAR = 'calendar'
+
+class TkWidget(TkWidgetLabel):
     def __init__(self):
+        super(TkWidget, self).__init__()
         self.widgets = {}  # widgets[category][id] => widget
         self.variables = {}
-        # constant
-        self.DROPDOWN = 'optionMenu'
-        self.LABEL = 'label'
-        self.TEXTFIELD = 'entry'
-        self.BUTTON = 'button'
-        self.CALENDAR = 'calendar'
 
     def _storeWidgetVariable(self, widget, variable, ele):
         cat = ele.cat
@@ -81,7 +84,7 @@ class TkWidget:
         initWidgets = []
         sig = inspect.signature(class_object)
         for r, param in enumerate(sig.parameters.values()):
-            initWidgets.append(InitWidget(cat=cat, id=param.name, type=self.TEXTFIELD, label=param.name, default=param.default, pos=(r, 0, 1)))
+            initWidgets.append(TkInitWidget(cat=cat, id=param.name, type=self.TEXTFIELD, label=param.name, default=param.default, pos=(r, 0, 1)))
         return initWidgets
 
     def getWidgetValue(self, cat, id):

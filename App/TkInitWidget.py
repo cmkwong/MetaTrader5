@@ -4,7 +4,7 @@ from typing import Union
 from tkinter import *
 
 @dataclass
-class InitWidget:
+class TkInitWidget:
     cat: str    # widget category
     id: str     # widget id
     type: str   # widget type: button, textfield, ...

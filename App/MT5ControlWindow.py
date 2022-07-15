@@ -5,16 +5,16 @@ from tkinter import filedialog
 from tkcalendar import Calendar
 
 from AppSetting import AppSetting
-from common import InitWidget
+from TkInitWidget import TkInitWidget
 from TkWindow import TkWindow
 from mt5f.MT5Controller import MT5Controller
 from mt5f.loader.MT5PricesLoader import MT5PricesLoader
 from backtest import timeModel
 
 
-class MT5ControlPage(TkWindow):
+class MT5ControlWindow(TkWindow):
     def __init__(self):
-        super(MT5ControlPage, self).__init__()
+        super(MT5ControlWindow, self).__init__()
         self.isSetParam = False
         # variables
         self.var_timezone = StringVar()
@@ -32,11 +32,11 @@ class MT5ControlPage(TkWindow):
         cat = "mt5Control"
         # upload/get data
         frame = self.createFrame(root, [
-            InitWidget(cat=cat, id='getData', type=self.BUTTON, label='Get Data From MT5', pos=(0, 1, 1),
-                       command=lambda: self.openWindow(root, [self.getGetDataFrame])),
-            InitWidget(cat=cat, id='uploadData', type=self.BUTTON, label='Upload DB', pos=(1, 1, 1), command=None),
-            InitWidget(cat=cat, id='Setting', type=self.BUTTON, label='Setting', pos=(2, 1, 1),
-                       command=lambda: self.openWindow(root, [self.getInputParamFrame])),
+            TkInitWidget(cat=cat, id='getData', type=self.BUTTON, label='Get Data From MT5', pos=(0, 1, 1),
+                         command=lambda: self.openWindow(root, [self.getGetDataFrame])),
+            TkInitWidget(cat=cat, id='uploadData', type=self.BUTTON, label='Upload DB', pos=(1, 1, 1), command=None),
+            TkInitWidget(cat=cat, id='Setting', type=self.BUTTON, label='Setting', pos=(2, 1, 1),
+                         command=lambda: self.openWindow(root, [self.getInputParamFrame])),
         ], "Operation Panel")
         return frame
 
@@ -58,7 +58,7 @@ class MT5ControlPage(TkWindow):
         cat = MT5Controller.__name__
         initWidgets = self.get_params_initWidgets(MT5Controller, cat)
         # append save button
-        initWidgets.append(InitWidget(cat=cat, id='saveSetting', type=self.BUTTON, label="Save", command=lambda: self.onClickSettingOk(root, cat), pos=(len(initWidgets), 0, 1)))
+        initWidgets.append(TkInitWidget(cat=cat, id='saveSetting', type=self.BUTTON, label="Save", command=lambda: self.onClickSettingOk(root, cat), pos=(len(initWidgets), 0, 1)))
         frame = self.createFrame(root, initWidgets, 'MT5Controller')
         # frame = self.createFrame(window, [
         #     InitWidget(id='dataPath', type=self.TEXTFIELD, label='Local Data Path',
