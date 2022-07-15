@@ -16,10 +16,18 @@ class TkWidget:
         self.BUTTON = 'button'
         self.CALENDAR = 'calendar'
 
-    def getWidget(self, frame, ele):
+    def _storeWidgetVariable(self, widget, variable, ele):
+        cat = ele.cat
+        if cat not in self.widgets.keys():
+            self.widgets[cat] = {}
+            self.variables[cat] = {}
+        id = ele.id
+        self.widgets[cat][id], self.variables[cat][id] = widget, variable
+
+    def getWidget(self, root, ele):
         """
-        display widget onto frame, and save the widget into widgets = {}
-        :param frame: tk.Frame
+        display widget onto root, and save the widget into widgets = {}
+        :param root: tk.root / tk.Frame
         :param ele:
         :return:
         """
@@ -29,7 +37,7 @@ class TkWidget:
         row, column, columnspan = ele.pos
         # display label
         if elementType != self.BUTTON:
-            tk.Label(frame, text=ele.label).grid(row=row, column=column, padx=5, pady=5)  # label field
+            tk.Label(root, text=ele.label).grid(row=row, column=column, padx=5, pady=5)  # label field
         # get the style
         style = ele.style
         if not style:
@@ -41,28 +49,28 @@ class TkWidget:
                 d = datetime.strptime(ele.default, '%Y-%m-%d')  # date value
             else:
                 d = date.today()
-            widget = Calendar(frame, selectmode='day', year=d.year, month=d.month, day=d.day, **style)
+            widget = Calendar(root, selectmode='day', year=d.year, month=d.month, day=d.day, **style)
             variable = widget
         elif elementType == self.LABEL:
-            widget = tk.Label(frame, text=ele.value, **style)
+            widget = tk.Label(root, text=ele.value, **style)
             variable = widget
         elif elementType == self.TEXTFIELD:
-            widget = tk.Entry(frame, **style)
+            widget = tk.Entry(root, **style)
             if ele.default:
                 widget.insert(tk.END, ele.default)
             variable = widget
         elif elementType == self.DROPDOWN:
-            variable = tk.StringVar(frame)
-            widget = tk.OptionMenu(frame, variable, *ele.value)
+            variable = tk.StringVar(root)
+            widget = tk.OptionMenu(root, variable, *ele.value)
             if ele.default:
                 variable.set(ele.default)
         elif elementType == self.BUTTON:
-            widget = tk.Button(frame, text=ele.label, command=ele.command, **style)
+            widget = tk.Button(root, text=ele.label, command=ele.command, **style)
             variable = widget
 
         # display the widget
         widget.grid(row=row, column=column + 1, padx=5, pady=5)
-        return widget, variable
+        self._storeWidgetVariable(widget, variable, ele)
 
     def get_params_initWidgets(self, class_object, cat):
         """

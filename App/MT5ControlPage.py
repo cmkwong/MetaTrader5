@@ -8,6 +8,7 @@ from AppSetting import AppSetting
 from common import InitWidget
 from TkWindow import TkWindow
 from mt5f.MT5Controller import MT5Controller
+from mt5f.loader.MT5PricesLoader import MT5PricesLoader
 from backtest import timeModel
 
 
@@ -20,43 +21,45 @@ class MT5ControlPage(TkWindow):
         self.var_ccy = StringVar()
         self.var_typeFilling = StringVar()
 
-    def run(self, parent):
+    def run(self, root):
         if not self.isSetParam:
-            settingWindow = self.openWindow(parent, [self.getInputParamFrame])
+            settingWindow = self.openWindow(root, [self.getInputParamFrame])
         else:
             print('param already set')
-            controlWindow = self.openWindow(parent, [self.getControlFrame])
+            controlWindow = self.openWindow(root, [self.getControlFrame])
 
-    def getControlFrame(self, window):
+    def getControlFrame(self, root):
+        cat = "mt5Control"
         # upload/get data
-        frame = self.createFrame(window, [
-            InitWidget(id='getData', type=self.BUTTON, label='Get Data From MT5', pos=(0, 1, 1),
-                       command=lambda: self.openWindow(window, [self.getGetDataFrame])),
-            InitWidget(id='uploadData', type=self.BUTTON, label='Upload DB', pos=(1, 1, 1), command=None),
-            InitWidget(id='Setting', type=self.BUTTON, label='Setting', pos=(2, 1, 1),
-                       command=lambda: self.openWindow(window, [self.getInputParamFrame])),
+        frame = self.createFrame(root, [
+            InitWidget(cat=cat, id='getData', type=self.BUTTON, label='Get Data From MT5', pos=(0, 1, 1),
+                       command=lambda: self.openWindow(root, [self.getGetDataFrame])),
+            InitWidget(cat=cat, id='uploadData', type=self.BUTTON, label='Upload DB', pos=(1, 1, 1), command=None),
+            InitWidget(cat=cat, id='Setting', type=self.BUTTON, label='Setting', pos=(2, 1, 1),
+                       command=lambda: self.openWindow(root, [self.getInputParamFrame])),
         ], "Operation Panel")
         return frame
 
-    def onClickSettingOk(self, window, cat):
+    def onClickSettingOk(self, root, cat):
         allParamFilled = True
         params = []
         for id, widget in self.widgets[cat].items():
+            if widget.widgetName == self.BUTTON: continue
             param = self.getWidgetValue(cat, id)
-            allParamFilled = allParamFilled and bool(widget.get())
+            allParamFilled = allParamFilled and bool(self.getWidgetValue(cat, id))
             params.append(param)
         if (allParamFilled):
             self.mt5Controller = MT5Controller(*params)
             self.isSetParam = True
             print('Param set')
-            window.destroy()
+            root.destroy()
 
-    def getInputParamFrame(self, window):
+    def getInputParamFrame(self, root):
         cat = MT5Controller.__name__
         initWidgets = self.get_params_initWidgets(MT5Controller, cat)
         # append save button
-        initWidgets.append(InitWidget(cat=cat, id='saveSetting', type=self.BUTTON, label="Save", command=lambda: self.onClickSettingOk(window, cat), pos=(4, 0, 1)))
-        frame = self.createFrame(window, initWidgets, 'MT5Controller')
+        initWidgets.append(InitWidget(cat=cat, id='saveSetting', type=self.BUTTON, label="Save", command=lambda: self.onClickSettingOk(root, cat), pos=(len(initWidgets), 0, 1)))
+        frame = self.createFrame(root, initWidgets, 'MT5Controller')
         # frame = self.createFrame(window, [
         #     InitWidget(id='dataPath', type=self.TEXTFIELD, label='Local Data Path',
         #                default='C:/Users/Chris/projects/210215_mt5/docs',
@@ -75,15 +78,18 @@ class MT5ControlPage(TkWindow):
         # ], 'MT5 Setting')
         return frame
 
-    def getGetDataFrame(self, window):
-        frame = self.createFrame(window, [
-            InitWidget(id='symbols', type=self.TEXTFIELD, label='Symbols', default='USDJPY', pos=(0, 0, 1)),
-            InitWidget(id='start', type=self.CALENDAR, label='Start', default='2010-01-01', pos=(1, 0, 1)),
-            InitWidget(id='end', type=self.CALENDAR, label='End', default='2022-01-01', pos=(2, 0, 1)),
-            InitWidget(id='timeframe', type=self.DROPDOWN, label='Time Frame',
-                       value=list(timeModel.timeframe_ftext_dicts.keys()), pos=(3, 0, 1)),
-
-        ], 'Get Data Setting')
+    def getGetDataFrame(self, root):
+        cat = 'getData'
+        initWidgets = self.get_params_initWidgets(self.mt5Controller.mt5PricesLoader.get_data, cat)
+        frame = self.createFrame(root, initWidgets, 'Get Data Setting')
+        # frame = self.createFrame(root, [
+        #     InitWidget(cat=cat, id='symbols', type=self.TEXTFIELD, label='Symbols', default='USDJPY', pos=(0, 0, 1)),
+        #     InitWidget(cat=cat, id='start', type=self.CALENDAR, label='Start', default='2010-01-01', pos=(1, 0, 1)),
+        #     InitWidget(cat=cat, id='end', type=self.CALENDAR, label='End', default='2022-01-01', pos=(2, 0, 1)),
+        #     InitWidget(cat=cat, id='timeframe', type=self.DROPDOWN, label='Time Frame',
+        #                value=list(timeModel.timeframe_ftext_dicts.keys()), pos=(3, 0, 1)),
+        #
+        # ], 'Get Data Setting')
         return frame
 
     def run2(self):

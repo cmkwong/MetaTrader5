@@ -10,36 +10,30 @@ class TkWindow(TkWidget):
     def __init__(self):
         super(TkWindow, self).__init__()
 
-    def createFrame(self, parent, Widgets, label=None):
+    def createFrame(self, root, Widgets, label=None):
         """
         :param widgetDict: {'myCalendar': {'wtype': 'Calendar', label: 'Start', 'value': '2022-01-02', 'pos': (0,0,0) },
                             'myLabel': {'wtype': 'Label', label: 'Status', 'value': 'Error Occurred', 'pos': (0,1,0) },
                             'inputField1': {'wtype': 'Entry', label: 'MyAge', value: '', 'style': { width: 50, borderwidth: 3}, 'pos': (0,0,0) },
                             'dropdown1': {'wtype': 'OptionMenu', label: 'This is my Dropdown', value: [], variable: tkVar, 'pos': (0,0,0) },
-                            'button1': {'wtype': 'Button', label: 'Click Me', value: fn, 'style': {width: 20}, 'pos': (0,0,0) }
+                            'button1': {'wtype': 'Button', label: 'Click Me', value: fn, 'style': { width: 20}, 'pos': (0,0,0) }
                            }
         :return: frame
         """
         # create frame
         if label:
-            frame = tk.LabelFrame(parent, text=label)
+            frame = tk.LabelFrame(root, text=label)
         else:
-            frame = tk.Frame(parent)
+            frame = tk.Frame(root)
         # assign the widget onto frame
         for ele in Widgets:
-            cat = ele.cat
-            # define the new widget category
-            if cat not in self.widgets.keys():
-                self.widgets[cat] = {}
-                self.variables[cat] = {}
-            id = ele.id
-            self.widgets[cat][id], self.variables[cat][id] = self.getWidget(frame, ele)
+            self.getWidget(frame, ele)
         return frame
 
-    def openWindow(self, parent, getFrameCallbacks:list, windowSize='400x400'):
-        window = tk.Toplevel(parent)
-        window.geometry(windowSize)
+    def openWindow(self, root, getFrameCallbacks: list, windowSize='400x400'):
+        subRoot = tk.Toplevel(root)
+        subRoot.geometry(windowSize)
         for getFrameCallback in getFrameCallbacks:
-            frame = getFrameCallback(window)
+            frame = getFrameCallback(subRoot)
             frame.pack()
-        return window
+        return subRoot
