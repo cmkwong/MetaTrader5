@@ -6,6 +6,7 @@ import inspect
 from TkInitWidget import TkInitWidget
 from TkWidget import TkWidget
 
+
 class TkWindow(TkWidget):
     def __init__(self):
         super(TkWindow, self).__init__()
@@ -30,7 +31,7 @@ class TkWindow(TkWidget):
             self.getWidget(frame, ele)
         return frame
 
-    def openWindow(self, root, getFrameCallbacks: list, windowSize='400x400'):
+    def openTopWindow(self, root, getFrameCallbacks: list, windowSize='400x400'):
         subRoot = tk.Toplevel(root)
         subRoot.geometry(windowSize)
         for getFrameCallback in getFrameCallbacks:

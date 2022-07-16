@@ -8,7 +8,7 @@ import MetaTrader5 as mt5
 import pandas as pd
 from datetime import datetime
 
-from utils.paramType import SymbolList
+from utils.paramType import SymbolList, DatetimeTuple, InputBoolean
 # from dataclasses import dataclass, field
 # from typing import List, Tuple, Dict
 # from App.TkWidget import TkWidgetLabel
@@ -331,7 +331,7 @@ class MT5PricesLoader(BaseMT5PricesLoader): # created note 86a
 
         return Prices
 
-    def get_data(self, *, symbols:SymbolList, start:tuple, end:tuple, timeframe:str, local:bool=False, latest:bool=False, count:int=10):
+    def get_data(self, *, symbols:SymbolList, start:DatetimeTuple, end:DatetimeTuple, timeframe:str, local:InputBoolean=False, latest:InputBoolean=False, count:int=10):
         """
         :param local: if getting from local or from mt5f
         :param latest: if getting loader from past to now or from start to end

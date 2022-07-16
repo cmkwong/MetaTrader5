@@ -7,7 +7,7 @@ from tkcalendar import Calendar
 from AppSetting import AppSetting
 from TkWindow import TkWindow
 from TkInitWidget import TkInitWidget
-from MT5ControllerWindow import MT5ControllerWindow
+from WindowMT5Controller import WindowMT5Controller
 
 
 class MainPage(TkWindow):
@@ -16,16 +16,15 @@ class MainPage(TkWindow):
         self.root = Tk()
         self.root.title('Forex App')
         self.root.geometry("400x100")
-        # self.operationSelected = StringVar()
         # define subpage controller
-        self.mt5ControlPage = MT5ControllerWindow()
+        self.windowMT5Controller = WindowMT5Controller()
 
     def onOperationClicked(self):
         operation = self.variables['main']['operationDropdown'].get()
         print(operation)
         self.widgets['main']['operationStatus']['text'] = operation
         if operation == "MT5":
-            self.mt5ControlPage.run(self.root)
+            self.windowMT5Controller.run(self.root)
 
     def run(self):
         cat = 'main'
@@ -34,18 +33,18 @@ class MainPage(TkWindow):
         operations = ['MT5', 'Data', 'Strategies', 'Setting']
 
         # define element
-        dropdown = TkInitWidget(cat=cat, id='operationDropdown', type=self.DROPDOWN, default=operations[0],
-                                label="Please select the operation: ", value=operations,
-                                pos=(0, 0, 1))
-        btn = TkInitWidget(cat=cat, id='operationSubmit', type=self.BUTTON, label="Submit",
-                           command=self.onOperationClicked, pos=(0, 1, 1))
-        label = TkInitWidget(cat=cat, id='operationStatus', type=self.LABEL,
-                             label='Now the operation is running: ', pos=(1, 0, 2))
-
-        operationFrame = self.createFrame(self.root, [dropdown, btn, label], "Operation Selection")
+        frame = self.createFrame(self.root, [
+            TkInitWidget(cat=cat, id='operationDropdown', type=self.DROPDOWN, default=operations[0],
+                         label="Please select the operation: ", value=operations,
+                         pos=(0, 0, 1)),
+            TkInitWidget(cat=cat, id='operationSubmit', type=self.BUTTON, label="Submit",
+                         command=self.onOperationClicked, pos=(0, 1, 1)),
+            TkInitWidget(cat=cat, id='operationStatus', type=self.LABEL,
+                         label='Now the operation is running: ', pos=(1, 0, 2))
+        ], "Operation Selection")
 
         # pack the frame
-        operationFrame.pack()
+        frame.pack()
 
 
 class App(AppSetting):

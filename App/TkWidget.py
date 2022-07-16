@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import scrolledtext
 from tkcalendar import Calendar, DateEntry
 from datetime import datetime, date
 import inspect
@@ -12,6 +13,7 @@ class TkWidgetLabel:
     TEXTFIELD = 'Entry'
     BUTTON = 'Button'
     CALENDAR = 'DateEntry'
+    SCROLLEDTEXT = 'ScrolledText'
 
 class TkWidget(TkWidgetLabel):
     def __init__(self):
@@ -70,7 +72,9 @@ class TkWidget(TkWidgetLabel):
         elif elementType == self.BUTTON:
             widget = tk.Button(root, text=ele.label, command=ele.command, **style)
             variable = widget
-
+        elif elementType == self.SCROLLEDTEXT:
+            widget = scrolledtext.ScrolledText(root, undo=False, **style)
+            variable = widget
         # display the widget
         widget.grid(row=row, column=column + 1, padx=5, pady=5)
         self._storeWidgetVariable(widget, variable, ele)
@@ -91,13 +95,13 @@ class TkWidget(TkWidgetLabel):
         value = None
         widgetType = type(self.widgets[cat][id]).__name__
         if widgetType == self.CALENDAR:
-            pass
+            value = self.variables[cat][id].get_date()
         elif widgetType == self.LABEL:
             pass
         elif widgetType == self.TEXTFIELD:
             value = self.variables[cat][id].get()
         elif widgetType == self.DROPDOWN:
-            pass
+            value = self.variables[cat][id].get()
         elif widgetType == self.BUTTON:
             pass
         return value

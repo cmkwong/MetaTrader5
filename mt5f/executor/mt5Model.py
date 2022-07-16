@@ -1,13 +1,14 @@
 from backtest import timeModel, pointsModel, returnModel
-from mt5f.executor import common as mt5common
+from mt5f.BaseMt5 import BaseMt5
 
 import MetaTrader5 as mt5
 import numpy as np
 import pandas as pd
 import os
 
-class csv_Writer_Helper(mt5common.BaseMt5):
+class csv_Writer_Helper(BaseMt5):
     def __init__(self, csv_save_path='', csv_file_names=None, append_checkpoint=None):
+        super(csv_Writer_Helper, self).__init__()
         # for output csv file
         self.csv_save_path = csv_save_path
         self.append_checkpoint = append_checkpoint
@@ -18,7 +19,7 @@ class csv_Writer_Helper(mt5common.BaseMt5):
     def __exit__(self, *args):
         if self._appended_text: # if there is a appended text before, evacuate the rest of loader before exit
             self.evacuate_csv_file_datas()
-        mt5common.disconnect_server()
+        self.disconnect_server()
 
     def _register_csv_file_datas(self, csv_file_names):
         self._csv_file_datas = {}
@@ -64,12 +65,13 @@ class csv_Writer_Helper(mt5common.BaseMt5):
                 # empty the datas
             self._csv_file_datas[csv_file_name] = ''
 
-class Trader(mt5common.BaseMt5):
+class Trader(BaseMt5):
     def __init__(self, dt_string, history_path, type_filling='ioc'):
         """
         :param type_filling: 'fok', 'ioc', 'return'
         :param deviation: int
         """
+        super(Trader, self).__init__()
         self.type_filling = type_filling
         self.history_path = history_path
         self.dt_string = dt_string
