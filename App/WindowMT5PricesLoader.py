@@ -24,8 +24,8 @@ class WindowMT5PricesLoader(TkWindow):
             if type(widget).__name__ == self.BUTTON: continue
             param = self.getWidgetValue(cat, id)
             params.append(param)
-        requiredParams = paramModel.insert_params(self.mt5Controller.mt5PricesLoader.get_data, params)
-        self.mt5Controller.mt5PricesLoader.get_data(**requiredParams)
+        requiredParams = paramModel.insert_params(self.mt5Controller.mt5PricesLoader.getPrices, params)
+        self.mt5Controller.mt5PricesLoader.getPrices(**requiredParams)
         # show the status
         text = f"""
         Data got times {self.getDataCount}:
@@ -48,7 +48,8 @@ class WindowMT5PricesLoader(TkWindow):
             TkInitWidget(cat=cat, id='local', type=self.DROPDOWN, label='Local', value=[0, 1], default='0', pos=(4, 0, 1)),
             TkInitWidget(cat=cat, id='latest', type=self.DROPDOWN, label='latest', value=[0, 1], default='0', pos=(5, 0, 1)),
             TkInitWidget(cat=cat, id='count', type=self.TEXTFIELD, label='Count', default=10, pos=(6, 0, 1)),
-            TkInitWidget(cat=cat, id='submit', type=self.BUTTON, label='Submit', command=lambda: self.onClickGetData(root, cat), pos=(7, 0, 1))
+            TkInitWidget(cat=cat, id='ohlcvs', type=self.TEXTFIELD, label='ohlcvs', default=111111, pos=(7, 0, 1)),
+            TkInitWidget(cat=cat, id='submit', type=self.BUTTON, label='Submit', command=lambda: self.onClickGetData(root, cat), pos=(8, 0, 1))
         ], 'Get Data Setting')
         return frame
 

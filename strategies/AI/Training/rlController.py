@@ -73,11 +73,11 @@ tech_params = {
 
 mt5Controller = MT5Controller(data_path=data_options['local_min_path'], timezone=data_options['timezone'], deposit_currency=data_options['deposit_currency'])
 # get the loader
-mt5Controller.mt5PricesLoader.get_data(symbols=data_options['symbols'],
-                                       start=data_options['start'],
-                                       end=data_options['end'],
-                                       timeframe=data_options['timeframe'],
-                                       local=data_options['local'])
+mt5Controller.mt5PricesLoader.getPrices(symbols=data_options['symbols'],
+                                        start=data_options['start'],
+                                        end=data_options['end'],
+                                        timeframe=data_options['timeframe'],
+                                        local=data_options['local'])
 
 # split into train set and test set
 Train_Prices, Test_Prices = mt5Controller.mt5PricesLoader.split_Prices(

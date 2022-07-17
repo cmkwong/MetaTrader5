@@ -1,6 +1,9 @@
 import sys
+
+import mt5f.executor.CsvWriterHelper
+
 sys.path.append('C:/Users/Chris/projects/210215_mt5')
-from mt5f.executor import mt5Model
+from mt5f.executor import Trader
 from backtest import plotPre
 from strategies.Spread import spreadModel
 from views import plotView
@@ -25,7 +28,7 @@ data_options = {
     'plt_save_path': os.path.join(options['docs_path'], "spread_plt")
 }
 
-with mt5Model.csv_Writer_Helper():
+with mt5f.executor.CsvWriterHelper.CsvWriterHelper():
     spreads = spreadModel.get_spreads(data_options['symbols'], data_options['start'], data_options['end'], data_options['timezone'])
     plt_datas = plotPre.get_spread_plt_datas(spreads)
 

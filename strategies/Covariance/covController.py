@@ -1,7 +1,10 @@
 import sys
+
+import mt5f.executor.CsvWriterHelper
+
 sys.path.append('C:/Users/Chris/projects/210215_mt5')
 import config
-from mt5f.executor import mt5Model
+from mt5f.executor import Trader
 from mt5f.loader import MT5PricesLoader
 from strategies.Covariance import covModel
 import os
@@ -35,7 +38,7 @@ def get_cor_matrix(prices_loader, local):
     cor_table = covModel.corela_table(cor_matrix, symbols)
     return cor_matrix, cor_table
 
-with mt5Model.csv_Writer_Helper():
+with mt5f.executor.CsvWriterHelper.CsvWriterHelper():
     symbols = sorted(data_options['symbols'], reverse=False)  # sorting the symbols
     prices_loader = MT5PricesLoader.MT5PricesLoader(symbols=symbols,
                                                     timeframe=data_options['timeframe'],

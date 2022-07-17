@@ -10,7 +10,7 @@ class DataController(EndPoints, DfModel):
 
     def uploadForexData(self, *, tableName: str, forexDf: pd.DataFrame):
         """
-        upload forex data ohlc
+        upload forex data ohlcvs
         """
         forexDf['datetime'] = forexDf.index
         forexDf['datetime'] = forexDf['datetime'].dt.strftime('%Y-%m-%d %H:%M:%S')
@@ -24,8 +24,8 @@ class DataController(EndPoints, DfModel):
 
     def downloadForexData(self, *, tableName: str, dateFrom: str, dateTo: str):
         """
-        download forex ohlc from server
-        :return pd.DataFrame with ohlc
+        download forex ohlcvs from server
+        :return pd.DataFrame with ohlcvs
         """
         body = {
             'from': dateFrom,
@@ -52,7 +52,9 @@ class DataController(EndPoints, DfModel):
                 "open": "FLOAT",
                 "high": "FLOAT",
                 "low": "FLOAT",
-                "close": "FLOAT"
+                "close": "FLOAT",
+                "volume": "FLOAT",
+                "spread": "FLOAT",
             }
         }
         r = requests.get(self.createTableUrl.format(tableName), json=body)
@@ -133,7 +135,9 @@ class DataController(EndPoints, DfModel):
 #                                        start=data_options['start'],
 #                                        end=data_options['end'],
 #                                        timeframe=data_options['timeframe'],
-#                                        local=data_options['local'])
+#                                        local=data_options['local'],
+#                                        ohlcvs='111111'
+#                                        )
 #
 # dataController = DataController()
 # for key, df in mt5Controller.mt5PricesLoader.Prices.rawDfs.items():

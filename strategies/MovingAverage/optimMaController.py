@@ -1,7 +1,10 @@
 import sys
+
+import mt5f.executor.CsvWriterHelper
+
 sys.path.append('C:/Users/Chris/projects/210215_mt5')
 import config
-from mt5f.executor import mt5Model
+from mt5f.executor import Trader
 from backtest import timeModel
 from strategies.MovingAverage import maModel
 from mt5f.loader import MT5PricesLoader
@@ -69,9 +72,9 @@ test_short_stat_file_name = "{}_{}_{}_Short_Limit{}_From{}_To{}_Test.csv".format
     start_string,
     end_string
 )
-with mt5Model.csv_Writer_Helper(csv_save_path=data_options['csv_save_path'],
-                                csv_file_names=[train_long_stat_file_name, train_short_stat_file_name, test_long_stat_file_name, test_short_stat_file_name],
-                                append_checkpoint=data_options["append_checkpoint"]) as helper:
+with mt5f.executor.CsvWriterHelper.CsvWriterHelper(csv_save_path=data_options['csv_save_path'],
+                                                   csv_file_names=[train_long_stat_file_name, train_short_stat_file_name, test_long_stat_file_name, test_short_stat_file_name],
+                                                   append_checkpoint=data_options["append_checkpoint"]) as helper:
     # define loader
     prices_loader = MT5PricesLoader.MT5PricesLoader(symbols=data_options['symbols'],
                                                     timeframe=data_options['timeframe'],
@@ -81,7 +84,7 @@ with mt5Model.csv_Writer_Helper(csv_save_path=data_options['csv_save_path'],
                                                     timezone=data_options['timezone'],
                                                     deposit_currency=data_options['deposit_currency'])
     # get the loader
-    prices_loader.get_data(data_options['local'])
+    prices_loader.getPrices(data_options['local'])
 
     # split into train set and test set
     Train_Prices, Test_Prices = prices_loader.split_Prices(prices_loader.Prices, percentage=data_options['trainTestSplit'])

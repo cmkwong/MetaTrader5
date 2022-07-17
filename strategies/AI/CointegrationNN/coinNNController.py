@@ -1,7 +1,10 @@
 import sys
+
+import mt5f.executor.CsvWriterHelper
+
 sys.path.append('C:/Users/Chris/projects/210215_mt5')
 from strategies.AI.CointegrationNN import coinNNModel
-from mt5f.executor import mt5Model
+from mt5f.executor import Trader
 from backtest import plotPre
 from mt5f.loader import MT5PricesLoader, batches, files
 from views import printStat, plotView
@@ -60,7 +63,7 @@ train_options = {
 }
 # tensorboard --logdir C:\Users\Chris\projects\210215_mt5\production\docs\1\runs --host localhost
 
-with mt5Model.csv_Writer_Helper():
+with mt5f.executor.CsvWriterHelper.CsvWriterHelper():
     prices_loader = MT5PricesLoader.MT5PricesLoader(symbols=data_options['symbols'],
                                                     timeframe=data_options['timeframe'],
                                                     start=data_options['start'],
@@ -69,7 +72,7 @@ with mt5Model.csv_Writer_Helper():
                                                     data_path=data_options['local_min_path'],
                                                     deposit_currency=data_options['deposit_currency'])
     # get the loader
-    prices_loader.get_data(data_options['local'])
+    prices_loader.getPrices(data_options['local'])
     # Prices = prices_loader.get_Prices_format(options['local'])
 
     # split into train set and test set

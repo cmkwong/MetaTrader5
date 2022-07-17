@@ -1,6 +1,6 @@
 import sys
 sys.path.append('/')
-from mt5f.executor import mt5Model
+from mt5f.executor.Trader import Trader
 from strategies.Cointegration import coinModel
 from mt5f.loader import MT5PricesLoader
 from backtest import signalModel
@@ -39,7 +39,7 @@ coin_option = {
     'close_change': 1,  # 0 = close; 1 = change
 }
 
-with mt5Model.Trader(dt_string=options['dt'], history_path=trader_options["history_path"], type_filling=trader_options['type_filling']) as trader:
+with Trader(dt_string=options['dt'], history_path=trader_options["history_path"], type_filling=trader_options['type_filling']) as trader:
 
     prices_loader = MT5PricesLoader.MT5PricesLoader(symbols=trader_options['symbols'],
                                                     timeframe=trader_options['timeframe'],
@@ -55,7 +55,7 @@ with mt5Model.Trader(dt_string=options['dt'], history_path=trader_options["histo
     trader.register_strategy(short_strategy_id, trader_options['symbols'], trader_options['max_deviations'], trader_options['avg_spreads'], trader_options['lot_times'], long_mode=False)
 
     while True:
-        prices_loader.get_data(latest=True)
+        prices_loader.getPrices(latest=True)
         Prices = prices_loader.Prices
         if not Prices:
             time.sleep(2)

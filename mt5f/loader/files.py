@@ -25,7 +25,7 @@ def read_MyCSV(symbol_path, file_name, data_time_difference_to_UTC, names, useco
     :param symbol_path: str
     :param file_name: str
     :param time_difference_in_hr: time difference between current broker
-    :param ohlc: str, eg: '1001'
+    :param ohlcvs: str, eg: '1001'
     :return: pd.DataFrame
     """
     shifted_hr = config.BROKER_TIME_BETWEEN_UTC + data_time_difference_to_UTC
@@ -35,16 +35,16 @@ def read_MyCSV(symbol_path, file_name, data_time_difference_to_UTC, names, useco
     df.index = pd.to_datetime(df.index).shift(shifted_hr, freq='H')
     return df
 
-def read_symbol_price(data_path, symbol, data_time_difference_to_UTC, ohlc='1001'):
+def read_symbol_price(data_path, symbol, data_time_difference_to_UTC, ohlcvs='1001'):
     """
     :param main_path: str, file path that contains several minute excel loader
     :param data_time_difference_to_UTC: int, the time difference between downloaded loader and broker
     :param timeframe: str, '1H'
-    :param ohlc: str, '1001'
+    :param ohlcvs: str, '1001'
     :return: pd.DataFrame, symbol_prices
     """
     symbol_prices = None
-    names, usecols = _get_names_and_usecols(ohlc)
+    names, usecols = _get_names_and_usecols(ohlcvs)
     symbol_path = os.path.join(data_path, symbol)
     min_data_names = get_file_list(symbol_path)
     # concat a symbol in a dataframe (axis = 0)

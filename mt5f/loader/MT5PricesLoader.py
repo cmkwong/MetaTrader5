@@ -1,204 +1,17 @@
 import config
-from mt5f.executor import common as mt5common
-from backtest import timeModel, exchgModel, pointsModel
+from backtest import exchgModel, pointsModel
 from mt5f.loader import files
+from mt5f.loader.BaseMT5PricesLoader import BaseMT5PricesLoader
 from mt5f.mt5utils import segregation
 import collections
-import MetaTrader5 as mt5
-import pandas as pd
-from datetime import datetime
 
 from myUtils.paramType import SymbolList, DatetimeTuple, InputBoolean
+
 
 # from dataclasses import dataclass, field
 # from typing import List, Tuple, Dict
 # from App.TkWidget import TkWidgetLabel
 # from App.TkInitWidget import TkInitWidget
-"""
-Price loader from:
-1. mt5f sql
-2. mysql
-
-Fianlly just one single point - mysql
-"""
-
-
-class BaseMT5PricesLoader:
-
-    def _get_historical_data(self, symbol, timeframe, timezone, start, end=None):
-        """
-        :param symbol: str
-        :param timeframe: str, '1H'
-        :param timezone: Check: set(pytz.all_timezones_set) - (Etc/UTC)
-        :param start (local time): tuple (year, month, day, hour, mins) eg: (2010, 10, 30, 0, 0)
-        :param end (local time): tuple (year, month, day, hour, mins), if None, then take loader until present
-        :return: dataframe
-        """
-        timeframe = timeModel.get_txt2timeframe(timeframe)
-        utc_from = timeModel.get_utc_time_from_broker(start, timezone)
-        if end == None:  # if end is None, get the loader at current time
-            now = datetime.today()
-            now_tuple = (now.year, now.month, now.day, now.hour, now.minute)
-            utc_to = timeModel.get_utc_time_from_broker(now_tuple, timezone)
-        else:
-            utc_to = timeModel.get_utc_time_from_broker(end, timezone)
-        rates = mt5.copy_rates_range(symbol, timeframe, utc_from, utc_to)
-        rates_frame = pd.DataFrame(rates, dtype=float)  # create DataFrame out of the obtained loader
-        rates_frame['time'] = pd.to_datetime(rates_frame['time'], unit='s')  # convert time in seconds into the datetime format
-        rates_frame = rates_frame.set_index('time')
-        return rates_frame
-
-    def _get_current_bars(self, symbol, timeframe, count):
-        """
-        :param symbols: str
-        :param timeframe: str, '1H'
-        :param count: int
-        :return: df
-        """
-        timeframe = timeModel.get_txt2timeframe(timeframe)
-        rates = mt5.copy_rates_from_pos(symbol, timeframe, 0, count)  # 0 means the current bar
-        rates_frame = pd.DataFrame(rates, dtype=float)
-        rates_frame['time'] = pd.to_datetime(rates_frame['time'], unit='s')
-        rates_frame = rates_frame.set_index('time')
-        return rates_frame
-
-    def _price_type_from_code(self, ohlc):
-        """
-        :param ohlc: str of code, eg: '1001'
-        :return: list, eg: ['open', 'close']
-        """
-        type_names = ['open', 'high', 'low', 'close']
-        required_types = []
-        for i, c in enumerate(ohlc):
-            if c == '1':
-                required_types.append(type_names[i])
-        return required_types
-
-    def _get_mt5_prices(self, symbols, timeframe, timezone, start=None, end=None, ohlc='1111', count=10):
-        """
-        :param symbols: [str]
-        :param timeframe: str, '1H'
-        :param timezone: str "Hongkong"
-        :param start: (2010,1,1,0,0), if both start and end is None, use function get_current_bars()
-        :param end: (2020,1,1,0,0), if just end is None, get the historical loader from date to current
-        :param ohlc: str, eg: '1111'
-        :param count: int, for get_current_bar_function()
-        :return: pd.DataFrame
-        """
-        join = 'outer'
-        required_types = self._price_type_from_code(ohlc)
-        prices_df = None
-        for i, symbol in enumerate(symbols):
-            if start == None and end == None:  # get the latest units of loader
-                price = self._get_current_bars(symbol, timeframe, count).loc[:, required_types]
-                join = 'inner'  # if getting count, need to join=inner to check if loader getting completed
-            elif start != None:  # get loader from start to end
-                price = self._get_historical_data(symbol, timeframe, timezone, start, end).loc[:, required_types]
-            else:
-                raise Exception('start-date must be set when end-date is being set.')
-            if i == 0:
-                prices_df = price.copy()
-            else:
-                prices_df = pd.concat([prices_df, price], axis=1, join=join)
-
-        # replace NaN values with preceding values
-        prices_df.fillna(method='ffill', inplace=True)
-        prices_df.dropna(inplace=True, axis=0)
-
-        # get prices in dict
-        prices = self._prices_df2dict(prices_df, symbols, ohlc)
-
-        return prices
-
-    def _get_local_prices(self, data_path, symbols, data_time_difference_to_UTC, ohlc):
-        """
-        :param data_path: str
-        :param symbols: [str]
-        :param data_time_difference_to_UTC: int
-        :param timeframe: str, eg: '1H', '1min'
-        :param ohlc: str, eg: '1001'
-        :return: pd.DataFrame
-        """
-        prices_df = pd.DataFrame()
-        for i, symbol in enumerate(symbols):
-            print("Processing: {}".format(symbol))
-            price_df = files.read_symbol_price(data_path, symbol, data_time_difference_to_UTC, ohlc=ohlc)
-            if i == 0:
-                prices_df = price_df.copy()
-            else:
-                # join='outer' method with all symbols in a bigger dataframe (axis = 1)
-                prices_df = pd.concat([prices_df, price_df], axis=1, join='outer')  # because of 1 minute loader and for ensure the completion of loader, concat in join='outer' method
-
-        # replace NaN values with preceding values
-        prices_df.fillna(method='ffill', inplace=True)
-        prices_df.dropna(inplace=True, axis=0)
-
-        # get prices in dict
-        prices = self._prices_df2dict(prices_df, symbols, ohlc)
-
-        return prices
-
-    def _prices_df2dict(self, prices_df, symbols, ohlc):
-
-        # rename columns of the prices_df
-        col_names = self._price_type_from_code(ohlc)
-        prices_df.columns = col_names * len(symbols)
-
-        prices = {}
-        max_length = len(prices_df.columns)
-        step = len(col_names)
-        for i in range(0, max_length, step):
-            symbol = symbols[int(i / step)]
-            prices[symbol] = prices_df.iloc[:, i:i + step]
-        return prices
-
-    def _get_specific_from_prices(self, prices, required_symbols, ohlc):
-        """
-        :param prices: {symbol: pd.DataFrame}
-        :param required_symbols: [str]
-        :param ohlc: str, '1000'
-        :return: pd.DataFrame
-        """
-        types = self._price_type_from_code(ohlc)
-        required_prices = pd.DataFrame()
-        for i, symbol in enumerate(required_symbols):
-            if i == 0:
-                required_prices = prices[symbol].loc[:, types].copy()
-            else:
-                required_prices = pd.concat([required_prices, prices[symbol].loc[:, types]], axis=1)
-        required_prices.columns = required_symbols
-        return required_prices
-
-    def _get_ohlc_rule(self, df):
-        """
-        note 85e
-        Only for usage on change_timeframe()
-        :param check_code: list
-        :return: raise exception
-        """
-        check_code = [0, 0, 0, 0]
-        ohlc_rule = {}
-        for key in df.columns:
-            if key == 'open':
-                check_code[0] = 1
-                ohlc_rule['open'] = 'first'
-            elif key == 'high':
-                check_code[1] = 1
-                ohlc_rule['high'] = 'max'
-            elif key == 'low':
-                check_code[2] = 1
-                ohlc_rule['low'] = 'min'
-            elif key == 'close':
-                check_code[3] = 1
-                ohlc_rule['close'] = 'last'
-        # first exception
-        if check_code[1] == 1 or check_code[2] == 1:
-            if check_code[0] == 0 or check_code[3] == 0:
-                raise Exception("When high/low needed, there must be open/close loader included. \nThere is not open/close loader.")
-        # Second exception
-        if len(df.columns) > 4:
-            raise Exception("The DataFrame columns is exceeding 4")
-        return ohlc_rule
 
 
 # mt5f loader price loader
@@ -223,7 +36,7 @@ class MT5PricesLoader(BaseMT5PricesLoader):  # created note 86a
         self.latest_Prices_Collection = collections.namedtuple("latest_Prices_Collection", ['c', 'cc', 'ptDv', 'quote_exchg', 'rawDfs'])  # for latest Prices
         self._symbols_available = False  # only for usage of _check_if_symbols_available()
 
-    def _check_if_symbols_available(self, required_symbols, local):
+    def check_if_symbols_available(self, required_symbols, local):
         """
         check if symbols exist, note 83h
         :param required_symbols: [str]
@@ -270,28 +83,28 @@ class MT5PricesLoader(BaseMT5PricesLoader):  # created note 86a
     def get_Prices_format(self, symbols, prices, q2d_exchg_symbols, b2d_exchg_symbols):
 
         # get open prices
-        open_prices = self._get_specific_from_prices(prices, symbols, ohlc='1000')
+        open_prices = self._get_specific_from_prices(prices, symbols, ohlcvs='100000')
 
         # get the change of close price
-        close_prices = self._get_specific_from_prices(prices, symbols, ohlc='0001')
+        close_prices = self._get_specific_from_prices(prices, symbols, ohlcvs='000100')
         changes = ((close_prices - close_prices.shift(1)) / close_prices.shift(1)).fillna(0.0)
 
         # get the change of high price
-        high_prices = self._get_specific_from_prices(prices, symbols, ohlc='0100')
+        high_prices = self._get_specific_from_prices(prices, symbols, ohlcvs='010000')
 
         # get the change of low price
-        low_prices = self._get_specific_from_prices(prices, symbols, ohlc='0010')
+        low_prices = self._get_specific_from_prices(prices, symbols, ohlcvs='001000')
 
         # get point diff values
-        # open_prices = _get_specific_from_prices(prices, symbols, ohlc='1000')
+        # open_prices = _get_specific_from_prices(prices, symbols, ohlcvs='1000')
         points_dff_values_df = pointsModel.get_points_dff_values_df(symbols, close_prices, close_prices.shift(periods=1), self.all_symbol_info)
 
         # get the quote to deposit exchange rate
-        exchg_close_prices = self._get_specific_from_prices(prices, q2d_exchg_symbols, ohlc='0001')
+        exchg_close_prices = self._get_specific_from_prices(prices, q2d_exchg_symbols, ohlcvs='000100')
         q2d_exchange_rate_df = exchgModel.get_exchange_df(symbols, q2d_exchg_symbols, exchg_close_prices, self.deposit_currency, "q2d")
 
         # get the base to deposit exchange rate
-        exchg_close_prices = self._get_specific_from_prices(prices, b2d_exchg_symbols, ohlc='0001')
+        exchg_close_prices = self._get_specific_from_prices(prices, b2d_exchg_symbols, ohlcvs='000100')
         b2d_exchange_rate_df = exchgModel.get_exchange_df(symbols, q2d_exchg_symbols, exchg_close_prices, self.deposit_currency, "b2d")
 
         # assign the column into each collection tuple
@@ -309,7 +122,7 @@ class MT5PricesLoader(BaseMT5PricesLoader):  # created note 86a
 
     def get_latest_Prices_format(self, symbols, prices, q2d_exchg_symbols, count):
 
-        close_prices = self._get_specific_from_prices(prices, symbols, ohlc='0001')
+        close_prices = self._get_specific_from_prices(prices, symbols, ohlcvs='000100')
         if len(close_prices) != count:  # note 63a
             print("prices_df length of Data is not equal to count")
             return False
@@ -321,7 +134,7 @@ class MT5PricesLoader(BaseMT5PricesLoader):  # created note 86a
         points_dff_values_df = pointsModel.get_points_dff_values_df(symbols, close_prices, close_prices.shift(periods=1), self.all_symbol_info)
 
         # get quote exchange with values
-        exchg_close_prices = self._get_specific_from_prices(prices, q2d_exchg_symbols, ohlc='0001')
+        exchg_close_prices = self._get_specific_from_prices(prices, q2d_exchg_symbols, ohlcvs='000100')
         q2d_exchange_rate_df = exchgModel.get_exchange_df(symbols, q2d_exchg_symbols, exchg_close_prices, self.deposit_currency, "q2d")
         # if len(q2d_exchange_rate_df_o) or len(q2d_exchange_rate_df_c) == 39, return false and run again
         if len(q2d_exchange_rate_df) != count:  # note 63a
@@ -336,7 +149,7 @@ class MT5PricesLoader(BaseMT5PricesLoader):  # created note 86a
 
         return Prices
 
-    def get_data(self, *, symbols: SymbolList, start: DatetimeTuple, end: DatetimeTuple, timeframe: str, local: InputBoolean = False, latest: InputBoolean = False, count: int = 10):
+    def getPrices(self, *, symbols: SymbolList, start: DatetimeTuple, end: DatetimeTuple, timeframe: str, local: InputBoolean = False, latest: InputBoolean = False, count: int = 10, ohlcvs: str = '111100'):
         """
         :param local: if getting from local or from mt5f
         :param latest: if getting loader from past to now or from start to end
@@ -347,20 +160,20 @@ class MT5PricesLoader(BaseMT5PricesLoader):  # created note 86a
         # read loader in dictionary format
         prices, min_prices = {}, {}
         required_symbols = list(set(symbols + q2d_exchg_symbols + b2d_exchg_symbols))
-        self._check_if_symbols_available(required_symbols, local)  # if not, raise Exception
+        self.check_if_symbols_available(required_symbols, local)  # if not, raise Exception
         if not latest:
             if local:
-                min_prices = self._get_local_prices(self.data_path, required_symbols, self.data_time_difference_to_UTC, '1111')
+                min_prices = self._get_local_prices(self.data_path, required_symbols, self.data_time_difference_to_UTC, ohlcvs)
                 # change the timeframe if needed
                 if timeframe != '1min':  # 1 minute loader should not modify, saving the computation cost
                     for symbol in required_symbols:
                         prices[symbol] = self.change_timeframe(min_prices[symbol], timeframe)
                 self.Prices, self.min_Prices = self.get_Prices_format(symbols, prices, q2d_exchg_symbols, b2d_exchg_symbols), self.get_Prices_format(symbols, min_prices, q2d_exchg_symbols, b2d_exchg_symbols)
             else:
-                prices = self._get_mt5_prices(required_symbols, timeframe, self.timezone, start, end, '1111', count)
+                prices = self._get_mt5_prices(required_symbols, timeframe, self.timezone, start, end, ohlcvs, count)
                 self.Prices = self.get_Prices_format(symbols, prices, q2d_exchg_symbols, b2d_exchg_symbols)
         else:
-            prices = self._get_mt5_prices(required_symbols, timeframe, self.timezone, start, end, '1111', count)
+            prices = self._get_mt5_prices(required_symbols, timeframe, self.timezone, start, end, ohlcvs, count)
             self.Prices = self.get_latest_Prices_format(symbols, prices, q2d_exchg_symbols, count)
 
 # @dataclass

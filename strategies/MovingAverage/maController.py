@@ -1,7 +1,10 @@
 import sys
+
+import mt5f.executor.CsvWriterHelper
+
 sys.path.append('C:/Users/Chris/projects/210215_mt5')
 import config
-from mt5f.executor import mt5Model
+from mt5f.executor import Trader
 from backtest import plotPre
 from mt5f.loader import MT5PricesLoader
 from views import plotView
@@ -43,7 +46,7 @@ train_options = {
     }
 }
 
-with mt5Model.csv_Writer_Helper():
+with mt5f.executor.CsvWriterHelper.CsvWriterHelper():
     # define loader
     prices_loader = MT5PricesLoader.MT5PricesLoader(symbols=data_options['symbols'],
                                                     timeframe=data_options['timeframe'],
@@ -53,7 +56,7 @@ with mt5Model.csv_Writer_Helper():
                                                     timezone=data_options['timezone'],
                                                     deposit_currency=data_options['deposit_currency'])
     # get the loader
-    prices_loader.get_data(data_options['local'])
+    prices_loader.getPrices(data_options['local'])
 
     # split into train set and test set
     Train_Prices, Test_Prices = prices_loader.split_Prices(prices_loader.Prices, percentage=data_options['trainTestSplit'])
