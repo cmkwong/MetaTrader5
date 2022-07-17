@@ -1,8 +1,7 @@
 import collections
 from dataclasses import dataclass
-from typing import Union
-from tkinter import *
-from typing import List, Dict
+from typing import List, Dict, Union
+
 
 @dataclass
 class TkInitWidget:

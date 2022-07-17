@@ -12,7 +12,7 @@ from WindowMT5PricesLoader import WindowMT5PricesLoader
 from mt5f.MT5Controller import MT5Controller
 from backtest import timeModel
 
-from utils import paramModel
+from myUtils import paramModel
 
 
 class WindowMT5Controller(TkWindow):

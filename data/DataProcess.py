@@ -1,0 +1,3 @@
+
+class DataProcess:
+    pass

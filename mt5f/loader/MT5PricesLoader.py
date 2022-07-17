@@ -8,7 +8,8 @@ import MetaTrader5 as mt5
 import pandas as pd
 from datetime import datetime
 
-from utils.paramType import SymbolList, DatetimeTuple, InputBoolean
+from myUtils.paramType import SymbolList, DatetimeTuple, InputBoolean
+
 # from dataclasses import dataclass, field
 # from typing import List, Tuple, Dict
 # from App.TkWidget import TkWidgetLabel
@@ -20,6 +21,7 @@ Price loader from:
 
 Fianlly just one single point - mysql
 """
+
 
 class BaseMT5PricesLoader:
 
@@ -34,15 +36,15 @@ class BaseMT5PricesLoader:
         """
         timeframe = timeModel.get_txt2timeframe(timeframe)
         utc_from = timeModel.get_utc_time_from_broker(start, timezone)
-        if end == None: # if end is None, get the loader at current time
+        if end == None:  # if end is None, get the loader at current time
             now = datetime.today()
             now_tuple = (now.year, now.month, now.day, now.hour, now.minute)
             utc_to = timeModel.get_utc_time_from_broker(now_tuple, timezone)
         else:
             utc_to = timeModel.get_utc_time_from_broker(end, timezone)
         rates = mt5.copy_rates_range(symbol, timeframe, utc_from, utc_to)
-        rates_frame = pd.DataFrame(rates, dtype=float) # create DataFrame out of the obtained loader
-        rates_frame['time'] = pd.to_datetime(rates_frame['time'], unit='s') # convert time in seconds into the datetime format
+        rates_frame = pd.DataFrame(rates, dtype=float)  # create DataFrame out of the obtained loader
+        rates_frame['time'] = pd.to_datetime(rates_frame['time'], unit='s')  # convert time in seconds into the datetime format
         rates_frame = rates_frame.set_index('time')
         return rates_frame
 
@@ -54,7 +56,7 @@ class BaseMT5PricesLoader:
         :return: df
         """
         timeframe = timeModel.get_txt2timeframe(timeframe)
-        rates = mt5.copy_rates_from_pos(symbol, timeframe, 0, count) # 0 means the current bar
+        rates = mt5.copy_rates_from_pos(symbol, timeframe, 0, count)  # 0 means the current bar
         rates_frame = pd.DataFrame(rates, dtype=float)
         rates_frame['time'] = pd.to_datetime(rates_frame['time'], unit='s')
         rates_frame = rates_frame.set_index('time')
@@ -87,10 +89,10 @@ class BaseMT5PricesLoader:
         required_types = self._price_type_from_code(ohlc)
         prices_df = None
         for i, symbol in enumerate(symbols):
-            if start == None and end == None:   # get the latest units of loader
+            if start == None and end == None:  # get the latest units of loader
                 price = self._get_current_bars(symbol, timeframe, count).loc[:, required_types]
-                join = 'inner'                  # if getting count, need to join=inner to check if loader getting completed
-            elif start != None:                 # get loader from start to end
+                join = 'inner'  # if getting count, need to join=inner to check if loader getting completed
+            elif start != None:  # get loader from start to end
                 price = self._get_historical_data(symbol, timeframe, timezone, start, end).loc[:, required_types]
             else:
                 raise Exception('start-date must be set when end-date is being set.')
@@ -144,10 +146,10 @@ class BaseMT5PricesLoader:
 
         prices = {}
         max_length = len(prices_df.columns)
-        step =  len(col_names)
+        step = len(col_names)
         for i in range(0, max_length, step):
-            symbol = symbols[int(i/step)]
-            prices[symbol] = prices_df.iloc[:,i:i+step]
+            symbol = symbols[int(i / step)]
+            prices[symbol] = prices_df.iloc[:, i:i + step]
         return prices
 
     def _get_specific_from_prices(self, prices, required_symbols, ohlc):
@@ -198,13 +200,14 @@ class BaseMT5PricesLoader:
             raise Exception("The DataFrame columns is exceeding 4")
         return ohlc_rule
 
+
 # mt5f loader price loader
-class MT5PricesLoader(BaseMT5PricesLoader): # created note 86a
+class MT5PricesLoader(BaseMT5PricesLoader):  # created note 86a
     def __init__(self, all_symbol_info, data_path='', timezone='Hongkong', deposit_currency='USD'):
         self.all_symbol_info = all_symbol_info
 
         # for local
-        self.data_path = data_path # a symbol of loader that stored in this directory
+        self.data_path = data_path  # a symbol of loader that stored in this directory
         self.data_time_difference_to_UTC = config.DOWNLOADED_MIN_DATA_TIME_BETWEEN_UTC
 
         # property
@@ -216,9 +219,9 @@ class MT5PricesLoader(BaseMT5PricesLoader): # created note 86a
         self.deposit_currency = deposit_currency
 
         # prepare
-        self.Prices_Collection = collections.namedtuple("Prices_Collection", ['o','h','l','c', 'cc', 'ptDv','quote_exchg','base_exchg'])
-        self.latest_Prices_Collection = collections.namedtuple("latest_Prices_Collection", ['c', 'cc', 'ptDv', 'quote_exchg']) # for latest Prices
-        self._symbols_available = False # only for usage of _check_if_symbols_available()
+        self.Prices_Collection = collections.namedtuple("Prices_Collection", ['o', 'h', 'l', 'c', 'cc', 'ptDv', 'quote_exchg', 'base_exchg', 'rawDfs'])
+        self.latest_Prices_Collection = collections.namedtuple("latest_Prices_Collection", ['c', 'cc', 'ptDv', 'quote_exchg', 'rawDfs'])  # for latest Prices
+        self._symbols_available = False  # only for usage of _check_if_symbols_available()
 
     def _check_if_symbols_available(self, required_symbols, local):
         """
@@ -299,7 +302,8 @@ class MT5PricesLoader(BaseMT5PricesLoader): # created note 86a
                                         cc=changes,
                                         ptDv=points_dff_values_df,
                                         quote_exchg=q2d_exchange_rate_df,
-                                        base_exchg=b2d_exchange_rate_df)
+                                        base_exchg=b2d_exchange_rate_df,
+                                        rawDfs=prices)
 
         return Prices
 
@@ -327,11 +331,12 @@ class MT5PricesLoader(BaseMT5PricesLoader): # created note 86a
         Prices = self.latest_Prices_Collection(c=close_prices,
                                                cc=change_close_prices,
                                                ptDv=points_dff_values_df,
-                                               quote_exchg=q2d_exchange_rate_df)
+                                               quote_exchg=q2d_exchange_rate_df,
+                                               rawDfs=prices)
 
         return Prices
 
-    def get_data(self, *, symbols:SymbolList, start:DatetimeTuple, end:DatetimeTuple, timeframe:str, local:InputBoolean=False, latest:InputBoolean=False, count:int=10):
+    def get_data(self, *, symbols: SymbolList, start: DatetimeTuple, end: DatetimeTuple, timeframe: str, local: InputBoolean = False, latest: InputBoolean = False, count: int = 10):
         """
         :param local: if getting from local or from mt5f
         :param latest: if getting loader from past to now or from start to end
@@ -342,7 +347,7 @@ class MT5PricesLoader(BaseMT5PricesLoader): # created note 86a
         # read loader in dictionary format
         prices, min_prices = {}, {}
         required_symbols = list(set(symbols + q2d_exchg_symbols + b2d_exchg_symbols))
-        self._check_if_symbols_available(required_symbols, local) # if not, raise Exception
+        self._check_if_symbols_available(required_symbols, local)  # if not, raise Exception
         if not latest:
             if local:
                 min_prices = self._get_local_prices(self.data_path, required_symbols, self.data_time_difference_to_UTC, '1111')
@@ -358,8 +363,6 @@ class MT5PricesLoader(BaseMT5PricesLoader): # created note 86a
             prices = self._get_mt5_prices(required_symbols, timeframe, self.timezone, start, end, '1111', count)
             self.Prices = self.get_latest_Prices_format(symbols, prices, q2d_exchg_symbols, count)
 
-
-
 # @dataclass
 # class get_data_TKPARAM(TkWidgetLabel):
 #     symbols: dataclass = TkInitWidget(cat='get_data', id='1', type=TkWidgetLabel.DROPDOWN, value=['EURUSD', 'GBPUSD', 'USDJPY'])
@@ -371,5 +374,3 @@ class MT5PricesLoader(BaseMT5PricesLoader): # created note 86a
 #
 # d = get_data_TKPARAM()
 # print()
-
-

@@ -1,4 +1,4 @@
-from tkinter import *
+import tkinter as tk
 from PIL import ImageTk, Image
 from tkinter import messagebox
 from tkinter import filedialog
@@ -13,10 +13,6 @@ from WindowMT5Controller import WindowMT5Controller
 class MainPage(TkWindow):
     def __init__(self):
         super(MainPage, self).__init__()
-        self.root = Tk()
-        self.root.title('Forex App')
-        self.root.geometry("400x100")
-        # define subpage controller
         self.windowMT5Controller = WindowMT5Controller()
 
     def onOperationClicked(self):
@@ -25,8 +21,16 @@ class MainPage(TkWindow):
         self.widgets['main']['operationStatus']['text'] = operation
         if operation == "MT5":
             self.windowMT5Controller.run(self.root)
+        elif operation == 'Data':
+            pass
 
     def run(self):
+        # define subpage controller
+        self.root = tk.Tk()
+        frame = self.getMainFrame()
+        frame.pack()
+
+    def getMainFrame(self):
         cat = 'main'
 
         # set default variable
@@ -43,8 +47,7 @@ class MainPage(TkWindow):
                          label='Now the operation is running: ', pos=(1, 0, 2))
         ], "Operation Selection")
 
-        # pack the frame
-        frame.pack()
+        return frame
 
 
 class App(AppSetting):

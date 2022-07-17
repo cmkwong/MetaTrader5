@@ -5,7 +5,7 @@ from TkWindow import TkWindow
 
 from backtest import timeModel
 # Atom
-from utils import paramModel
+from myUtils import paramModel
 
 
 class WindowMT5PricesLoader(TkWindow):
