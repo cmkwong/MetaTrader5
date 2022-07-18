@@ -71,7 +71,7 @@ tech_params = {
     'macd': [(12, 26, 9), (19, 39, 9)]
 }
 
-mt5Controller = MT5Controller(data_path=data_options['local_min_path'], timezone=data_options['timezone'], deposit_currency=data_options['deposit_currency'])
+mt5Controller = MT5Controller(timezone=data_options['timezone'], deposit_currency=data_options['deposit_currency'])
 # get the loader
 mt5Controller.mt5PricesLoader.getPrices(symbols=data_options['symbols'],
                                         start=data_options['start'],
