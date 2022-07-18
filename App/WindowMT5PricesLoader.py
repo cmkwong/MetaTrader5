@@ -45,11 +45,10 @@ class WindowMT5PricesLoader(TkWindow):
             TkInitWidget(cat=cat, id='end', type=self.CALENDAR, label='End', default='2022-01-01', pos=(2, 0, 1)),
             TkInitWidget(cat=cat, id='timeframe', type=self.DROPDOWN, label='Time Frame',
                          value=list(timeModel.timeframe_ftext_dicts.keys()), default='1H', pos=(3, 0, 1)),
-            TkInitWidget(cat=cat, id='local', type=self.DROPDOWN, label='Local', value=[0, 1], default='0', pos=(4, 0, 1)),
-            TkInitWidget(cat=cat, id='latest', type=self.DROPDOWN, label='latest', value=[0, 1], default='0', pos=(5, 0, 1)),
-            TkInitWidget(cat=cat, id='count', type=self.TEXTFIELD, label='Count', default=10, pos=(6, 0, 1)),
-            TkInitWidget(cat=cat, id='ohlcvs', type=self.TEXTFIELD, label='ohlcvs', default=111111, pos=(7, 0, 1)),
-            TkInitWidget(cat=cat, id='submit', type=self.BUTTON, label='Submit', command=lambda: self.onClickGetData(root, cat), pos=(8, 0, 1))
+            TkInitWidget(cat=cat, id='latest', type=self.DROPDOWN, label='latest', value=[0, 1], default='0', pos=(4, 0, 1)),
+            TkInitWidget(cat=cat, id='count', type=self.TEXTFIELD, label='Count', default=10, pos=(5, 0, 1)),
+            TkInitWidget(cat=cat, id='ohlcvs', type=self.TEXTFIELD, label='ohlcvs', default='111111', pos=(6, 0, 1)),
+            TkInitWidget(cat=cat, id='submit', type=self.BUTTON, label='Submit', command=lambda: self.onClickGetData(root, cat), pos=(7, 0, 1))
         ], 'Get Data Setting')
         return frame
 

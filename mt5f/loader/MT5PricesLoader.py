@@ -16,12 +16,8 @@ from myUtils.paramType import SymbolList, DatetimeTuple, InputBoolean
 
 # mt5f loader price loader
 class MT5PricesLoader(BaseMT5PricesLoader):  # created note 86a
-    def __init__(self, all_symbol_info, data_path='', timezone='Hongkong', deposit_currency='USD'):
+    def __init__(self, all_symbol_info, timezone='Hongkong', deposit_currency='USD'):
         self.all_symbol_info = all_symbol_info
-
-        # for local
-        self.data_path = data_path  # a symbol of loader that stored in this directory
-        self.data_time_difference_to_UTC = config.DOWNLOADED_MIN_DATA_TIME_BETWEEN_UTC
 
         # property
         self.Prices = {}
@@ -36,24 +32,18 @@ class MT5PricesLoader(BaseMT5PricesLoader):  # created note 86a
         self.latest_Prices_Collection = collections.namedtuple("latest_Prices_Collection", ['c', 'cc', 'ptDv', 'quote_exchg', 'rawDfs'])  # for latest Prices
         self._symbols_available = False  # only for usage of _check_if_symbols_available()
 
-    def check_if_symbols_available(self, required_symbols, local):
+    def check_if_symbols_available(self, required_symbols):
         """
         check if symbols exist, note 83h
         :param required_symbols: [str]
-        :param local: Boolean
         :return: None
         """
         if not self._symbols_available:
             for symbol in required_symbols:
-                if not local:
-                    try:
-                        _ = self.all_symbol_info[symbol]
-                    except KeyError:
-                        raise Exception("The {} is not provided in this broker.".format(symbol))
-                else:
-                    fs = files.get_file_list(self.data_path)
-                    if symbol not in fs:
-                        raise Exception("The {} is not provided in my {}.".format(symbol, self.data_path))
+                try:
+                    _ = self.all_symbol_info[symbol]
+                except KeyError:
+                    raise Exception("The {} is not provided in this broker.".format(symbol))
             self._symbols_available = True
 
     def change_timeframe(self, df, timeframe='1H'):
@@ -149,29 +139,19 @@ class MT5PricesLoader(BaseMT5PricesLoader):  # created note 86a
 
         return Prices
 
-    def getPrices(self, *, symbols: SymbolList, start: DatetimeTuple, end: DatetimeTuple, timeframe: str, local: InputBoolean = False, latest: InputBoolean = False, count: int = 10, ohlcvs: str = '111100'):
+    def getPrices(self, *, symbols: SymbolList, start: DatetimeTuple, end: DatetimeTuple, timeframe: str, latest: InputBoolean = False, count: int = 10, ohlcvs: str = '111100'):
         """
-        :param local: if getting from local or from mt5f
         :param latest: if getting loader from past to now or from start to end
         """
         q2d_exchg_symbols = exchgModel.get_exchange_symbols(symbols, self.all_symbol_info, self.deposit_currency, 'q2d')
         b2d_exchg_symbols = exchgModel.get_exchange_symbols(symbols, self.all_symbol_info, self.deposit_currency, 'b2d')
 
         # read loader in dictionary format
-        prices, min_prices = {}, {}
         required_symbols = list(set(symbols + q2d_exchg_symbols + b2d_exchg_symbols))
-        self.check_if_symbols_available(required_symbols, local)  # if not, raise Exception
+        self.check_if_symbols_available(required_symbols)  # if not, raise Exception
         if not latest:
-            if local:
-                min_prices = self._get_local_prices(self.data_path, required_symbols, self.data_time_difference_to_UTC, ohlcvs)
-                # change the timeframe if needed
-                if timeframe != '1min':  # 1 minute loader should not modify, saving the computation cost
-                    for symbol in required_symbols:
-                        prices[symbol] = self.change_timeframe(min_prices[symbol], timeframe)
-                self.Prices, self.min_Prices = self.get_Prices_format(symbols, prices, q2d_exchg_symbols, b2d_exchg_symbols), self.get_Prices_format(symbols, min_prices, q2d_exchg_symbols, b2d_exchg_symbols)
-            else:
-                prices = self._get_mt5_prices(required_symbols, timeframe, self.timezone, start, end, ohlcvs, count)
-                self.Prices = self.get_Prices_format(symbols, prices, q2d_exchg_symbols, b2d_exchg_symbols)
+            prices = self._get_mt5_prices(required_symbols, timeframe, self.timezone, start, end, ohlcvs, count)
+            self.Prices = self.get_Prices_format(symbols, prices, q2d_exchg_symbols, b2d_exchg_symbols)
         else:
             prices = self._get_mt5_prices(required_symbols, timeframe, self.timezone, start, end, ohlcvs, count)
             self.Prices = self.get_latest_Prices_format(symbols, prices, q2d_exchg_symbols, count)
