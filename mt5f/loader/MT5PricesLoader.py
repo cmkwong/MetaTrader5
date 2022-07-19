@@ -1,9 +1,10 @@
 import config
 from backtest import exchgModel, pointsModel
-from mt5f.loader import files
 from mt5f.loader.BaseMT5PricesLoader import BaseMT5PricesLoader
 from mt5f.mt5utils import segregation
+
 import collections
+import pandas as pd
 
 from myUtils.paramType import SymbolList, DatetimeTuple, InputBoolean
 
@@ -19,17 +20,13 @@ class MT5PricesLoader(BaseMT5PricesLoader):  # created note 86a
     def __init__(self, all_symbol_info, timezone='Hongkong', deposit_currency='USD'):
         self.all_symbol_info = all_symbol_info
 
-        # property
-        self.Prices = {}
-        self.min_Prices = {}
-
         # for mt5f
         self.timezone = timezone
         self.deposit_currency = deposit_currency
 
         # prepare
-        self.Prices_Collection = collections.namedtuple("Prices_Collection", ['o', 'h', 'l', 'c', 'cc', 'ptDv', 'quote_exchg', 'base_exchg', 'rawDfs'])
-        self.latest_Prices_Collection = collections.namedtuple("latest_Prices_Collection", ['c', 'cc', 'ptDv', 'quote_exchg', 'rawDfs'])  # for latest Prices
+        self.Prices_Collection = collections.namedtuple("Prices_Collection", ['o', 'h', 'l', 'c', 'cc', 'ptDv', 'quote_exchg', 'base_exchg'])
+        self.latest_Prices_Collection = collections.namedtuple("latest_Prices_Collection", ['c', 'cc', 'ptDv', 'quote_exchg'])  # for latest Prices
         self._symbols_available = False  # only for usage of _check_if_symbols_available()
 
     def check_if_symbols_available(self, required_symbols):
@@ -70,6 +67,21 @@ class MT5PricesLoader(BaseMT5PricesLoader):  # created note 86a
         Test_Prices = prices._make(test_list)
         return Train_Prices, Test_Prices
 
+    def getOhlcFromPrices(self, symbols, Prices):
+        """
+        :param symbols: [symbol str]
+        :param Prices: Prices collection
+        :return: {pd.DataFrame}
+        """
+        ohlcs = {}
+        for i, symbol in enumerate(symbols):
+            o = Prices.o.iloc[:, i].rename('open')
+            h = Prices.o.iloc[:, i].rename('high')
+            l = Prices.o.iloc[:, i].rename('low')
+            c = Prices.o.iloc[:, i].rename('close')
+            ohlcs[symbol] = pd.concat([o, h, l, c], axis=1)
+        return ohlcs
+
     def get_Prices_format(self, symbols, prices, q2d_exchg_symbols, b2d_exchg_symbols):
 
         # get open prices
@@ -105,8 +117,8 @@ class MT5PricesLoader(BaseMT5PricesLoader):  # created note 86a
                                         cc=changes,
                                         ptDv=points_dff_values_df,
                                         quote_exchg=q2d_exchange_rate_df,
-                                        base_exchg=b2d_exchange_rate_df,
-                                        rawDfs=prices)
+                                        base_exchg=b2d_exchange_rate_df
+                                        )
 
         return Prices
 
@@ -134,8 +146,8 @@ class MT5PricesLoader(BaseMT5PricesLoader):  # created note 86a
         Prices = self.latest_Prices_Collection(c=close_prices,
                                                cc=change_close_prices,
                                                ptDv=points_dff_values_df,
-                                               quote_exchg=q2d_exchange_rate_df,
-                                               rawDfs=prices)
+                                               quote_exchg=q2d_exchange_rate_df
+                                               )
 
         return Prices
 
@@ -149,12 +161,12 @@ class MT5PricesLoader(BaseMT5PricesLoader):  # created note 86a
         # read loader in dictionary format
         required_symbols = list(set(symbols + q2d_exchg_symbols + b2d_exchg_symbols))
         self.check_if_symbols_available(required_symbols)  # if not, raise Exception
+        prices = self._get_mt5_prices(required_symbols, timeframe, self.timezone, start, end, ohlcvs, count)
         if not latest:
-            prices = self._get_mt5_prices(required_symbols, timeframe, self.timezone, start, end, ohlcvs, count)
-            self.Prices = self.get_Prices_format(symbols, prices, q2d_exchg_symbols, b2d_exchg_symbols)
+            Prices = self.get_Prices_format(symbols, prices, q2d_exchg_symbols, b2d_exchg_symbols)
         else:
-            prices = self._get_mt5_prices(required_symbols, timeframe, self.timezone, start, end, ohlcvs, count)
-            self.Prices = self.get_latest_Prices_format(symbols, prices, q2d_exchg_symbols, count)
+            Prices = self.get_latest_Prices_format(symbols, prices, q2d_exchg_symbols, count)
+        return Prices
 
 # @dataclass
 # class get_data_TKPARAM(TkWidgetLabel):

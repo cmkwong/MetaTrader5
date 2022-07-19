@@ -73,15 +73,14 @@ tech_params = {
 
 mt5Controller = MT5Controller(timezone=data_options['timezone'], deposit_currency=data_options['deposit_currency'])
 # get the loader
-mt5Controller.mt5PricesLoader.getPrices(symbols=data_options['symbols'],
-                                        start=data_options['start'],
-                                        end=data_options['end'],
-                                        timeframe=data_options['timeframe'],
-                                        local=data_options['local'])
+Prices = mt5Controller.mt5PricesLoader.getPrices(symbols=data_options['symbols'],
+                                                 start=data_options['start'],
+                                                 end=data_options['end'],
+                                                 timeframe=data_options['timeframe']
+                                                 )
 
 # split into train set and test set
-Train_Prices, Test_Prices = mt5Controller.mt5PricesLoader.split_Prices(
-    mt5Controller.mt5PricesLoader.Prices, percentage=data_options['trainTestSplit'])
+Train_Prices, Test_Prices = mt5Controller.mt5PricesLoader.split_Prices(Prices, percentage=data_options['trainTestSplit'])
 
 # build the env (long)
 env = environ.TechicalForexEnv(data_options['symbols'][0], Train_Prices, tech_params, True,
