@@ -1,14 +1,9 @@
-from tkinter import *
-from PIL import ImageTk, Image
-from tkinter import messagebox
-from tkinter import filedialog
-from tkcalendar import Calendar
-
 from AppSetting import AppSetting
 from TkInitWidget import TkInitWidget
 from TkWindow import TkWindow
 from WindowMT5PricesLoader import WindowMT5PricesLoader
 
+from config import APPStorage
 from mt5f.MT5Controller import MT5Controller
 from backtest import timeModel
 
@@ -33,11 +28,14 @@ class WindowMT5Controller(TkWindow):
         frame = self.createFrame(root, [
             TkInitWidget(cat=cat, id='getData', type=self.BUTTON, label='Get Data From MT5', pos=(0, 1, 1),
                          command=lambda: self.windowMT5PricesLoader.run(root)),
-            TkInitWidget(cat=cat, id='execute', type=self.BUTTON, label='Execute on MT5', pos=(1, 1, 1), command=None),
+            TkInitWidget(cat=cat, id='execute', type=self.BUTTON, label='Execute on MT5', pos=(1, 1, 1), command=self.onClickTest),
             TkInitWidget(cat=cat, id='Setting', type=self.BUTTON, label='Setting', pos=(2, 1, 1),
                          command=lambda: self.openTopWindow(root, [self.getInputParamFrame])),
         ], "Operation Panel")
         return frame
+
+    def onClickTest(self):
+        print(APPStorage['Prices'])
 
     def onClickSettingOk(self, root, cat):
         allParamFilled = True

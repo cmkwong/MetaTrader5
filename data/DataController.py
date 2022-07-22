@@ -10,7 +10,7 @@ class DataController(EndPoints, DfModel):
 
     def uploadForexData(self, *, tableName: str, forexDf: pd.DataFrame):
         """
-        upload forex data ohlcvs
+        upload forex data ohlcvs: open, high, low, close, volume, spread
         """
         forexDf['datetime'] = forexDf.index
         forexDf['datetime'] = forexDf['datetime'].dt.strftime('%Y-%m-%d %H:%M:%S')

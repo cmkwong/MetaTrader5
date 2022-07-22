@@ -3,6 +3,7 @@ from tkinter import *
 from TkInitWidget import TkInitWidget
 from TkWindow import TkWindow
 
+from config import APPStorage
 from backtest import timeModel
 # Atom
 from myUtils import paramModel
@@ -26,6 +27,7 @@ class WindowMT5PricesLoader(TkWindow):
             params.append(param)
         requiredParams = paramModel.insert_params(self.mt5Controller.mt5PricesLoader.getPrices, params)
         Prices = self.mt5Controller.mt5PricesLoader.getPrices(**requiredParams)
+        APPStorage['Prices'] = Prices
         # show the status
         cols = [k for k in Prices.__dataclass_fields__.keys()]
         text = f"""
