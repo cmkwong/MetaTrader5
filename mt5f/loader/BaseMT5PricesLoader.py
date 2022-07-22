@@ -6,7 +6,6 @@ import pandas as pd
 from backtest import timeModel
 from mt5f.loader import files
 
-
 class BaseMT5PricesLoader:
 
     def _get_symbol_info_tick(self, symbol):

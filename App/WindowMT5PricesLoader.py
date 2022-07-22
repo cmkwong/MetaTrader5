@@ -25,11 +25,13 @@ class WindowMT5PricesLoader(TkWindow):
             param = self.getWidgetValue(cat, id)
             params.append(param)
         requiredParams = paramModel.insert_params(self.mt5Controller.mt5PricesLoader.getPrices, params)
-        self.mt5Controller.mt5PricesLoader.getPrices(**requiredParams)
+        Prices = self.mt5Controller.mt5PricesLoader.getPrices(**requiredParams)
         # show the status
+        cols = [k for k in Prices.__dataclass_fields__.keys()]
         text = f"""
         Data got times {self.getDataCount}:
-        The line of row: {len(self.mt5Controller.mt5PricesLoader.Prices.c)}
+        The line of row: {len(Prices.c)}
+        The columns: {len(cols)}
         """
         self.widgets['status']['showStatus'].insert(END, text)
         self.widgets['status']['showStatus'].see(END)
