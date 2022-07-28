@@ -1,6 +1,6 @@
 import tkinter as tk
 
-from appVariable import APPClasses
+from appVariable import AppClasses
 from AppSetting import AppSetting
 from TkWindow import TkWindow
 from TkInitWidget import TkInitWidget
@@ -20,7 +20,7 @@ class MainPage(TkWindow):
         print(operation)
         self.widgets['main']['operationStatus']['text'] = operation
         if operation == "MT5":
-            if MT5Controller.__name__ not in APPClasses.keys():
+            if MT5Controller.__name__ not in AppClasses.keys():
                 self.openTopWindowByFrame(self.root, [self.getInputParamFrame], 'MT5Controller Setting', classFn=MT5Controller)
             else:
                 self.windowMT5Controller.run(self.root)
@@ -67,7 +67,7 @@ class MainPage(TkWindow):
             allParamFilled = allParamFilled and bool(self.getWidgetValue(cat, id))
             params.append(param)
         if (allParamFilled):
-            APPClasses[classFn.__name__] = classFn(*params)
+            AppClasses[classFn.__name__] = classFn(*params)
             print('Param set')
             root.destroy()
 

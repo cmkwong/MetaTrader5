@@ -3,7 +3,7 @@ from TkInitWidget import TkInitWidget
 from TkWindow import TkWindow
 from WindowMT5PricesLoader import WindowMT5PricesLoader
 
-from appVariable import APPStorage
+from appVariable import AppStorage
 from mt5f.MT5Controller import MT5Controller
 from backtest import timeModel
 
@@ -30,4 +30,4 @@ class WindowMT5Controller(TkWindow):
         return frame
 
     def onClickTest(self):
-        print(APPStorage['Prices'])
+        print(AppStorage['Prices'])

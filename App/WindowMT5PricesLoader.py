@@ -3,8 +3,8 @@ from tkinter import *
 from TkInitWidget import TkInitWidget
 from TkWindow import TkWindow
 
-from appVariable import APPStorage
-from appVariable import APPClasses
+from appVariable import AppStorage
+from appVariable import AppClasses
 from backtest import timeModel
 # Atom
 from myUtils import paramModel
@@ -18,17 +18,28 @@ class WindowMT5PricesLoader(TkWindow):
     def run(self, root):
         self.openTopWindowByFrame(root, [self.getGetDataFrame, self.getStatusFrame], title='Prices Loader', windowSize='400x600')
 
+    def storeData(self, symbols, Prices):
+        dfs = AppClasses['MT5Controller'].mt5PricesLoader.getOhlcvsFromPrices(symbols, Prices)
+        for symbol, df in dfs.items():
+            count = int(self.getWidgetValue('getData', 'count')) # convert into integer
+            if (count > 0):
+                AppStorage['live'][symbol] = df
+            elif (count == 0):
+                AppStorage['history'][symbol] = df
+
     def onClickGetData(self, root, cat):
         params = []
         for id, widget in self.widgets[cat].items():
             if type(widget).__name__ == self.BUTTON: continue
             param = self.getWidgetValue(cat, id)
             params.append(param)
-        requiredParams = paramModel.insert_params(APPClasses['MT5Controller'].mt5PricesLoader.getPrices, params)
-        Prices = APPClasses['MT5Controller'].mt5PricesLoader.getPrices(**requiredParams)
-        APPStorage['Prices'] = Prices
-        # show the status
+        requiredParams = paramModel.insert_params(AppClasses['MT5Controller'].mt5PricesLoader.getPrices, params)
+        Prices = AppClasses['MT5Controller'].mt5PricesLoader.getPrices(**requiredParams)
+        # store data
+        self.storeData(requiredParams['symbols'], Prices)
+        # which of fields getting valid
         cols = Prices.getValidCols()
+        # show the status
         text = f"""
         Data got times {self.getDataCount}:
         The line of row: {len(Prices.c)}

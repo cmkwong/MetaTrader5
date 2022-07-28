@@ -1,3 +1,6 @@
 # storage for APP
-APPStorage = {}
-APPClasses = {}
+AppStorage = {
+    'history': {},
+    'live': {}
+}
+AppClasses = {}

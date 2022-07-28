@@ -56,7 +56,7 @@ class BaseMT5PricesLoader:
         :param ohlcvs: str of code, eg: '1001'
         :return: list, eg: ['open', 'close']
         """
-        type_names = ['open', 'high', 'low', 'close', 'tick_volume', 'spread']
+        type_names = ['open', 'high', 'low', 'close', 'volume', 'spread']
         required_types = []
         for i, c in enumerate(ohlcvs):
             if c == '1':

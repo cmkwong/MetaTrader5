@@ -68,20 +68,24 @@ class MT5PricesLoader(BaseMT5PricesLoader):  # created note 86a
         Test_Prices = prices._make(test_list)
         return Train_Prices, Test_Prices
 
-    def getOhlcFromPrices(self, symbols, Prices):
+    def getOhlcvsFromPrices(self, symbols, Prices, ohlcvs):
         """
+        resume into normal dataframe
         :param symbols: [symbol str]
         :param Prices: Prices collection
         :return: {pd.DataFrame}
         """
-        ohlcs = {}
+        ohlcsvs = {}
+        vaildCol = Prices.getValidCols()
         for i, symbol in enumerate(symbols):
-            o = Prices.o.iloc[:, i].rename('open')
-            h = Prices.o.iloc[:, i].rename('high')
-            l = Prices.o.iloc[:, i].rename('low')
-            c = Prices.o.iloc[:, i].rename('close')
-            ohlcs[symbol] = pd.concat([o, h, l, c], axis=1)
-        return ohlcs
+            if ohlcvs[0] == 1: o = Prices.o.iloc[:, i].rename('open')
+            h = Prices.h.iloc[:, i].rename('high')
+            l = Prices.l.iloc[:, i].rename('low')
+            c = Prices.c.iloc[:, i].rename('close')
+            v = Prices.volume.iloc[:, i].rename('volume')  # volume
+            s = Prices.spread.iloc[:, i].rename('spread')  # spread
+            ohlcsvs[symbol] = pd.concat([o, h, l, c, v, s], axis=1)
+        return ohlcsvs
 
     def get_Prices_format(self, symbols, prices, q2d_exchg_symbols, b2d_exchg_symbols, ohlcvs):
 
@@ -168,6 +172,7 @@ class MT5PricesLoader(BaseMT5PricesLoader):  # created note 86a
     def getPrices(self, *, symbols: SymbolList, start: DatetimeTuple, end: DatetimeTuple, timeframe: str, count: int = 0, ohlcvs: str = '111100'):
         """
         :param count: 0 if want to get the data from start to end, otherwise will get the latest bar data
+        :param ohlcvs: 000000 means that get simple version of prices
         """
         q2d_exchg_symbols = exchgModel.get_exchange_symbols(symbols, self.all_symbol_info, self.deposit_currency, 'q2d')
         b2d_exchg_symbols = exchgModel.get_exchange_symbols(symbols, self.all_symbol_info, self.deposit_currency, 'b2d')
