@@ -3,6 +3,7 @@ from datetime import datetime
 import MetaTrader5 as mt5
 import pandas as pd
 
+from mt5f import BaseMt5
 from backtest import timeModel
 from mt5f.loader import files
 

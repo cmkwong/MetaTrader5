@@ -70,7 +70,7 @@ class TkWidget(TkWidgetLabel):
             if ele.default:
                 variable.set(ele.default)
         elif elementType == self.BUTTON:
-            widget = tk.Button(root, text=ele.label, command=ele.command, **style)
+            widget = tk.Button(root, text=ele.label, command=ele.onClick, **style)
             variable = widget
         elif elementType == self.SCROLLEDTEXT:
             widget = scrolledtext.ScrolledText(root, undo=False, **style)

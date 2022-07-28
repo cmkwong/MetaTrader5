@@ -3,21 +3,20 @@ from tkinter import *
 from TkInitWidget import TkInitWidget
 from TkWindow import TkWindow
 
-from config import APPStorage
+from appVariable import APPStorage
+from appVariable import APPClasses
 from backtest import timeModel
 # Atom
 from myUtils import paramModel
 
 
 class WindowMT5PricesLoader(TkWindow):
-    def __init__(self, mt5Controller):
+    def __init__(self):
         super(WindowMT5PricesLoader, self).__init__()
-        self.isSetParam = False
-        self.mt5Controller = mt5Controller
         self.getDataCount = 1
 
     def run(self, root):
-        self.openTopWindow(root, [self.getGetDataFrame, self.getStatusFrame], '400x600')
+        self.openTopWindowByFrame(root, [self.getGetDataFrame, self.getStatusFrame], windowSize='400x600')
 
     def onClickGetData(self, root, cat):
         params = []
@@ -25,8 +24,8 @@ class WindowMT5PricesLoader(TkWindow):
             if type(widget).__name__ == self.BUTTON: continue
             param = self.getWidgetValue(cat, id)
             params.append(param)
-        requiredParams = paramModel.insert_params(self.mt5Controller.mt5PricesLoader.getPrices, params)
-        Prices = self.mt5Controller.mt5PricesLoader.getPrices(**requiredParams)
+        requiredParams = paramModel.insert_params(APPClasses['MT5Controller'].mt5PricesLoader.getPrices, params)
+        Prices = APPClasses['MT5Controller'].mt5PricesLoader.getPrices(**requiredParams)
         APPStorage['Prices'] = Prices
         # show the status
         cols = [k for k in Prices.__dataclass_fields__.keys()]
@@ -52,7 +51,7 @@ class WindowMT5PricesLoader(TkWindow):
             TkInitWidget(cat=cat, id='latest', type=self.DROPDOWN, label='latest', value=[0, 1], default='0', pos=(4, 0, 1)),
             TkInitWidget(cat=cat, id='count', type=self.TEXTFIELD, label='Count', default=10, pos=(5, 0, 1)),
             TkInitWidget(cat=cat, id='ohlcvs', type=self.TEXTFIELD, label='ohlcvs', default='111111', pos=(6, 0, 1)),
-            TkInitWidget(cat=cat, id='submit', type=self.BUTTON, label='Submit', command=lambda: self.onClickGetData(root, cat), pos=(7, 0, 1))
+            TkInitWidget(cat=cat, id='submit', type=self.BUTTON, label='Submit', onClick=lambda: self.onClickGetData(root, cat), pos=(7, 0, 1))
         ], 'Get Data Setting')
         return frame
 

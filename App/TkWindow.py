@@ -31,10 +31,11 @@ class TkWindow(TkWidget):
             self.getWidget(frame, ele)
         return frame
 
-    def openTopWindow(self, root, getFrameCallbacks: list, windowSize='400x400'):
+    def openTopWindowByFrame(self, root, getFrameCallbacks: list, title='tk window', windowSize='400x400', **kwargs):
         subRoot = tk.Toplevel(root)
+        subRoot.title(title)
         subRoot.geometry(windowSize)
         for getFrameCallback in getFrameCallbacks:
-            frame = getFrameCallback(subRoot)
+            frame = getFrameCallback(subRoot, **kwargs)
             frame.pack()
         return subRoot
