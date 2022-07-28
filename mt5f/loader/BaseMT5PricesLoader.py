@@ -7,6 +7,7 @@ from mt5f import BaseMt5
 from backtest import timeModel
 from mt5f.loader import files
 
+
 class BaseMT5PricesLoader:
 
     def _get_symbol_info_tick(self, symbol):
@@ -62,7 +63,7 @@ class BaseMT5PricesLoader:
                 required_types.append(type_names[i])
         return required_types
 
-    def _get_mt5_prices(self, symbols, timeframe, timezone, start=None, end=None, ohlcvs='111100', count=10):
+    def _get_mt5_prices(self, symbols, timeframe, timezone, start=None, end=None, ohlcvs='111100', count: int = 10):
         """
         :param symbols: [str]
         :param timeframe: str, '1H'
@@ -77,10 +78,10 @@ class BaseMT5PricesLoader:
         required_types = self._price_type_from_code(ohlcvs)
         prices_df = None
         for i, symbol in enumerate(symbols):
-            if start == None and end == None:  # get the latest units of loader
+            if count > 0:  # get the latest units of loader
                 price = self._get_current_bars(symbol, timeframe, count).loc[:, required_types]
                 join = 'inner'  # if getting count, need to join=inner to check if loader getting completed
-            elif start != None:  # get loader from start to end
+            elif count == 0:  # get loader from start to end
                 price = self._get_historical_data(symbol, timeframe, timezone, start, end).loc[:, required_types]
             else:
                 raise Exception('start-date must be set when end-date is being set.')

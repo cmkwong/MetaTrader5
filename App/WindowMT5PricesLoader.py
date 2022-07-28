@@ -16,7 +16,7 @@ class WindowMT5PricesLoader(TkWindow):
         self.getDataCount = 1
 
     def run(self, root):
-        self.openTopWindowByFrame(root, [self.getGetDataFrame, self.getStatusFrame], windowSize='400x600')
+        self.openTopWindowByFrame(root, [self.getGetDataFrame, self.getStatusFrame], title='Prices Loader', windowSize='400x600')
 
     def onClickGetData(self, root, cat):
         params = []
@@ -28,7 +28,7 @@ class WindowMT5PricesLoader(TkWindow):
         Prices = APPClasses['MT5Controller'].mt5PricesLoader.getPrices(**requiredParams)
         APPStorage['Prices'] = Prices
         # show the status
-        cols = [k for k in Prices.__dataclass_fields__.keys()]
+        cols = Prices.getValidCols()
         text = f"""
         Data got times {self.getDataCount}:
         The line of row: {len(Prices.c)}
@@ -48,10 +48,9 @@ class WindowMT5PricesLoader(TkWindow):
             TkInitWidget(cat=cat, id='end', type=self.CALENDAR, label='End', default='2022-01-01', pos=(2, 0, 1)),
             TkInitWidget(cat=cat, id='timeframe', type=self.DROPDOWN, label='Time Frame',
                          value=list(timeModel.timeframe_ftext_dicts.keys()), default='1H', pos=(3, 0, 1)),
-            TkInitWidget(cat=cat, id='latest', type=self.DROPDOWN, label='latest', value=[0, 1], default='0', pos=(4, 0, 1)),
-            TkInitWidget(cat=cat, id='count', type=self.TEXTFIELD, label='Count', default=10, pos=(5, 0, 1)),
-            TkInitWidget(cat=cat, id='ohlcvs', type=self.TEXTFIELD, label='ohlcvs', default='111111', pos=(6, 0, 1)),
-            TkInitWidget(cat=cat, id='submit', type=self.BUTTON, label='Submit', onClick=lambda: self.onClickGetData(root, cat), pos=(7, 0, 1))
+            TkInitWidget(cat=cat, id='count', type=self.TEXTFIELD, label='Count', default='0', pos=(4, 0, 1)),
+            TkInitWidget(cat=cat, id='ohlcvs', type=self.TEXTFIELD, label='ohlcvs', default='111111', pos=(5, 0, 1)),
+            TkInitWidget(cat=cat, id='submit', type=self.BUTTON, label='Submit', onClick=lambda: self.onClickGetData(root, cat), pos=(6, 0, 1))
         ], 'Get Data Setting')
         return frame
 

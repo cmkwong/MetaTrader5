@@ -165,9 +165,9 @@ class MT5PricesLoader(BaseMT5PricesLoader):  # created note 86a
 
         return Prices
 
-    def getPrices(self, *, symbols: SymbolList, start: DatetimeTuple, end: DatetimeTuple, timeframe: str, latest: InputBoolean = False, count: int = 10, ohlcvs: str = '111100'):
+    def getPrices(self, *, symbols: SymbolList, start: DatetimeTuple, end: DatetimeTuple, timeframe: str, count: int = 0, ohlcvs: str = '111100'):
         """
-        :param latest: if getting loader from past to now or from start to end
+        :param count: 0 if want to get the data from start to end, otherwise will get the latest bar data
         """
         q2d_exchg_symbols = exchgModel.get_exchange_symbols(symbols, self.all_symbol_info, self.deposit_currency, 'q2d')
         b2d_exchg_symbols = exchgModel.get_exchange_symbols(symbols, self.all_symbol_info, self.deposit_currency, 'b2d')
@@ -176,7 +176,7 @@ class MT5PricesLoader(BaseMT5PricesLoader):  # created note 86a
         required_symbols = list(set(symbols + q2d_exchg_symbols + b2d_exchg_symbols))
         self.check_if_symbols_available(required_symbols)  # if not, raise Exception
         prices = self._get_mt5_prices(required_symbols, timeframe, self.timezone, start, end, ohlcvs, count)
-        if not latest:
+        if count == 0:
             Prices = self.get_Prices_format(symbols, prices, q2d_exchg_symbols, b2d_exchg_symbols, ohlcvs)
         else:
             Prices = self.get_latest_Prices_format(symbols, prices, q2d_exchg_symbols, count)
