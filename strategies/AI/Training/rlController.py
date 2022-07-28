@@ -11,7 +11,7 @@ import torch
 import torch.optim as optim
 import numpy as np
 
-from RL import environ, models, agents, actions, experience, validation
+from RL import environ, models, agents, actions, experience, criterion
 from mt5f.MT5Controller import MT5Controller
 
 now = datetime.now()
@@ -124,7 +124,7 @@ best_mean_val = None
 
 # create the validator
 # TODO - need to modified the validator
-validator = validation.validator(
+validator = criterion.validator(
     env_val, agent, save_path=os.path.join(*[RL_options['val_save_path'], RL_options['dt_str']]), comission=0.1)
 
 # create the monitor
@@ -173,7 +173,7 @@ with common.RewardTracker(writer, np.inf, group_rewards=100) as reward_tracker:
             with open(os.path.join(*[RL_options['net_saved_path'], DT_STRING, f"checkpoint-{step_idx}.loader"]), "wb") as f:
                 torch.save(checkpoint, f)
 
-        # TODO: validation has something to changed
+        # TODO: criterion has something to changed
         if step_idx % RL_options['validation_step'] == 0:
             net_processor.eval_mode(batch_size=1)
             # writer.add_scalar("validation_episodes", validation_episodes, step_idx)
