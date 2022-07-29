@@ -9,6 +9,8 @@ from mt5f.loader import files
 
 
 class BaseMT5PricesLoader:
+    # the column name got from MT5
+    type_names = ['open', 'high', 'low', 'close', 'tick_volume', 'spread']
 
     def _get_symbol_info_tick(self, symbol):
         lasttick = mt5.symbol_info_tick(symbol)._asdict()
@@ -56,11 +58,10 @@ class BaseMT5PricesLoader:
         :param ohlcvs: str of code, eg: '1001'
         :return: list, eg: ['open', 'close']
         """
-        type_names = ['open', 'high', 'low', 'close', 'volume', 'spread']
         required_types = []
         for i, c in enumerate(ohlcvs):
             if c == '1':
-                required_types.append(type_names[i])
+                required_types.append(self.type_names[i])
         return required_types
 
     def _get_mt5_prices(self, symbols, timeframe, timezone, start=None, end=None, ohlcvs='111100', count: int = 10):

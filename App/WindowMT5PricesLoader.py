@@ -19,7 +19,7 @@ class WindowMT5PricesLoader(TkWindow):
         self.openTopWindowByFrame(root, [self.getGetDataFrame, self.getStatusFrame], title='Prices Loader', windowSize='400x600')
 
     def storeData(self, symbols, Prices):
-        dfs = AppClasses['MT5Controller'].mt5PricesLoader.getOhlcvsFromPrices(symbols, Prices)
+        dfs = Prices.getOhlcvsFromPrices(symbols)
         for symbol, df in dfs.items():
             count = int(self.getWidgetValue('getData', 'count')) # convert into integer
             if (count > 0):
