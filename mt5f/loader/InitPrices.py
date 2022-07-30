@@ -8,12 +8,12 @@ class InitPrices:
     cc: pd.DataFrame
     ptDv: pd.DataFrame
     quote_exchg: pd.DataFrame
+    base_exchg: pd.DataFrame
     o: pd.DataFrame = pd.DataFrame()
     h: pd.DataFrame = pd.DataFrame()
     l: pd.DataFrame = pd.DataFrame()
     volume: pd.DataFrame = pd.DataFrame()
     spread: pd.DataFrame = pd.DataFrame()
-    base_exchg: pd.DataFrame = pd.DataFrame()
 
     # @o.setter
     # def o(self, value):
@@ -56,11 +56,11 @@ class InitPrices:
         :return: {pd.DataFrame}
         """
         ohlcsvs = {}
-        nameDict = {'o': 'open', 'h': 'high', 'l': 'low', 'c': 'close', 'volume': 'volume', 'spread': 'spread'}
+        nameDict = {'o': 'open', 'h': 'high', 'l': 'low', 'c': 'close', 'volume': 'volume', 'spread': 'spread', 'ptDv': 'ptDv', 'quote_exchg': 'quote_exchg', 'base_exchg': 'base_exchg'}
         for si, symbol in enumerate(symbols):
             requiredDf = pd.DataFrame()
-            for name, field in self.__dataclass_fields__.items(): # name = variable name; field = pd.dataframe/ value
-                if name not in nameDict.keys(): continue # if not ohlcvs cols, pass
+            for name, field in self.__dataclass_fields__.items():  # name = variable name; field = pd.dataframe/ value
+                if name not in nameDict.keys(): continue  # if not ohlcvs cols, pass
                 df = getattr(self, name)
                 if not df.empty:
                     dfCol = df.iloc[:, si].rename(nameDict[name])  # get required column
