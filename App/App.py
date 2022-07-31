@@ -5,15 +5,16 @@ from AppSetting import AppSetting
 from TkWindow import TkWindow
 from TkInitWidget import TkInitWidget
 from WindowMT5Controller import WindowMT5Controller
+from WindowDataController import WindowDataController
 from mt5f.MT5Controller import MT5Controller
-from mt5f.loader.MT5PricesLoader import MT5PricesLoader
-from mt5f.executor.MT5Executor import MT5Executor
+from data.DataController import DataController
 
 
 class MainPage(TkWindow):
     def __init__(self):
         super(MainPage, self).__init__()
         self.windowMT5Controller = WindowMT5Controller()
+        self.windowDataController = WindowDataController()
 
     def onOperationClicked(self):
         operation = self.getWidgetValue('main', 'operationDropdown')
@@ -25,7 +26,10 @@ class MainPage(TkWindow):
             else:
                 self.windowMT5Controller.run(self.root)
         elif operation == 'Data':
-            pass
+            if DataController.__name__ not in AppClasses.keys():
+                AppClasses[DataController.__name__] = DataController()
+            else:
+                self.windowDataController.run(self.root)
 
     def onSetting(self):
         operation = self.getWidgetValue('main', 'operationDropdown')

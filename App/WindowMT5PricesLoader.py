@@ -16,7 +16,7 @@ class WindowMT5PricesLoader(TkWindow):
         self.getDataCount = 1
 
     def run(self, root):
-        self.openTopWindowByFrame(root, [self.getGetDataFrame, self.getStatusFrame], title='Prices Loader', windowSize='400x600')
+        self.openTopWindowByFrame(root, [self.pricesFrame, self.statusFrame], title='Prices Loader', windowSize='400x600')
 
     def storeData(self, symbols, Prices):
         dfs = Prices.getOhlcvsFromPrices(symbols)
@@ -49,7 +49,7 @@ class WindowMT5PricesLoader(TkWindow):
         self.widgets['status']['showStatus'].see(END)
         self.getDataCount += 1
 
-    def getGetDataFrame(self, root):
+    def pricesFrame(self, root):
         cat = 'getData'
         # initWidgets = self.get_params_initWidgets(self.mt5Controller.mt5PricesLoader.get_data, cat)
         # frame = self.createFrame(root, initWidgets, 'Get Data Setting')
@@ -65,7 +65,7 @@ class WindowMT5PricesLoader(TkWindow):
         ], 'Get Data Setting')
         return frame
 
-    def getStatusFrame(self, root):
+    def statusFrame(self, root):
         cat = 'status'
         frame = self.createFrame(root, [
             TkInitWidget(cat=cat, id='showStatus', type=self.SCROLLEDTEXT, pos=(0, 0, 1), style={'height': 10, 'width': 40})

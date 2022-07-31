@@ -47,7 +47,7 @@ class DataController(EndPoints, DfModel):
         :return:
         """
         body = {
-            "colObj": {
+            "schemaObj": {
                 "datetime": "DATETIME NOT NULL PRIMARY KEY",
                 "open": "FLOAT",
                 "high": "FLOAT",
@@ -55,6 +55,8 @@ class DataController(EndPoints, DfModel):
                 "close": "FLOAT",
                 "volume": "FLOAT",
                 "spread": "FLOAT",
+                "base_exchg": "FLOAT",
+                "quote_exchg": "FLOAT"
             }
         }
         r = requests.get(self.createTableUrl.format(tableName), json=body)
