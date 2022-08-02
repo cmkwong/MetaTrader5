@@ -13,7 +13,7 @@ class TkInitWidget:
     onClick: any = None  # fn for button click, if widget type is button
     label: str = ''  # label beside to widget
     default: any = None  # default value, for textfield and dropdown
-    pos: tuple = (0, 0, 0)  # position
+    pos: tuple = None  # position
     style: Dict = None  # style
     targetType: any = None
 

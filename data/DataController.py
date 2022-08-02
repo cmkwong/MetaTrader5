@@ -8,13 +8,13 @@ from data.EndPoints import EndPoints
 # upload the forex loader
 class DataController(EndPoints, DfModel):
 
-    def uploadForexData(self, *, tableName: str, forexDf: pd.DataFrame):
+    def uploadForexData(self, forexDf: pd.DataFrame, *, tableName: str):
         """
         upload forex data ohlcvs: open, high, low, close, volume, spread
         """
         forexDf['datetime'] = forexDf.index
         forexDf['datetime'] = forexDf['datetime'].dt.strftime('%Y-%m-%d %H:%M:%S')
-        listData = self.df2ListDict(forexDf)
+        listData = forexDf.to_dict('records')
         r = requests.post(self.uploadForexDataUrl.format(tableName), json={'data': listData})
         if r.status_code != 200:
             print(r.text)

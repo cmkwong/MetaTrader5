@@ -3,8 +3,8 @@ from tkinter import *
 from TkInitWidget import TkInitWidget
 from TkWindow import TkWindow
 
-from appVariable import AppStorage
-from appVariable import AppClasses
+from AppStorage import AppData
+from AppStorage import AppClasses
 from backtest import timeModel
 # Atom
 from myUtils import paramModel
@@ -23,9 +23,9 @@ class WindowMT5PricesLoader(TkWindow):
         for symbol, df in dfs.items():
             count = int(self.getWidgetValue('getData', 'count')) # convert into integer
             if (count > 0):
-                AppStorage['live'][symbol] = df
+                AppData['live'][symbol] = df
             elif (count == 0):
-                AppStorage['history'][symbol] = df
+                AppData['history'][symbol] = df
 
     def onClickGetData(self, root, cat):
         params = []

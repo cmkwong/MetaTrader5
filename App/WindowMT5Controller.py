@@ -3,7 +3,7 @@ from TkInitWidget import TkInitWidget
 from TkWindow import TkWindow
 from WindowMT5PricesLoader import WindowMT5PricesLoader
 
-from appVariable import AppStorage
+from AppStorage import AppData
 from mt5f.MT5Controller import MT5Controller
 from backtest import timeModel
 
@@ -25,9 +25,6 @@ class WindowMT5Controller(TkWindow):
         frame = self.createFrame(root, [
             TkInitWidget(cat=cat, id='getData', type=self.BUTTON, label='Get Data From MT5', pos=(0, 1, 1),
                          onClick=lambda: self.windowMT5PricesLoader.run(root)),
-            TkInitWidget(cat=cat, id='execute', type=self.BUTTON, label='Execute on MT5', pos=(1, 1, 1), onClick=self.onClickTest),
+            TkInitWidget(cat=cat, id='execute', type=self.BUTTON, label='Execute on MT5', pos=(1, 1, 1), onClick=None),
         ], "Operation Panel")
         return frame
-
-    def onClickTest(self):
-        print(AppStorage['Prices'])

@@ -1,7 +1,7 @@
 from TkWindow import TkWindow
 from TkInitWidget import TkInitWidget
-from appVariable import AppStorage, AppClasses
-
+from AppStorage import AppData, AppClasses
+from data import DataController
 
 class WindowDataController(TkWindow):
 
@@ -11,16 +11,25 @@ class WindowDataController(TkWindow):
     def uploadDataFrame(self, root):
         cat = 'data'
 
-        historicalSymbols = list(AppStorage['history'].keys())
-        liveSymbols = list(AppStorage['live'].keys())
+        historicalSymbols = list(AppData['history'].keys())
+        liveSymbols = list(AppData['live'].keys())
+        if len(historicalSymbols) == 0: historicalSymbols.append('No Data')
+        if len(liveSymbols) == 0: liveSymbols.append('No Data')
 
         frame = self.createFrame(root, [
+            TkInitWidget(cat=cat, id='tableName', type=self.TEXTFIELD,
+                         label='Table Name'),
             TkInitWidget(cat=cat, id='historyUpload', type=self.DROPDOWN,
-                         label='Historical data: ', value=historicalSymbols, pos=(0, 0, 1)),
+                         label='Historical data: ', value=historicalSymbols),
+            TkInitWidget(cat=cat, id='btn_historyUpload', type=self.BUTTON,
+                         label='Upload', onClick=None),
             TkInitWidget(cat=cat, id='liveUpload', type=self.DROPDOWN,
-                         label='Live data: ', value=liveSymbols, pos=(1, 0, 1)),
-            TkInitWidget(cat=cat, id='uploadForex', type=self.BUTTON,
-                         label='Upload Forex Data', onClick=None, pos=(2, 0, 1)),
+                         label='Live data: ', value=liveSymbols),
+            TkInitWidget(cat=cat, id='btn_liveUpload', type=self.BUTTON,
+                         label='Upload', onClick=None),
         ], "Data Operation")
-
         return frame
+
+    def onUploadHistoryData(self, cat):
+        self.getWidgetValue(cat, historyUpload)
+        AppClasses[DataController.__name__].uploadForexData(AppData[''])

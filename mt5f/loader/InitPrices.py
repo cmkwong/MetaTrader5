@@ -15,31 +15,6 @@ class InitPrices:
     volume: pd.DataFrame = pd.DataFrame()
     spread: pd.DataFrame = pd.DataFrame()
 
-    # @o.setter
-    # def o(self, value):
-    #     if value == None:
-    #         self.o = pd.DataFrame()
-    # @h.setter
-    # def h(self, value):
-    #     if value == None:
-    #         self.h = pd.DataFrame()
-    # @l.setter
-    # def l(self, value):
-    #     if value == None:
-    #         self.l = pd.DataFrame()
-    # @volume.setter
-    # def volume(self, value):
-    #     if value == None:
-    #         self.volume = pd.DataFrame()
-    # @spread.setter
-    # def spread(self, value):
-    #     if value == None:
-    #         self.spread = pd.DataFrame()
-    # @base_exchg.setter
-    # def base_exchg(self, value):
-    #     if value == None:
-    #         self.base_exchg = pd.DataFrame()
-
     def getValidCols(self):
         validCol = []
         for name, field in self.__dataclass_fields__.items():

@@ -27,7 +27,10 @@ class TkWindow(TkWidget):
         else:
             frame = tk.Frame(root)
         # assign the widget onto frame
-        for ele in Widgets:
+        for i, ele in enumerate(Widgets):
+            # assign default pos, if not specific
+            if not ele.pos:
+                ele.pos = (i, 0, 1)  # (row, column, columnspan)
             self.getWidget(frame, ele)
         return frame
 

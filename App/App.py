@@ -1,6 +1,6 @@
 import tkinter as tk
 
-from appVariable import AppClasses
+from AppStorage import AppClasses
 from AppSetting import AppSetting
 from TkWindow import TkWindow
 from TkInitWidget import TkInitWidget
@@ -28,8 +28,7 @@ class MainPage(TkWindow):
         elif operation == 'Data':
             if DataController.__name__ not in AppClasses.keys():
                 AppClasses[DataController.__name__] = DataController()
-            else:
-                self.windowDataController.run(self.root)
+            self.windowDataController.run(self.root)
 
     def onSetting(self):
         operation = self.getWidgetValue('main', 'operationDropdown')
