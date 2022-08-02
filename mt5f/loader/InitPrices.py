@@ -33,9 +33,9 @@ class InitPrices:
         ohlcsvs = {}
         nameDict = {'o': 'open', 'h': 'high', 'l': 'low', 'c': 'close', 'volume': 'volume', 'spread': 'spread', 'ptDv': 'ptDv', 'quote_exchg': 'quote_exchg', 'base_exchg': 'base_exchg'}
         for si, symbol in enumerate(symbols):
-            requiredDf = pd.DataFrame()
+            requiredDf = pd.DataFrame() # create empty df
             for name, field in self.__dataclass_fields__.items():  # name = variable name; field = pd.dataframe/ value
-                if name not in nameDict.keys(): continue  # if not ohlcvs cols, pass
+                if name not in nameDict.keys(): continue  # only need the cols in nameDict
                 df = getattr(self, name)
                 if not df.empty:
                     dfCol = df.iloc[:, si].rename(nameDict[name])  # get required column

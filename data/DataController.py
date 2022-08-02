@@ -12,6 +12,7 @@ class DataController(EndPoints, DfModel):
         """
         upload forex data ohlcvs: open, high, low, close, volume, spread
         """
+        forexDf = forexDf.fillna('')
         forexDf['datetime'] = forexDf.index
         forexDf['datetime'] = forexDf['datetime'].dt.strftime('%Y-%m-%d %H:%M:%S')
         listData = forexDf.to_dict('records')

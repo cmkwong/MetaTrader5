@@ -1,7 +1,7 @@
 from TkWindow import TkWindow
 from TkInitWidget import TkInitWidget
 from AppStorage import AppData, AppClasses
-from data import DataController
+from data.DataController import DataController
 
 class WindowDataController(TkWindow):
 
@@ -22,14 +22,11 @@ class WindowDataController(TkWindow):
             TkInitWidget(cat=cat, id='historyUpload', type=self.DROPDOWN,
                          label='Historical data: ', value=historicalSymbols),
             TkInitWidget(cat=cat, id='btn_historyUpload', type=self.BUTTON,
-                         label='Upload', onClick=None),
-            TkInitWidget(cat=cat, id='liveUpload', type=self.DROPDOWN,
-                         label='Live data: ', value=liveSymbols),
-            TkInitWidget(cat=cat, id='btn_liveUpload', type=self.BUTTON,
-                         label='Upload', onClick=None),
+                         label='Upload', onClick=lambda: self.onUploadHistoryData(cat)),
         ], "Data Operation")
         return frame
 
     def onUploadHistoryData(self, cat):
-        self.getWidgetValue(cat, historyUpload)
-        AppClasses[DataController.__name__].uploadForexData(AppData[''])
+        tableName = self.getWidgetValue(cat, 'tableName')
+        symbol = self.getWidgetValue(cat, 'historyUpload')
+        r = AppClasses[DataController.__name__].uploadForexData(AppData['history'][symbol], tableName=tableName)
