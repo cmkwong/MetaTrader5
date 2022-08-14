@@ -34,6 +34,20 @@ class ExperienceSource:
         self.total_steps = []
         self.vectorized = vectorized
 
+    def _group_list(self, items, lens):
+        """
+        Unflat the list of items by lens
+        :param items: list of items
+        :param lens: list of integers
+        :return: list of list of items grouped by lengths
+        """
+        res = []
+        cur_ofs = 0
+        for g_len in lens:
+            res.append(items[cur_ofs:cur_ofs + g_len])
+            cur_ofs += g_len
+        return res
+
     def __iter__(self):
         states, agent_states, histories, cur_rewards, cur_steps = [], [], [], [], []
         env_lens = []
@@ -73,7 +87,7 @@ class ExperienceSource:
                     g_idx = states_indices[idx]
                     actions[g_idx] = action
                     agent_states[g_idx] = new_agent_states[idx]
-            grouped_actions = _group_list(actions, env_lens)
+            grouped_actions = self._group_list(actions, env_lens)
 
             global_ofs = 0
             for env_idx, (env, action_n) in enumerate(zip(self.pool, grouped_actions)):
@@ -126,20 +140,6 @@ class ExperienceSource:
         if res:
             self.total_rewards, self.total_steps = [], []
         return res
-
-def _group_list(items, lens):
-    """
-    Unflat the list of items by lens
-    :param items: list of items
-    :param lens: list of integers
-    :return: list of list of items grouped by lengths
-    """
-    res = []
-    cur_ofs = 0
-    for g_len in lens:
-        res.append(items[cur_ofs:cur_ofs+g_len])
-        cur_ofs += g_len
-    return res
 
 class ExperienceSourceCMK:
     def __init__(self, env, agent, steps_count):
@@ -212,55 +212,6 @@ class ExperienceSourceFirstLast(ExperienceSourceCMK):
             yield ExperienceFirstLast(state=exp[0].state, action=exp[0].action,
                                       reward=total_reward, last_state=last_state)
 
-class ExperienceReplayBuffer:
-    def __init__(self, experience_source, buffer_size):
-        assert isinstance(experience_source, (ExperienceSourceCMK, type(None)))
-        assert isinstance(buffer_size, int)
-        self.experience_source_iter = None if experience_source is None else iter(experience_source)
-        self.buffer = []
-        self.capacity = buffer_size
-        self.pos = 0
-
-    def __len__(self):
-        return len(self.buffer)
-
-    def __iter__(self):
-        return iter(self.buffer)
-
-    def sample(self, batch_size):
-        """
-        Get one random batch from experience replay
-        TODO: implement sampling order policy
-        :param batch_size:
-        :return:
-        """
-        if len(self.buffer) <= batch_size:
-            return self.buffer
-        # Warning: replace=False makes random.choice O(n)
-        keys = np.random.choice(len(self.buffer), batch_size, replace=True)
-        return [self.buffer[key] for key in keys]
-
-    def buffer_sample(self, monitor_size):
-        if len(self.buffer) <= monitor_size:
-            return self.buffer
-        keys = np.random.choice(len(self.buffer), monitor_size, replace=True)
-        return [self.buffer[key] for key in keys]
-
-    def _add(self, sample):
-        if len(self.buffer) < self.capacity:
-            self.buffer.append(sample)
-        else:
-            self.buffer[self.pos] = sample
-        self.pos = (self.pos + 1) % self.capacity
-
-    def populate(self, samples):
-        """
-        Populates samples into the buffer
-        :param samples: how many samples to populate
-        """
-        for _ in range(samples):
-            entry = next(self.experience_source_iter)
-            self._add(entry)
 #
 # class ExperienceSource:
 #     def __init__(self, env, agent, steps_count):

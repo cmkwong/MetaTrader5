@@ -1,7 +1,7 @@
 from TkWindow import TkWindow
 from TkInitWidget import TkInitWidget
 from AppStorage import AppData, AppClasses
-from data.DataController import DataController
+from data.ServerConnector import ServerConnector
 
 class WindowDataController(TkWindow):
 
@@ -29,4 +29,4 @@ class WindowDataController(TkWindow):
     def onUploadHistoryData(self, cat):
         tableName = self.getWidgetValue(cat, 'tableName')
         symbol = self.getWidgetValue(cat, 'historyUpload')
-        AppClasses[DataController.__name__].uploadForexData(AppData['history'][symbol], tableName=tableName)
+        AppClasses[ServerConnector.__name__].uploadForexData(AppData['history'][symbol], tableName=tableName)

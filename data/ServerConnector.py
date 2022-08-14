@@ -2,11 +2,15 @@ import requests
 import pandas as pd
 
 from myUtils.DfModel import DfModel
-from data.EndPoints import EndPoints
-
 
 # upload the forex loader
-class DataController(EndPoints, DfModel):
+class ServerConnector(DfModel):
+
+    def __init__(self):
+        self.mainUrl = "http://localhost:3002/"
+        self.uploadForexDataUrl = self.mainUrl + "api/v1/query/forexTable/upload?tableName={}"
+        self.downloadForexDataUrl = self.mainUrl + "api/v1/query/forexTable/download?tableName={}"
+        self.createTableUrl = self.mainUrl + "api/v1/query/forexTable/create?tableName={}"
 
     def uploadForexData(self, forexDf: pd.DataFrame, *, tableName: str):
         """

@@ -7,7 +7,7 @@ from TkInitWidget import TkInitWidget
 from WindowMT5Controller import WindowMT5Controller
 from WindowDataController import WindowDataController
 from mt5f.MT5Controller import MT5Controller
-from data.DataController import DataController
+from data.ServerConnector import ServerConnector
 
 
 class MainPage(TkWindow):
@@ -26,8 +26,8 @@ class MainPage(TkWindow):
             else:
                 self.windowMT5Controller.run(self.root)
         elif operation == 'Data':
-            if DataController.__name__ not in AppClasses.keys():
-                AppClasses[DataController.__name__] = DataController()
+            if ServerConnector.__name__ not in AppClasses.keys():
+                AppClasses[ServerConnector.__name__] = ServerConnector()
             self.windowDataController.run(self.root)
 
     def onSetting(self):

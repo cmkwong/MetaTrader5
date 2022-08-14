@@ -51,10 +51,11 @@ class WindowMT5PricesLoader(TkWindow):
 
     def pricesFrame(self, root):
         cat = 'getData'
+        defaultSymbols = 'AUDJPY AUDCAD CADJPY AUDUSD EURGBP EURCAD EURUSD GBPUSD USDJPY'
         # initWidgets = self.get_params_initWidgets(self.mt5Controller.mt5PricesLoader.get_data, cat)
         # frame = self.createFrame(root, initWidgets, 'Get Data Setting')
         frame = self.createFrame(root, [
-            TkInitWidget(cat=cat, id='symbols', type=self.TEXTFIELD, label='Symbols', default='USDJPY EURUSD', pos=(0, 0, 1), targetType=list),
+            TkInitWidget(cat=cat, id='symbols', type=self.TEXTFIELD, label='Symbols', default=defaultSymbols, pos=(0, 0, 1), targetType=list),
             TkInitWidget(cat=cat, id='start', type=self.CALENDAR, label='Start', default='2011-01-03', pos=(1, 0, 1)),
             TkInitWidget(cat=cat, id='end', type=self.CALENDAR, label='End', default='2022-01-01', pos=(2, 0, 1)),
             TkInitWidget(cat=cat, id='timeframe', type=self.DROPDOWN, label='Time Frame',
