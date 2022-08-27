@@ -1,7 +1,5 @@
 import sys
 
-import RL.envs.TechnicalForexEnv
-
 sys.path.append('C:/Users/Chris/projects/210215_mt5')
 import config
 from strategies.AI import common
@@ -13,7 +11,12 @@ import torch
 import torch.optim as optim
 import numpy as np
 
-from RL import models, agents, actions, experience, criterion
+from RL import agents, actions
+from RL.envs.TechnicalForexEnv import TechnicalForexEnv
+from RL.experience.ExperienceSource import ExperienceSourceFirstLast
+from RL.experience.ExperienceReplayBuffer import ExperienceReplayBuffer
+from RL.Validator import Validator
+from RL.models.SimpleFFDQN import SimpleFFDQN
 from mt5f.MT5Controller import MT5Controller
 
 now = datetime.now()
@@ -85,19 +88,18 @@ Prices = mt5Controller.mt5PricesLoader.getPrices(symbols=data_options['symbols']
 Train_Prices, Test_Prices = mt5Controller.mt5PricesLoader.split_Prices(Prices, percentage=data_options['trainTestSplit'])
 
 # build the env (long)
-env = RL.envs.TechnicalForexEnv.TechnicalForexEnv(data_options['symbols'][0], Train_Prices, tech_params, True,
-                                                  mt5Controller.mt5PricesLoader.all_symbol_info, 0.05, 8, 15, 1, random_ofs_on_reset=True, reset_on_close=True)
-env_val = RL.envs.TechnicalForexEnv.TechnicalForexEnv(data_options['symbols'][0], Test_Prices, tech_params, True,
-                                                      mt5Controller.mt5PricesLoader.all_symbol_info, 0.05, 8, 15, 1, random_ofs_on_reset=False, reset_on_close=False)
+env = TechnicalForexEnv(data_options['symbols'][0], Train_Prices, tech_params, True,
+                                                  mt5Controller.mt5PricesLoader.all_symbol_info, 0.05, 8, 15, random_ofs_on_reset=True, reset_on_close=True)
+env_val = TechnicalForexEnv(data_options['symbols'][0], Test_Prices, tech_params, True,
+                                                      mt5Controller.mt5PricesLoader.all_symbol_info, 0.05, 8, 15, random_ofs_on_reset=False, reset_on_close=False)
 
-net = models.SimpleFFDQN(env.get_obs_len(), env.get_action_space_size())
+net = SimpleFFDQN(env.get_obs_len(), env.get_action_space_size())
 
 # load the network
 if RL_options['load_net'] is True:
     with open(os.path.join(*[RL_options['net_saved_path'], RL_options['dt_str'], RL_options['net_file']]), "rb") as f:
         checkpoint = torch.load(f)
-    net = models.SimpleFFDQN(
-        env.get_obs_len(), env.get_action_space_size())
+    net = SimpleFFDQN(env.get_obs_len(), env.get_action_space_size())
     net.load_state_dict(checkpoint['state_dict'])
 
 # create buffer
@@ -105,10 +107,8 @@ net.to(torch.device("cuda"))  # pass into gpu
 selector = actions.EpsilonGreedyActionSelector(RL_options['epsilon_start'])
 agent = agents.DQNAgent(net, selector)
 # agent = agents.Supervised_DQNAgent(net, selector, sample_sheet, assistance_ratio=0.2)
-exp_source = experience.ExperienceSourceFirstLast(
-    env, agent, RL_options['gamma'], steps_count=RL_options['reward_steps'])
-buffer = experience.ExperienceReplayBuffer(
-    exp_source, RL_options['replay_size'])
+exp_source = ExperienceSourceFirstLast(env, agent, RL_options['gamma'], steps_count=RL_options['reward_steps'])
+buffer = ExperienceReplayBuffer(exp_source, RL_options['replay_size'])
 
 # create optimizer
 optimizer = optim.Adam(net.parameters(), lr=RL_options['lr'])
@@ -126,22 +126,19 @@ best_mean_val = None
 
 # create the validator
 # TODO - need to modified the validator
-validator = criterion.validator(
-    env_val, agent, save_path=os.path.join(*[RL_options['val_save_path'], RL_options['dt_str']]), comission=0.1)
+validator = Validator(env_val, agent, save_path=os.path.join(*[RL_options['val_save_path'], RL_options['dt_str']]), comission=0.1)
 
 # create the monitor
 monitor = common.monitor(buffer, os.path.join(*[RL_options['buffer_save_path'], RL_options['dt_str']]))
 
-writer = SummaryWriter(log_dir=os.path.join(
-    RL_options['runs_save_path'], DT_STRING), comment="ForexRL")
+writer = SummaryWriter(log_dir=os.path.join(RL_options['runs_save_path'], DT_STRING), comment="ForexRL")
 loss_tracker = common.lossTracker(writer, group_losses=100)
 with common.RewardTracker(writer, np.inf, group_rewards=100) as reward_tracker:
     while True:
         step_idx += 1
         net_processor.populate_mode(batch_size=1)
         buffer.populate(1)
-        selector.epsilon = max(
-            RL_options['epsilon_end'], RL_options['epsilon_start'] - step_idx * 0.75 / RL_options['epsilon_step'])
+        selector.epsilon = max(RL_options['epsilon_end'], RL_options['epsilon_start'] - step_idx * 0.75 / RL_options['epsilon_step'])
 
         new_rewards = exp_source.pop_rewards_steps()
         if new_rewards:
@@ -154,8 +151,7 @@ with common.RewardTracker(writer, np.inf, group_rewards=100) as reward_tracker:
 
         # init the hidden both in network and tgt network
         net_processor.train_mode(batch_size=RL_options['batch_size'])
-        loss_v = common.calc_loss(
-            batch, agent, RL_options['gamma'] ** RL_options['reward_steps'], train_on_gpu=True)
+        loss_v = common.calc_loss(batch, agent, RL_options['gamma'] ** RL_options['reward_steps'], train_on_gpu=True)
         loss_v.backward()
         optimizer.step()
         loss_value = loss_v.item()

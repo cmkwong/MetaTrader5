@@ -76,7 +76,7 @@ Train_Prices, Test_Prices = mt5Controller.mt5PricesLoader.split_Prices(Prices, p
 
 # build the env (long)
 env = RL.envs.TechnicalForexEnv.TechnicalForexEnv(data_options['symbols'][0], Train_Prices, tech_params, True,
-                                                  mt5Controller.mt5PricesLoader.all_symbol_info, 0.05, 8, 15, 1, random_ofs_on_reset=True, reset_on_close=True)
+                                                  mt5Controller.mt5PricesLoader.all_symbol_info, 0.05, 8, 15, random_ofs_on_reset=True, reset_on_close=True)
 env_val = RL.envs.TechnicalForexEnv.TechnicalForexEnv(data_options['symbols'][0], Test_Prices, tech_params, True,
-                                                      mt5Controller.mt5PricesLoader.all_symbol_info, 0.05, 8, 15, 1, random_ofs_on_reset=False, reset_on_close=False)
+                                                      mt5Controller.mt5PricesLoader.all_symbol_info, 0.05, 8, 15, random_ofs_on_reset=False, reset_on_close=False)
 

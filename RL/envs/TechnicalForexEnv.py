@@ -7,12 +7,12 @@ from mt5f.mt5utils import integration
 
 
 class TechnicalForexEnv:
-    def __init__(self, symbol, Prices, tech_params, long_mode, all_symbols_info, time_cost_pt, commission_pt, spread_pt, lot_times, random_ofs_on_reset, reset_on_close):
+    def __init__(self, symbol, Prices, tech_params, long_mode, all_symbols_info, time_cost_pt, commission_pt, spread_pt, random_ofs_on_reset, reset_on_close):
         self.Prices = Prices
         self.tech_params = tech_params  # pd.DataFrame
         self.dependent_datas = pd.concat([self._get_tech_df(), Prices.o, Prices.h, Prices.l, Prices.c], axis=1, join='outer').fillna(0)
         self._state = State(symbol, Prices.c, Prices.quote_exchg, self.dependent_datas, Prices.c.index,
-                            time_cost_pt, commission_pt, spread_pt, lot_times, long_mode, all_symbols_info, reset_on_close)
+                            time_cost_pt, commission_pt, spread_pt, long_mode, all_symbols_info, reset_on_close)
         self.random_ofs_on_reset = random_ofs_on_reset
 
     def _get_tech_df(self):

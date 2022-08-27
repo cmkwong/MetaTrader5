@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-class validator:
+class Validator:
     def __init__(self, env, agent, save_path, comission):
         self.env = env
         self.agent = agent
