@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from RL.State import State
+from RL.envs.State import State
 from backtest import techModel
 from mt5f.mt5utils import integration
 

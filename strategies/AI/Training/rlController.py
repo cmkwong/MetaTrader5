@@ -11,11 +11,12 @@ import torch
 import torch.optim as optim
 import numpy as np
 
-from RL import agents, actions
+from RL.agents.DQNAgent import DQNAgent
+from RL.agents import Actions
 from RL.envs.TechnicalForexEnv import TechnicalForexEnv
 from RL.experience.ExperienceSource import ExperienceSourceFirstLast
 from RL.experience.ExperienceReplayBuffer import ExperienceReplayBuffer
-from RL.Validator import Validator
+from RL.criterion.Validator import Validator
 from RL.models.SimpleFFDQN import SimpleFFDQN
 from mt5f.MT5Controller import MT5Controller
 
@@ -104,8 +105,8 @@ if RL_options['load_net'] is True:
 
 # create buffer
 net.to(torch.device("cuda"))  # pass into gpu
-selector = actions.EpsilonGreedyActionSelector(RL_options['epsilon_start'])
-agent = agents.DQNAgent(net, selector)
+selector = Actions.EpsilonGreedyActionSelector(RL_options['epsilon_start'])
+agent = DQNAgent(net, selector)
 # agent = agents.Supervised_DQNAgent(net, selector, sample_sheet, assistance_ratio=0.2)
 exp_source = ExperienceSourceFirstLast(env, agent, RL_options['gamma'], steps_count=RL_options['reward_steps'])
 buffer = ExperienceReplayBuffer(exp_source, RL_options['replay_size'])
