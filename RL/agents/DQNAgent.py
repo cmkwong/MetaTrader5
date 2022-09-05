@@ -1,55 +1,9 @@
 import copy
 import numpy as np
 import torch
-import torch.nn.functional as func
-
-class BaseAgent:
-    """
-    Abstract Agent interface
-    """
-    def initial_state(self):
-        """
-        Should create initial empty state for the agent. It will be called for the start of the episode
-        :return: Anything agent want to remember
-        """
-        return None
-
-    def __call__(self, states, agent_states):
-        """
-        Convert observations and states into actions to take
-        :param states: list of environment states to process
-        :param agent_states: list of states with the same length as observations
-        :return: tuple of actions, states
-        """
-        assert isinstance(states, list)
-        assert isinstance(agent_states, list)
-        assert len(agent_states) == len(states)
-
-        raise NotImplementedError
-
-def default_states_preprocessor(states, unitVector=True, train_on_gpu=True):
-    """
-    Convert list of states into the form suitable for model. By default we assume Variable
-    :param states: list of numpy arrays with states
-    :return: Variable
-    """
-    assert isinstance(states, list)
-    # choose device
-    if train_on_gpu:
-        device = torch.device("cuda")
-    else:
-        device = torch.device("cpu")
-    # pre-process the states
-    if len(states) == 1:
-        np_states = np.expand_dims(states[0], 0)
-    else:
-        np_states = np.array([np.array(s, copy=False) for s in states], copy=False)
-    t_v = func.normalize(torch.from_numpy(np_states).to(device), p=2, dim=1) if unitVector else torch.from_numpy(np_states).to(device)
-    return t_v
-
-def float32_preprocessor(states):
-    np_states = np.array(states, dtype=np.float32)
-    return torch.from_numpy(np_states)
+from torch import nn
+from RL.agents.BaseAgent import BaseAgent
+from RL.agents.preprocessor import default_states_preprocessor, attention_states_preprocessor
 
 class DQNAgent(BaseAgent):
     """
@@ -57,14 +11,50 @@ class DQNAgent(BaseAgent):
     from the observations and  converts them into the actions using action_selector
     """
     def __init__(self, dqn_model, action_selector, preprocessor=default_states_preprocessor):
+        self.device = torch.device("cuda")
         self.model = dqn_model
         self.target_model = copy.deepcopy(dqn_model)
         self.action_selector = action_selector
         self.preprocessor = preprocessor
 
+    def unpack_batch(self, batch):
+        states, actions, rewards, dones, last_states = [], [], [], [], []
+        for exp in batch:
+            states.append(exp.state)
+            actions.append(exp.action)
+            rewards.append(exp.reward)
+            dones.append(exp.last_state is None)
+            if exp.last_state is None:
+                last_states.append(exp.state)  # the result will be masked anyway
+            else:
+                last_states.append(exp.last_state)
+        return states, np.array(actions), np.array(rewards, dtype=np.float32), np.array(dones, dtype=np.uint8), last_states
+
+    def calc_loss(self, batch, gamma):
+        """
+        :param batch: [state]
+        :param gamma: float
+        :return:
+        """
+        states, actions, rewards, dones, next_states = self.unpack_batch(batch)
+
+        states_v = states
+        next_states_v = next_states
+        actions_v = torch.from_numpy(actions).to(self.device)
+        rewards_v = torch.from_numpy(rewards).to(self.device)
+        done_mask = torch.cuda.BoolTensor(dones)
+
+        state_action_values = self.get_Q_value(states_v).gather(1, actions_v).squeeze(-1)
+        next_state_actions = self.get_Q_value(next_states_v).max(1)[1]
+        next_state_values = self.get_Q_value(next_states_v, tgt=True).gather(1, next_state_actions.unsqueeze(-1)).squeeze(-1)
+        next_state_values[done_mask] = 0.0
+
+        expected_state_action_values = next_state_values.detach() * gamma + rewards_v
+        return nn.L1Loss()(state_action_values, expected_state_action_values)
+
     def getActionIndex(self, states, agent_states=None):
         """
-        :param states: [state]
+        :param states: [torch tensor] with shape (1, 57)
         :param agent_states:
         :return:
         """
@@ -119,6 +109,16 @@ class Supervised_DQNAgent(BaseAgent):
         actions = self.action_selector(q)
         actions[sample_mask] = sample_actions
         return actions, agent_states
+
+class DQNAgentAttn(DQNAgent):
+    def __init__(self, dqn_model, action_selector, preprocessor=attention_states_preprocessor):
+        super(DQNAgentAttn, self).__init__(dqn_model, action_selector, preprocessor)
+
+    # def unpack_batch(self, batch):
+    #     pass
+    #
+    # def calc_loss(self, batch, gamma):
+    #     pass
 
 # class TargetNet:
 #     """

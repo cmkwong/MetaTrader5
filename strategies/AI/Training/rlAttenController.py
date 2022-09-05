@@ -11,13 +11,14 @@ import torch
 import torch.optim as optim
 import numpy as np
 
-from RL.agents.DQNAgent import DQNAgent
+from RL.agents.DQNAgent import DQNAgent, DQNAgentAttn
 from RL.agents import Actions
-from RL.envs.TechnicalForexEnv import TechnicalForexEnv
+from RL.envs.TechnicalForexEnv import TechnicalForexEnv, TechnicalForexAttnEnv
 from RL.experience.ExperienceSource import ExperienceSourceFirstLast
 from RL.experience.ExperienceReplayBuffer import ExperienceReplayBuffer
 from RL.criterion.Validator import Validator
 from RL.models.SimpleFFDQN import SimpleFFDQN
+from RL.models.AttentionTimeSeries import AttentionTimeSeries
 from mt5f.MT5Controller import MT5Controller
 
 now = datetime.now()
@@ -49,7 +50,7 @@ RL_options = {
     'lr': 0.001,
     'dt_str': '220515093044',  # time that program being run
     'net_file': 'checkpoint-2970000.loader',
-    'batch_size': 1024,
+    'batch_size': 64,
     'epsilon_start': 1.0,
     'epsilon_end': 0.35,
     'gamma': 0.9,
@@ -98,24 +99,25 @@ Prices = mt5Controller.mt5PricesLoader.getPrices(symbols=data_options['symbols']
 Train_Prices, Test_Prices = mt5Controller.mt5PricesLoader.split_Prices(Prices, percentage=data_options['trainTestSplit'])
 
 # build the env (long)
-env = TechnicalForexEnv(data_options['symbols'][0], Train_Prices, tech_params, True,
-                                                  mt5Controller.mt5PricesLoader.all_symbol_info, 0.05, 8, 15, random_ofs_on_reset=True, reset_on_close=True)
-env_val = TechnicalForexEnv(data_options['symbols'][0], Test_Prices, tech_params, True,
-                                                      mt5Controller.mt5PricesLoader.all_symbol_info, 0.05, 8, 15, random_ofs_on_reset=False, reset_on_close=False)
+env = TechnicalForexAttnEnv(RL_options['seqLen'], data_options['symbols'][0], Train_Prices, tech_params, True,
+                            mt5Controller.mt5PricesLoader.all_symbol_info, 0.05, 8, 15, random_ofs_on_reset=False, reset_on_close=False)
+env_val = TechnicalForexAttnEnv(RL_options['seqLen'], data_options['symbols'][0], Test_Prices, tech_params, True,
+                                mt5Controller.mt5PricesLoader.all_symbol_info, 0.05, 8, 15, random_ofs_on_reset=False, reset_on_close=False)
 
-net = SimpleFFDQN(env.get_obs_len(), env.get_action_space_size())
+# net = SimpleFFDQN(env.get_obs_len(), env.get_action_space_size())
+net = AttentionTimeSeries(hiddenSize=128, inputSize=55, seqLen=30, batchSize=128, outputSize=3, statusSize=2, pdrop=0.1)
 
 # load the network
 if RL_options['load_net'] is True:
     with open(os.path.join(*[RL_options['net_saved_path'], RL_options['dt_str'], RL_options['net_file']]), "rb") as f:
         checkpoint = torch.load(f)
-    net = SimpleFFDQN(env.get_obs_len(), env.get_action_space_size())
+    net = AttentionTimeSeries(hiddenSize=128, inputSize=55, seqLen=30, batchSize=128, outputSize=3, statusSize=2, pdrop=0.1)
     net.load_state_dict(checkpoint['state_dict'])
 
 # create buffer
 net.to(torch.device("cuda"))  # pass into gpu
 selector = Actions.EpsilonGreedyActionSelector(RL_options['epsilon_start'])
-agent = DQNAgent(net, selector)
+agent = DQNAgentAttn(net, selector)
 # agent = agents.Supervised_DQNAgent(net, selector, sample_sheet, assistance_ratio=0.2)
 exp_source = ExperienceSourceFirstLast(env, agent, RL_options['gamma'], steps_count=RL_options['reward_steps'])
 buffer = ExperienceReplayBuffer(exp_source, RL_options['replay_size'])
@@ -167,7 +169,7 @@ with common.RewardTracker(writer, np.inf, group_rewards=100) as reward_tracker:
         loss_value = loss_v.item()
         loss_tracker.loss(loss_value, step_idx)
 
-        if step_idx % 1000 == 0:
+        if step_idx % 200 == 0:
             print(f"{step_idx}: {loss_v.item()}")
 
         if step_idx % RL_options['target_net_sync'] == 0:

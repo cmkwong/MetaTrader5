@@ -1,6 +1,7 @@
 import numpy as np
 from RL.experience.ExperienceSource import ExperienceSourceCMK
 
+
 class ExperienceReplayBuffer:
     def __init__(self, experience_source, buffer_size):
         assert isinstance(experience_source, (ExperienceSourceCMK, type(None)))
@@ -35,11 +36,11 @@ class ExperienceReplayBuffer:
         keys = np.random.choice(len(self.buffer), monitor_size, replace=True)
         return [self.buffer[key] for key in keys]
 
-    def _add(self, sample):
+    def _add(self, entry):
         if len(self.buffer) < self.capacity:
-            self.buffer.append(sample)
+            self.buffer.append(entry)
         else:
-            self.buffer[self.pos] = sample
+            self.buffer[self.pos] = entry
         self.pos = (self.pos + 1) % self.capacity
 
     def populate(self, samples):
@@ -50,3 +51,36 @@ class ExperienceReplayBuffer:
         for _ in range(samples):
             entry = next(self.experience_source_iter)
             self._add(entry)
+
+
+# class BufferAttn:
+#     def __new__(cls, seqLen, featureSize):
+#         cls.seqLen = seqLen
+#         cls.featureSize = featureSize
+#         cls.buffer = {}
+#         cls.buffer['encoderInput'] = []
+#         cls.buffer['status'] = []
+#         return cls.buffer
+#
+#     def __len__(self):
+#         return len(self.buffer['status'])
+#
+#     def append(self, entry):
+#         self.buffer['encoderInput'] = np.empty(shape=(1, 60, 55))
+#         self.buffer['encoderInput'] = np.empty(shape=(1, 2))
+
+
+# class ExperienceReplayBufferAttn(ExperienceReplayBuffer):
+#     def __init__(self, seqLen, featureSize, experience_source, buffer_size):
+#         super(ExperienceReplayBufferAttn, self).__init__(experience_source, buffer_size)
+#         self.buffer = {}
+#
+#     def _add(self, entry):
+#         """
+#         :param entry: { encoderInput: array(N, 60, 55),
+#                         status: array(N, 2)
+#                         }
+#         :return:
+#         """
+#         if len(self.buffer) < self.capacity:
+#             self.buffer.append()

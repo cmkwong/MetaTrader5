@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 
 from RL.envs.State import State
+from RL.envs.AttnState import AttnState
 from backtest import techModel
 from mt5f.mt5utils import integration
 
@@ -33,7 +34,7 @@ class TechnicalForexEnv:
         if not self.random_ofs_on_reset:
             self._state.reset(0)
         else:
-            random_offset = np.random.randint(len(self.Prices.o) - 10) # minus a buffer, because draw at the end of loader sometimes, then it will be bug
+            random_offset = np.random.randint(len(self.Prices.o) - 10)  # minus a buffer, because draw at the end of loader sometimes, then it will be bug
             self._state.reset(random_offset)
         obs = self._state.encode()
         return obs
@@ -42,3 +43,20 @@ class TechnicalForexEnv:
         reward, done = self._state.step(action)
         obs = self._state.encode()
         return obs, reward, done
+
+class TechnicalForexAttnEnv(TechnicalForexEnv):
+    def __init__(self, seqLen, symbol, Prices, tech_params, long_mode, all_symbols_info, time_cost_pt, commission_pt, spread_pt, random_ofs_on_reset, reset_on_close):
+        super(TechnicalForexAttnEnv, self).__init__(symbol, Prices, tech_params, long_mode, all_symbols_info, time_cost_pt, commission_pt, spread_pt, random_ofs_on_reset, reset_on_close)
+        self.seqLen = seqLen
+        self._state = AttnState(seqLen, symbol, Prices.c, Prices.quote_exchg, self.dependent_datas, Prices.c.index,
+                                time_cost_pt, commission_pt, spread_pt, long_mode, all_symbols_info, reset_on_close)
+
+    def reset(self):
+        startIndex = len(self.Prices.c) % self.seqLen + self.seqLen * 2 # (+ self.seqLen * 2) because of it taking backward seq as input
+        if not self.random_ofs_on_reset:
+            self._state.reset(startIndex)
+        else:
+            random_offset = np.random.randint(startIndex, (len(self.Prices.c) - startIndex) / self.seqLen)  # minus a buffer, because draw at the end of loader sometimes, then it will be bug
+            self._state.reset(random_offset * self.seqLen)
+        obs = self._state.encode()
+        return obs

@@ -91,45 +91,6 @@ class lossTracker:
         self.writer.add_scalar("loss_100", movingAverage_loss, frame)
         self.writer.add_scalar("loss", mean_loss, frame)
 
-def unpack_batch(batch):
-    states, actions, rewards, dones, last_states = [], [], [], [], []
-    for exp in batch:
-        states.append(exp.state)
-        actions.append(exp.action)
-        rewards.append(exp.reward)
-        dones.append(exp.last_state is None)
-        if exp.last_state is None:
-            last_states.append(exp.state)       # the result will be masked anyway
-        else:
-            last_states.append(exp.last_state)
-    return states, np.array(actions), np.array(rewards, dtype=np.float32), \
-           np.array(dones, dtype=np.uint8), last_states
-
-def calc_loss(batch, agent, gamma, train_on_gpu):
-    if train_on_gpu:
-        device = torch.device("cuda")
-    else:
-        device = torch.device("cpu")
-
-    states, actions, rewards, dones, next_states = unpack_batch(batch)
-
-    states_v = states
-    next_states_v = next_states
-    actions_v = torch.from_numpy(actions).to(device)
-    rewards_v = torch.from_numpy(rewards).to(device)
-    if train_on_gpu:
-        done_mask = torch.cuda.BoolTensor(dones)
-    else:
-        done_mask = torch.BoolTensor(dones)
-
-    state_action_values = agent.get_Q_value(states_v).gather(1, actions_v).squeeze(-1)
-    next_state_actions = agent.get_Q_value(next_states_v).max(1)[1]
-    next_state_values = agent.get_Q_value(next_states_v, tgt=True).gather(1, next_state_actions.unsqueeze(-1)).squeeze(-1)
-    next_state_values[done_mask] = 0.0
-
-    expected_state_action_values = next_state_values.detach() * gamma + rewards_v
-    return nn.L1Loss()(state_action_values, expected_state_action_values)
-
 def find_stepidx(text, open_str, end_str):
     regex_open = re.compile(open_str)
     regex_end = re.compile(end_str)

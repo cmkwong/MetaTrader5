@@ -57,10 +57,10 @@ class MT5PricesLoader(BaseMT5PricesLoader):  # created note 86a
         return df
 
     def split_Prices(self, Prices, percentage):
-        keys = list(Prices._asdict().keys())
+        keys = list(Prices.__dict__.keys())
         prices = collections.namedtuple("prices", keys)
         train_list, test_list = [], []
-        for df in Prices:
+        for key, df in Prices.__dict__.items():
             train, test = segregation.split_df(df, percentage)
             train_list.append(train)
             test_list.append(test)
