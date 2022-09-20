@@ -110,7 +110,7 @@ class DecoderAttnFull(nn.Module):
         self.gru.flatten_parameters()
         output, hn = self.gru(output, hn)  # (N, L, H_in)
 
-        output = F.softmax(self.out(output).squeeze(1), dim=1)
+        output = self.out(output).squeeze(1)
         return output, hn, attn_weights
 
     def initHidden(self, batchSize):

@@ -46,10 +46,10 @@ data_options = {
 }
 
 RL_options = {
-    'load_net': False,
-    'lr': 0.001,
-    'dt_str': '220515093044',  # time that program being run
-    'net_file': 'checkpoint-2970000.loader',
+    'load_net': True,
+    'lr': 0.1,
+    'dt_str': '220911104535',  # time that program being run
+    'net_file': 'checkpoint-1440000.loader',
     'batch_size': 64,
     'epsilon_start': 1.0,
     'epsilon_end': 0.35,
@@ -100,7 +100,7 @@ Train_Prices, Test_Prices = mt5Controller.mt5PricesLoader.split_Prices(Prices, p
 
 # build the env (long)
 env = TechnicalForexAttnEnv(RL_options['seqLen'], data_options['symbols'][0], Train_Prices, tech_params, True,
-                            mt5Controller.mt5PricesLoader.all_symbol_info, 0.05, 8, 15, random_ofs_on_reset=False, reset_on_close=False)
+                            mt5Controller.mt5PricesLoader.all_symbol_info, 0.05, 8, 15, random_ofs_on_reset=True, reset_on_close=True)
 env_val = TechnicalForexAttnEnv(RL_options['seqLen'], data_options['symbols'][0], Test_Prices, tech_params, True,
                                 mt5Controller.mt5PricesLoader.all_symbol_info, 0.05, 8, 15, random_ofs_on_reset=False, reset_on_close=False)
 
@@ -109,7 +109,8 @@ net = AttentionTimeSeries(hiddenSize=128, inputSize=55, seqLen=30, batchSize=128
 
 # load the network
 if RL_options['load_net'] is True:
-    with open(os.path.join(*[RL_options['net_saved_path'], RL_options['dt_str'], RL_options['net_file']]), "rb") as f:
+    loadedPath = os.path.join(*[general_docs_path, RL_options['dt_str'], 'net'])
+    with open(os.path.join(*[loadedPath, RL_options['net_file']]), "rb") as f:
         checkpoint = torch.load(f)
     net = AttentionTimeSeries(hiddenSize=128, inputSize=55, seqLen=30, batchSize=128, outputSize=3, statusSize=2, pdrop=0.1)
     net.load_state_dict(checkpoint['state_dict'])

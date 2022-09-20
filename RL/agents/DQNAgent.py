@@ -50,6 +50,9 @@ class DQNAgent(BaseAgent):
         next_state_values[done_mask] = 0.0
 
         expected_state_action_values = next_state_values.detach() * gamma + rewards_v
+        loss = nn.L1Loss()(state_action_values, expected_state_action_values)
+        # if torch.isnan(loss):
+        #     print('error')
         return nn.L1Loss()(state_action_values, expected_state_action_values)
 
     def getActionIndex(self, states, agent_states=None):
