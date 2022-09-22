@@ -117,7 +117,6 @@ class DecoderAttnFull(nn.Module):
         self.batchSize = batchSize
         return torch.zeros(1, batchSize, self.hiddenSize, device=self.device)
 
-
 class AttentionTimeSeries(nn.Module):
     def __init__(self, hiddenSize, inputSize, seqLen, batchSize, outputSize, statusSize, pdrop):
         super(AttentionTimeSeries, self).__init__()
@@ -142,7 +141,7 @@ class AttentionTimeSeries(nn.Module):
         for i in range(self.seqLen):
             input = state['encoderInput'][:, 0 + i:0 + i + self.seqLen, :]  # taking part of series data
             encoderOutput, encoderHn = self.encoder(input, encoderHn)
-            encoderOutputs[:, i, :] = encoderOutput[:, -1, :]  # taking the last occurred vector
+            encoderOutputs[:, i, :] = encoderOutput[:, -1, :]  # taking the last occurred vector to form the encoderOutputs, then feed into decoder
 
         # assign encoder hidden to decoder hidden
         decoderHn = encoderHn

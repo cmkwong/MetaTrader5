@@ -11,14 +11,13 @@ import torch
 import torch.optim as optim
 import numpy as np
 
-from RL.agents.DQNAgent import DQNAgent, DQNAgentAttn
+from RL.agents.DQNAgent import DQNAgentAttn
 from RL.agents import Actions
-from RL.envs.TechnicalForexEnv import TechnicalForexEnv, TechnicalForexAttnEnv
+from RL.envs.technicalForexAttnEnv_series.commit_current.TechnicalForexAttnEnv import TechnicalForexAttnEnv
 from RL.experience.ExperienceSource import ExperienceSourceFirstLast
 from RL.experience.ExperienceReplayBuffer import ExperienceReplayBuffer
 from RL.criterion.Validator import Validator
-from RL.models.SimpleFFDQN import SimpleFFDQN
-from RL.models.AttentionTimeSeries import AttentionTimeSeries
+from RL.models.attensionsSeries.commit_current.AttentionTimeSeries import AttentionTimeSeries
 from mt5f.MT5Controller import MT5Controller
 
 now = datetime.now()
@@ -46,8 +45,8 @@ data_options = {
 }
 
 RL_options = {
-    'load_net': True,
-    'lr': 0.1,
+    'load_net': False,
+    'lr': 0.01,
     'dt_str': '220911104535',  # time that program being run
     'net_file': 'checkpoint-1440000.loader',
     'batch_size': 64,
