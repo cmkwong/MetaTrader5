@@ -33,30 +33,24 @@ class DecoderAttnFull(nn.Module):
         self.hiddenSize = hiddenSize
         self.outputSize = outputSize
         self.attn = nn.Sequential(
-            nn.Linear(self.hiddenSize * 2 + statusSize, 1024),
-            nn.Linear(1024, 1024),
-            nn.ReLU(),
-            nn.Linear(1024, 1024),
-            nn.ReLU(),
-            nn.Linear(1024, 512),
-            nn.ReLU(),
+            nn.Linear(self.hiddenSize * 2 + statusSize, 512),
+            nn.LeakyReLU(0.5),
+            nn.Linear(512, 512),
+            nn.LeakyReLU(0.5),
             nn.Linear(512, 256),
-            nn.ReLU(),
+            nn.LeakyReLU(0.5),
             nn.Linear(256, self.hiddenSize)
         ).to(self.device)
         self.attn_combine = nn.Sequential(
-            nn.Linear(self.hiddenSize * 2, 1024),
-            nn.Linear(1024, 1024),
-            nn.ReLU(),
-            nn.Linear(1024, 1024),
-            nn.ReLU(),
-            nn.Linear(1024, 512),
-            nn.ReLU(),
+            nn.Linear(self.hiddenSize * 2, 512),
+            nn.LeakyReLU(0.5),
+            nn.Linear(512, 512),
+            nn.LeakyReLU(0.5),
             nn.Linear(512, 256),
-            nn.ReLU(),
+            nn.LeakyReLU(0.5),
             nn.Linear(256, self.hiddenSize)
         ).to(self.device)
-        self.dropout = nn.Dropout(self.dropout_p)
+        self.attn_normlise = nn.BatchNorm1d(self.hiddenSize * 2)
         self.gru = nn.GRU(self.hiddenSize, self.hiddenSize, batch_first=True).to(self.device)
         self.out = nn.Linear(self.hiddenSize, self.outputSize).to(self.device)
 
@@ -67,7 +61,8 @@ class DecoderAttnFull(nn.Module):
         attn_applied = torch.mul(attn_weights, encoderOutput)
 
         concatAttnApplied = torch.cat((encoderOutput, attn_applied), dim=1)
-        output = self.attn_combine(concatAttnApplied)
+        concatAttnApplied_normalised = self.attn_normlise(concatAttnApplied)
+        output = self.attn_combine(concatAttnApplied_normalised)
 
         output = F.relu(output).unsqueeze(1)
         self.gru.flatten_parameters()
