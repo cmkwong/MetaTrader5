@@ -1,7 +1,7 @@
 import MetaTrader5 as mt5
 import os
 from datetime import datetime
-from mt5Server.codes.mt5f.mt5utils import tools
+from mt5Server.codes.Mt5f.mt5utils import tools
 
 now = datetime.now()
 DT_STRING = now.strftime("%y%m%d%H%M%S")

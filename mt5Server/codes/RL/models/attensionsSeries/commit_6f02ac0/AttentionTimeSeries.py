@@ -139,7 +139,7 @@ class AttentionTimeSeries(nn.Module):
         encoderHn = self.encoder.initHidden(cur_batchSize)
         encoderOutputs = torch.zeros(cur_batchSize, self.seqLen, self.hiddenSize, device=self.encoder.device)
         for i in range(self.seqLen):
-            input = state['encoderInput'][:, 0 + i:0 + i + self.seqLen, :]  # taking part of series data
+            input = state['encoderInput'][:, 0 + i:0 + i + self.seqLen, :]  # taking part of series Data
             encoderOutput, encoderHn = self.encoder(input, encoderHn)
             encoderOutputs[:, i, :] = encoderOutput[:, -1, :]  # taking the last occurred vector to form the encoderOutputs, then feed into decoder
 

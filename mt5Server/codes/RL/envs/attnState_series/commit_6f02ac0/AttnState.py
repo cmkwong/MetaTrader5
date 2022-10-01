@@ -16,6 +16,6 @@ class AttnState(State):
         earning = 0.0
         if self.have_position:
             earning = self.cal_profit(self.action_price.iloc[self._offset, :].values, self._prev_action_price, self.quote_exchg.iloc[self._offset, :].values)
-        state['encoderInput'] = self.dependent_datas.iloc[self._offset - (self.seqLen * 2):self._offset, :].values  # getting seqLen * 2 len of data
+        state['encoderInput'] = self.dependent_datas.iloc[self._offset - (self.seqLen * 2):self._offset, :].values  # getting seqLen * 2 len of Data
         state['status'] = np.array([earning, float(self.have_position)])  # earning, have_position (True = 1.0, False = 0.0)
         return state

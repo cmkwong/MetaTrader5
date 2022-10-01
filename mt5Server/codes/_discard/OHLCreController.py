@@ -1,6 +1,6 @@
-# from mt5f.executor import common as mt5common, mt5Model
-# from mt5f.loader import prices, files
-# from backtest import exchgModel, pointsModel, signalModel, returnModel
+# from Mt5f.executor import common as mt5common, mt5Model
+# from Mt5f.loader import prices, files
+# from Backtest import exchgModel, pointsModel, signalModel, returnModel
 # import config
 # import os
 # import numpy as np
