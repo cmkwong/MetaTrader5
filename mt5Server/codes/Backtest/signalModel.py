@@ -1,4 +1,4 @@
-from mt5Server.codes.backtest import indexModel, techModel
+from mt5Server.codes.Backtest import indexModel, techModel
 import pandas as pd
 from datetime import timedelta
 

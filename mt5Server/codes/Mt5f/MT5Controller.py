@@ -1,5 +1,3 @@
-from mt5Server.codes.backtest import timeModel
-
 from mt5Server.codes.Mt5f.loader.MT5PricesLoader import MT5PricesLoader
 from mt5Server.codes.Mt5f.executor.MT5Executor import MT5Executor
 from mt5Server.codes.Mt5f.BaseMt5 import BaseMt5

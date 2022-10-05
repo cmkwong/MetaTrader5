@@ -4,7 +4,7 @@ import MetaTrader5 as mt5
 import pandas as pd
 
 from mt5Server.codes.Mt5f import BaseMt5
-from mt5Server.codes.backtest import timeModel
+from mt5Server.codes.Backtest import timeModel
 from mt5Server.codes.Mt5f.loader import files
 
 

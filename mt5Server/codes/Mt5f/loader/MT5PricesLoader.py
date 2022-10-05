@@ -1,5 +1,5 @@
 from mt5Server.codes import config
-from mt5Server.codes.backtest import exchgModel, pointsModel
+from mt5Server.codes.Backtest import exchgModel, pointsModel
 from mt5Server.codes.Mt5f.loader.BaseMT5PricesLoader import BaseMT5PricesLoader
 from mt5Server.codes.Mt5f.mt5utils import segregation
 from mt5Server.codes.Mt5f.loader.InitPrices import InitPrices

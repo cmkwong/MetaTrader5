@@ -43,3 +43,6 @@ CSV_FILE_NAME = "T{}_{}_Frame-{}_Long-{}_Limit-{}_From-{}-to-{}_result.csv".form
 
 # relative path for different computer
 PROJECT_PATH = tools.find_required_path(os.getcwd(), '210215_mt5')
+
+# TG token
+TG_TOKEN_AUDUSD = ''

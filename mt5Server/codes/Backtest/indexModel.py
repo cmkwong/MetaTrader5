@@ -1,4 +1,4 @@
-from mt5Server.codes.backtest import signalModel
+from mt5Server.codes.Backtest import signalModel
 
 def find_target_index(series, target, step=1, numeric=False):
     """
