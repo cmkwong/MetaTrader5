@@ -132,7 +132,7 @@ def get_standard_deviation(closes, timeperiod, nbdev=0):
         std[symbol] = talib.STDDEV(closes[symbol], timeperiod, nbdev)
     return std
 
-def get_EMA(close, timeperiod):
+def get_EMA_DISCARD(close, timeperiod):
     """
     :param close: pd.DataFrame
     :param timeperiod: int
@@ -140,6 +140,21 @@ def get_EMA(close, timeperiod):
     """
     ema = talib.EMA(close, timeperiod=timeperiod)
     return ema
+
+def get_EMA(close, timeperiod, smoothing=2):
+    """
+    :param close: pd.DataFrame
+    :param timeperiod: int
+    :return: pd.DataFrame
+    """
+    emaArr = [np.nan] * (timeperiod - 1)
+    ema = [close[:timeperiod].sum().values[0] / timeperiod]
+    for row in close[timeperiod:].iterrows():
+        c = row[1].values[0] # get the value
+        ema.append((c * (smoothing / (1 + timeperiod))) + ema[-1] * (1 - (smoothing / (1 + timeperiod))))
+    # build the full list
+    emaArr.extend(ema)
+    return pd.DataFrame(emaArr, index=close.index)
 
 def get_tech_datas(Prices, params, tech_name):
     """

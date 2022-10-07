@@ -3,15 +3,16 @@ import sys
 sys.path.append('C:/Users/Chris/projects/210215_mt5')
 from mt5Server.codes.Mt5f.MT5Controller import MT5Controller
 from mt5Server.codes.Backtest import techModel
+from myUtils.printModel import print_at
 
 import pandas as pd
 import time
 
 
 class SwingScalping:
-    def __init__(self, mt5Controlle, symbol, diff_ema_100_50=45, diff_ema_50_25=30, ratio_sl_sp=1.5):
+    def __init__(self, mt5Controller, symbol, diff_ema_100_50=45, diff_ema_50_25=30, ratio_sl_sp=1.5, tg=None):
         # define the controller
-        self.mt5Controller = mt5Controlle
+        self.mt5Controller = mt5Controller
         self.symbol = symbol
         self.diff_ema_100_50 = diff_ema_100_50
         self.diff_ema_50_25 = diff_ema_50_25
@@ -21,17 +22,20 @@ class SwingScalping:
         self.breakUpThroughTime, self.breakDownThroughTime = None, None
         self.breakUpThroughCondition, self.breakUpThroughNotice, self.downTrendRangeCondition = False, False, False
         self.breakDownThroughCondition, self.breakDownThroughNotice, self.riseTrendRangeCondition = False, False, False
+        # define tg
+        self.tg = tg
+        self.loop_tg = True
 
     def run(self):
 
-        while (True):
+        while (self.loop_tg):
             time.sleep(5)
             # getting the live price
             Prices = self.mt5Controller.mt5PricesLoader.getPrices(symbols=[self.symbol],
                                                                   start=None,
                                                                   end=None,
-                                                                  timeframe='5min',
-                                                                  count=200,
+                                                                  timeframe='1min',
+                                                                  count=1000,
                                                                   ohlcvs='111111'
                                                                   )
             # get the close price
@@ -40,9 +44,9 @@ class SwingScalping:
 
             # calculate the ema price: 25, 50, 100
             ema = pd.DataFrame(index=Prices.c.index)
-            ema['25'] = techModel.get_EMA(close, 25)
-            ema['50'] = techModel.get_EMA(close, 50)
-            ema['100'] = techModel.get_EMA(close, 100)
+            ema['25'] = techModel.get_EMA(Prices.c, 25)
+            ema['50'] = techModel.get_EMA(Prices.c, 50)
+            ema['100'] = techModel.get_EMA(Prices.c, 100)
 
             # get latest 3 close price
             latest3Close = close[-3]
@@ -59,7 +63,7 @@ class SwingScalping:
 
             print(f"--------------------{currentTime}--------------------")
             print("{:>15}{:>15}{:>15}".format('latest', 'latest 2', 'latest 3'))
-            print(f"{latest1Close:>15}{latest2Close:>15}{latest3Close:>15}")
+            print("{:>15}{:>15}{:>15}".format(f"{latest1Close:.5f}", f"{latest2Close:.5f}", f"{latest3Close:.5f}"))
             print("{:>15}{:>15}{:>15}".format('EMA100', 'EMA50', 'EMA25'))
             print("{:>15}{:>15}{:>15}".format(f"{ema['100'][-1]:.5f}", f"{ema['50'][-1]:.5f}", f"{ema['25'][-1]:.5f}"))
             print(f"EMA100-EMA50: {ptDiff_100_50[-1]:.2f}")
@@ -89,9 +93,9 @@ class SwingScalping:
                     # print out result to TG, if trade finished
                     # update all Data into database (for training purpose)
                     self.breakUpThroughTime = currentTime
-                    print(f'Down Trend\n Time: {self.breakUpThroughTime}\n Stop loss: {stopLoss}\n Stop Profit: {stopProfit}\n\n')
+                    print_at(f'Down Trend\n Time: {self.breakUpThroughTime}\n Stop loss: {stopLoss}\n Stop Profit: {stopProfit}\n\n', self.tg)
                     self.breakUpThroughNotice = True
-                    print(f"{currentTime}, {self.breakUpThroughTime}, {currentTime is not self.breakUpThroughTime}")
+                    # print(f"{currentTime}, {self.breakUpThroughTime}, {currentTime is not self.breakUpThroughTime}")
             # reset the notice if in next time slot
             if self.breakUpThroughCondition and (currentTime != self.breakUpThroughTime):
                 self.breakUpThroughNotice = False
@@ -116,15 +120,15 @@ class SwingScalping:
                     # print out result to TG, if trade finished
                     # update all Data into database (for training purpose)
                     self.breakDownThroughTime = currentTime
-                    print(f'Rise Trend\n Time: {self.breakDownThroughTime}\n Stop loss: {stopLoss}\n Stop Profit: {stopProfit}\n\n')
+                    print_at(f'Rise Trend\n Time: {self.breakDownThroughTime}\n Stop loss: {stopLoss}\n Stop Profit: {stopProfit}\n\n', self.tg)
                     self.breakDownThroughNotice = True
-                    print(f"{currentTime}, {self.breakDownThroughTime}, {currentTime is not self.breakDownThroughTime}")
+                    # print(f"{currentTime}, {self.breakDownThroughTime}, {currentTime is not self.breakDownThroughTime}")
             # reset the notice if in next time slot
             if self.breakDownThroughCondition and (currentTime != self.breakDownThroughTime):
                 self.breakDownThroughNotice = False
 
 
 # get live Data from MT5 Server
-mt5Controller = MT5Controller()
-swingScalping = SwingScalping(mt5Controller, 'USDJPY')
-swingScalping.run()
+# mt5Controller = MT5Controller()
+# swingScalping = SwingScalping(mt5Controller, 'USDJPY')
+# swingScalping.run()
