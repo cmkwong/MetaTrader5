@@ -26,6 +26,10 @@ class SwingScalping:
         self.tg = tg
         self.loop_tg = True
 
+    @property
+    def getName(self):
+        return f"{self.__class__.__name__}_{self.symbol}"
+
     def run(self):
 
         while (self.loop_tg):
