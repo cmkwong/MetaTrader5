@@ -38,7 +38,7 @@ class SwingScalping:
             Prices = self.mt5Controller.mt5PricesLoader.getPrices(symbols=[self.symbol],
                                                                   start=None,
                                                                   end=None,
-                                                                  timeframe='1min',
+                                                                  timeframe='5min',
                                                                   count=1000,
                                                                   ohlcvs='111111'
                                                                   )
@@ -65,7 +65,7 @@ class SwingScalping:
             ptDiff_100_50 = (ema['100'] - ema['50']) * (10 ** digits)
             ptDiff_50_25 = (ema['50'] - ema['25']) * (10 ** digits)
 
-            print(f"--------------------{currentTime}--------------------")
+            print(f"--------------------{currentTime}__{self.symbol}--------------------")
             print("{:>15}{:>15}{:>15}".format('latest', 'latest 2', 'latest 3'))
             print("{:>15}{:>15}{:>15}".format(f"{latest1Close:.5f}", f"{latest2Close:.5f}", f"{latest3Close:.5f}"))
             print("{:>15}{:>15}{:>15}".format('EMA100', 'EMA50', 'EMA25'))
