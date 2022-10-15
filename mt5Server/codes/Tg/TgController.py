@@ -1,5 +1,5 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import Application, CallbackQueryHandler, CommandHandler, ContextTypes, ConversationHandler, MessageHandler, filters
+from telegram.ext import Application, CallbackQueryHandler, CommandHandler, ContextTypes, ConversationHandler, InlineQueryHandler, MessageHandler, filters
 import threading
 import asyncio
 
@@ -10,12 +10,12 @@ from mt5Server.codes import config
 SET_SYMBOL, SET_STRATEGY = map(chr, range(2))
 RUN_STRATEGY = map(chr, range(2, 3))
 END = map(chr, range(3, 4))
-
+CHATID = '1051403979'
 
 class Telegram_Bot:
     def __init__(self, token):
         self.chat_id = False
-        self.application = Application.builder().token(token).build()  # different token means different symbol
+        self.application = Application.builder().token(token).arbitrary_callback_data(True).build()  # different token means different symbol
         self.mt5Controller = MT5Controller()
         self.SYBMOLS = ['USDJPY', 'USDCAD', 'AUDJPY', 'AUDUSD']
         self.STRATEGIES = [SwingScalping]
@@ -73,7 +73,7 @@ class Telegram_Bot:
 
         strategyName = query.data
 
-        thread = threading.Thread(target=self.idleStrategies[strategyName].run)
+        thread = threading.Thread(target=self.idleStrategies[strategyName].run, args=[update, context])
         thread.start()
         # add the strategy in running strategy
         self.runningStrategies[strategyName] = self.idleStrategies[strategyName]
@@ -102,6 +102,15 @@ class Telegram_Bot:
 
         return SET_STRATEGY
 
+    async def preActingNotice(self, update, context, msg):
+        await update.message.send_message(text=msg, chat_id=CHATID)
+
+    async def start(self, update, context):
+        self.chat_id = update.effective_chat.id
+        await update.effective_message.reply_html(
+            f"Your chat id is <code>{update.effective_chat.id}</code>."
+        )
+
     def run(self):
         addConv = ConversationHandler(
             entry_points=[CommandHandler('add', self.listStrategy)],
@@ -123,9 +132,12 @@ class Telegram_Bot:
         print('TG Running ...')
         self.application.add_handler(addConv)
         self.application.add_handler(runConv)
+        # show chat id
+        self.application.add_handler(CommandHandler('start', self.start))
         self.application.run_polling()
 
 
 tg = Telegram_Bot('5647603910:AAHsqwx7YGoDRicWAhEE4TWi1vk5zN69Fl4')
+# tg.preActingNotice('hello', 0.1, 0.1, 0.1, 0.1)
 tg.run()
 print()

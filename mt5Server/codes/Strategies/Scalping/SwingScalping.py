@@ -30,7 +30,7 @@ class SwingScalping:
     def getName(self):
         return f"{self.__class__.__name__}_{self.symbol}"
 
-    def run(self):
+    def run(self, update, context):
 
         while (self.loop_tg):
             time.sleep(5)
@@ -65,13 +65,16 @@ class SwingScalping:
             ptDiff_100_50 = (ema['100'] - ema['50']) * (10 ** digits)
             ptDiff_50_25 = (ema['50'] - ema['25']) * (10 ** digits)
 
-            print(f"--------------------{currentTime}__{self.symbol}--------------------")
-            print("{:>15}{:>15}{:>15}".format('latest', 'latest 2', 'latest 3'))
-            print("{:>15}{:>15}{:>15}".format(f"{latest1Close:.5f}", f"{latest2Close:.5f}", f"{latest3Close:.5f}"))
-            print("{:>15}{:>15}{:>15}".format('EMA100', 'EMA50', 'EMA25'))
-            print("{:>15}{:>15}{:>15}".format(f"{ema['100'][-1]:.5f}", f"{ema['50'][-1]:.5f}", f"{ema['25'][-1]:.5f}"))
-            print(f"EMA100-EMA50: {ptDiff_100_50[-1]:.2f}")
-            print(f" EMA50-EMA25: {ptDiff_50_25[-1]:.2f}")
+            msg = ''
+            msg += f"--------------------{currentTime}__{self.symbol}--------------------" + '\n'
+            msg += "{:>15}{:>15}{:>15}".format('latest', 'latest 2', 'latest 3') + '\n'
+            msg += "{:>15}{:>15}{:>15}".format(f"{latest1Close:.5f}", f"{latest2Close:.5f}", f"{latest3Close:.5f}") + '\n'
+            msg += "{:>15}{:>15}{:>15}".format('EMA100', 'EMA50', 'EMA25') + '\n'
+            msg += "{:>15}{:>15}{:>15}".format(f"{ema['100'][-1]:.5f}", f"{ema['50'][-1]:.5f}", f"{ema['25'][-1]:.5f}") + '\n'
+            msg += f"EMA100-EMA50: {ptDiff_100_50[-1]:.2f}" + '\n'
+            msg += f" EMA50-EMA25: {ptDiff_50_25[-1]:.2f}" + '\n'
+
+            self.tg.preActingNotice(update, context, msg)
 
             # check range between EMA
             self.downTrendRangeCondition = (ptDiff_100_50[-1] >= self.diff_ema_100_50) and (ptDiff_50_25[-1] >= self.diff_ema_50_25)
