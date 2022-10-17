@@ -24,7 +24,7 @@ class SwingScalping:
         self.breakThroughCondition, self.trendRangeCondition, self.breakThroughNoticed = False, False, False
         # self.breakDownThroughCondition, self.breakDownThroughNotice, self.riseTrendRangeCondition = False, False, False
         # define tg
-        # self.tg = tg
+        self.tg = tg
         # self.loopAllow = True
 
     @property
@@ -104,9 +104,21 @@ class SwingScalping:
 
         return False
 
-    def run(self):
+    async def run(self, update, context):
+        query = update.callback_query
+
+        await query.answer()
+
+        strategyName = query.data
+
+        # add the strategy in running strategy
+        self.tg.runningStrategies[strategyName] = self.tg.idleStrategies[strategyName]
+        # delete the strategy in idle strategy
+        self.tg.idleStrategies.pop(strategyName, None)
+        await query.edit_message_text(f"{strategyName} is running... ")
+
         # getting the live price
-        EmaDiff = self.gettingEmaDiff()
+        EmaDiff = self.gettingEmaDiff(mute=False)
         # --------------------------- DOWN TREND ---------------------------
         status = self.checkBreakThrough(EmaDiff, 'down')
         if status: return status
@@ -114,6 +126,7 @@ class SwingScalping:
         status = self.checkBreakThrough(EmaDiff, 'rise')
         if status: return status
 
+        return False
 
 # get live Data from MT5 Server
 # mt5Controller = MT5Controller()

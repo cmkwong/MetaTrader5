@@ -8,8 +8,7 @@ from mt5Server.codes.Strategies.Scalping.SwingScalping import SwingScalping
 from mt5Server.codes import config
 
 SET_SYMBOL, SET_STRATEGY = map(chr, range(2))
-RUN_STRATEGY = map(chr, range(2, 3))
-END = map(chr, range(3, 4))
+SELECT, RUN, END = map(chr, range(2, 5))
 CHATID = '1051403979'
 
 class Telegram_Bot:
@@ -23,6 +22,7 @@ class Telegram_Bot:
         self.tg_available = False
         self.idleStrategies = {}  # idle strategy: {strategy_name: class object}
         self.runningStrategies = {}  # running strategy: {strategy_name: class object}
+        self.targetStrategy = None
 
     async def listStrategy(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         optionList = []
@@ -45,7 +45,7 @@ class Telegram_Bot:
         definedStrategy = None
         for strategy in self.STRATEGIES:
             if strategy.__name__ == context.user_data['strategy']:
-                definedStrategy = strategy(self.mt5Controller, symbol)
+                definedStrategy = strategy(self.mt5Controller, symbol, tg=self)
                 self.idleStrategies[definedStrategy.getName] = definedStrategy
 
         await query.edit_message_text(text=f"Strategy is defined: {definedStrategy}")
@@ -61,27 +61,29 @@ class Telegram_Bot:
 
             await update.message.reply_text("Please choose:", reply_markup=reply_markup)
 
-            return RUN_STRATEGY
+            return SELECT
         else:
             await update.message.reply_text('There is no idle strategy yet. ')
             return END
 
-    async def runStrategy(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def selectStrategy(self, update, context):
         query = update.callback_query
 
         await query.answer()
 
         strategyName = query.data
 
-        thread = threading.Thread(target=self.idleStrategies[strategyName].run, args=[update, context])
-        thread.start()
-        # add the strategy in running strategy
-        self.runningStrategies[strategyName] = self.idleStrategies[strategyName]
-        # delete the strategy in idle strategy
-        self.idleStrategies.pop(strategyName, None)
-        await query.edit_message_text(f"{strategyName} is running... ")
+        # thread = threading.Thread(target=self.idleStrategies[strategyName].run, args=[update, context])
+        # thread.start()
 
-        return END
+        # status = self.idleStrategies[strategyName].run()
+
+        # add the strategy in running strategy
+        self.targetStrategy = self.idleStrategies[strategyName]
+
+        await self.targetStrategy.run(update, context)
+
+        return RUN
 
     async def endConv(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Completed.")
@@ -102,8 +104,8 @@ class Telegram_Bot:
 
         return SET_STRATEGY
 
-    async def preActingNotice(self, update, context, msg):
-        await update.message.send_message(text=msg, chat_id=CHATID)
+    # async def preActingNotice(self, update, context, msg):
+    #     await update.message.send_message(text=msg, chat_id=CHATID)
 
     async def start(self, update, context):
         self.chat_id = update.effective_chat.id
@@ -124,7 +126,8 @@ class Telegram_Bot:
         runConv = ConversationHandler(
             entry_points=[CommandHandler('run', self.listIdleStrategy)],
             states={
-                RUN_STRATEGY: [CallbackQueryHandler(self.runStrategy)],
+                SELECT: [CallbackQueryHandler(self.selectStrategy)],
+                # RUN: [CallbackQueryHandler(self.targetStrategy.run)],
                 END: [CommandHandler('run', self.listIdleStrategy)]
             },
             fallbacks=[]
