@@ -11,7 +11,7 @@ import time
 
 
 class SwingScalping:
-    def __init__(self, mt5Controller, symbol, diff_ema_100_50=45, diff_ema_50_25=30, ratio_sl_sp=1.5, tg=None):
+    def __init__(self, mt5Controller, symbol, *, diff_ema_100_50=45, diff_ema_50_25=30, ratio_sl_sp=1.5, tg=None):
         # define the controller
         self.mt5Controller = mt5Controller
         self.symbol = symbol
