@@ -6,7 +6,9 @@ class StrategyController:
         self.mt5Controller = mt5Controller
         self.runningStrategies = {}
         self.idleStrategies = {}
-        self.listStrategies = [SwingScalping]
+        self.listStrategies = [
+            {'id': 0, 'name': SwingScalping.__name__}
+        ]
         self.Sybmols = ['USDJPY', 'AUDUSD']
         self.tg = tg
 
@@ -17,13 +19,13 @@ class StrategyController:
             txt += f"{id}. {strategy.__name__}\n"
         return txt
 
-    def _setStrategy(self, strategyId, symbol):
-        strategy = self.listStrategies[strategyId](self.mt5Controller, symbol, tg=self.tg)
-        self.idleStrategies[strategy.getName] = strategy
-
-    def _runStrategy(self):
-        txt = ''
-        for id, strategy in self.listStrategies:
-            txt += f"{id}. {strategy.__name__}\n"
-        print_at(txt, tg=self.tg)
+    # def _setStrategy(self, strategyId, symbol):
+    #     strategy = self.distStrategies[strategyId](self.mt5Controller, symbol, tg=self.tg)
+    #     self.idleStrategies[strategy.getName] = strategy
+    #
+    # def _runStrategy(self):
+    #     txt = ''
+    #     for id, strategy in self.distStrategies:
+    #         txt += f"{id}. {strategy.__name__}\n"
+    #     print_at(txt, tg=self.tg)
 

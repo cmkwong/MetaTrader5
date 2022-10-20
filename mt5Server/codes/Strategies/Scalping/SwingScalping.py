@@ -1,9 +1,9 @@
 import sys
-
+import os
 sys.path.append('C:/Users/Chris/projects/210215_mt5')
+sys.path.append('C:/Users/Chris/projects/AtomLib')
 from mt5Server.codes.Mt5f.MT5Controller import MT5Controller
 from mt5Server.codes.Backtest import techModel
-from myUtils.printModel import print_at
 
 import pandas as pd
 import collections
@@ -11,18 +11,17 @@ import time
 
 
 class SwingScalping:
-    def __init__(self, mt5Controller, symbol, *, diff_ema_100_50=45, diff_ema_50_25=30, ratio_sl_sp=1.5, tg=None):
+    def __init__(self, mt5Controller, symbol, *, diff_ema_100_50=45, diff_ema_50_25=30, ratio_sl_sp=1.5, breakThroughCondition='25', tg=None):
         # define the controller
         self.mt5Controller = mt5Controller
         self.symbol = symbol
         self.DIFF_EMA_100_50 = diff_ema_100_50
         self.DIFF_EMA_50_25 = diff_ema_50_25
         self.RATIO_SL_SP = ratio_sl_sp
-        self.BREAK_THROUGH_CONDITION = '25'  # 0 = 25; 1 = 50
+        self.BREAK_THROUGH_CONDITION = breakThroughCondition  # 0 = 25; 1 = 50
         # init the variables
         self.breakThroughTime = None
         self.breakThroughCondition, self.trendRangeCondition, self.breakThroughNoticed = False, False, False
-        # self.breakDownThroughCondition, self.breakDownThroughNotice, self.riseTrendRangeCondition = False, False, False
         # define tg
         self.tg = tg
         # self.loopAllow = True
@@ -74,7 +73,7 @@ class SwingScalping:
             msg += "{:>15}{:>15}{:>15}".format(f"{EmaDiff.ema['100'][-1]:.5f}", f"{EmaDiff.ema['50'][-1]:.5f}", f"{EmaDiff.ema['25'][-1]:.5f}") + '\n'
             msg += f"EMA100-EMA50: {EmaDiff.ptDiff_100_50[-1]:.2f}" + '\n'
             msg += f" EMA50-EMA25: {EmaDiff.ptDiff_50_25[-1]:.2f}" + '\n'
-
+            print(msg)
         return EmaDiff
 
     # check if condition is meet: down / rise trend
@@ -104,31 +103,23 @@ class SwingScalping:
 
         return False
 
-    async def run(self, update, context):
-        query = update.callback_query
-
-        await query.answer()
-
-        strategyName = query.data
-
-        # add the strategy in running strategy
-        self.tg.runningStrategies[strategyName] = self.tg.idleStrategies[strategyName]
-        # delete the strategy in idle strategy
-        self.tg.idleStrategies.pop(strategyName, None)
-        await query.edit_message_text(f"{strategyName} is running... ")
-
-        # getting the live price
-        EmaDiff = self.gettingEmaDiff(mute=False)
-        # --------------------------- DOWN TREND ---------------------------
-        status = self.checkBreakThrough(EmaDiff, 'down')
-        if status: return status
-        # --------------------------- RISE TREND ---------------------------
-        status = self.checkBreakThrough(EmaDiff, 'rise')
-        if status: return status
-
-        return False
+    def run(self):
+        while True:
+            time.sleep(5)
+            # getting the live price
+            EmaDiff = self.gettingEmaDiff(mute=False)
+            # --------------------------- DOWN TREND ---------------------------
+            status = self.checkBreakThrough(EmaDiff, 'down')
+            if status:
+                os.system(f"start C:/Users/Chris/projects/210215_mt5/mt5Server/Sounds/{self.symbol}.mp3")
+                print(status)
+            # --------------------------- RISE TREND ---------------------------
+            status = self.checkBreakThrough(EmaDiff, 'rise')
+            if status:
+                os.system(f"start C:/Users/Chris/projects/210215_mt5/mt5Server/Sounds/{self.symbol}.mp3")
+                print(status)
 
 # get live Data from MT5 Server
-# mt5Controller = MT5Controller()
-# swingScalping = SwingScalping(mt5Controller, 'USDJPY')
-# swingScalping.run()
+mt5Controller = MT5Controller()
+swingScalping = SwingScalping(mt5Controller, 'USDJPY', breakThroughCondition='50')
+swingScalping.run()
