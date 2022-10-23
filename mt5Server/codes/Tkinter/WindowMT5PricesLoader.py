@@ -33,8 +33,8 @@ class WindowMT5PricesLoader(TkWindow):
             if type(widget).__name__ == self.BUTTON: continue
             param = self.getWidgetValue(cat, id)
             params.append(param)
-        requiredParams = paramModel.insert_params(AppClasses['MT5Controller'].mt5PricesLoader.getPrices, params)
-        Prices = AppClasses['MT5Controller'].mt5PricesLoader.getPrices(**requiredParams)
+        requiredParams = paramModel.insert_params(AppClasses['MT5Controller'].pricesLoader.getPrices, params)
+        Prices = AppClasses['MT5Controller'].pricesLoader.getPrices(**requiredParams)
         # store Data
         self.storeData(requiredParams['symbols'], Prices)
         # which of fields getting valid

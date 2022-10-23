@@ -1,9 +1,11 @@
 import sys
 import os
+
 sys.path.append('C:/Users/Chris/projects/210215_mt5')
 sys.path.append('C:/Users/Chris/projects/AtomLib')
 from mt5Server.codes.Mt5f.MT5Controller import MT5Controller
 from mt5Server.codes.Backtest import techModel
+from myUtils.printModel import print_at
 
 import pandas as pd
 import collections
@@ -35,13 +37,13 @@ class SwingScalping:
         EmaDiff = collections.namedtuple('EmaDiff', ['currentTime', 'ema', 'ptDiff_100_50', 'ptDiff_50_25', 'latest3Close', 'latest2Close', 'latest1Close'])
 
         # getting Prices
-        Prices = self.mt5Controller.mt5PricesLoader.getPrices(symbols=[self.symbol],
-                                                              start=None,
-                                                              end=None,
-                                                              timeframe='5min',
-                                                              count=1000,
-                                                              ohlcvs='111111'
-                                                              )
+        Prices = self.mt5Controller.pricesLoader.getPrices(symbols=[self.symbol],
+                                                           start=None,
+                                                           end=None,
+                                                           timeframe='5min',
+                                                           count=1000,
+                                                           ohlcvs='111111'
+                                                           )
         # get the close price
         close = Prices.c.values.reshape(-1)
         EmaDiff.currentTime = Prices.c.index[-1]
@@ -92,10 +94,12 @@ class SwingScalping:
             self.breakThroughTime = EmaDiff.currentTime
             # calculate the stop loss and stop profit
             stopLoss = EmaDiff.ema['100'][-1]
-            stopProfit = EmaDiff.latest1Close - (EmaDiff.ema['100'][-1] - EmaDiff.latest1Close) * self.RATIO_SL_SP
-            print(f'Trend({trendType})\n Time: {self.breakThroughTime}\n Stop loss: {stopLoss}\n Stop Profit: {stopProfit}\n\n')
+            takeProfit = EmaDiff.latest1Close - (EmaDiff.ema['100'][-1] - EmaDiff.latest1Close) * self.RATIO_SL_SP
+            # print(f'Trend({trendType})\n Time: {self.breakThroughTime}\n Stop loss: {stopLoss}\n Stop Profit: {stopProfit}\n\n')
             self.breakThroughNoticed = True
-            return {'type': trendType, 'time': self.breakThroughTime, 'sl': stopLoss, 'sp': stopProfit}
+            status = {'type': trendType, 'time': self.breakThroughTime, 'sl': stopLoss, 'tp': takeProfit}
+            self.makeNotice(status)
+            return status
 
         # reset the notice if in next time slot
         if EmaDiff.currentTime != self.breakThroughTime:
@@ -103,23 +107,28 @@ class SwingScalping:
 
         return False
 
+    def makeNotice(self, status):
+        os.system(f"start C:/Users/Chris/projects/210215_mt5/mt5Server/Sounds/{self.symbol}.mp3")
+        statusTxt = f'{self.symbol}\n'
+        for k, v in status.items():
+            statusTxt += f"{k} {v}\n"
+        if self.tg: print_at(statusTxt, tg=self.tg, print_allowed=True, reply_markup=self.tg.actionKeyboard(self.symbol, status['sl'], status['tp'], deviation=5, lot=1, msg=statusTxt))
+
     def run(self):
         while True:
+            # status = {'type': 'rise', 'time': '', 'sl': 100, 'tp': 50} # testing
+            # self.makeNotice(status)
             time.sleep(5)
             # getting the live price
             EmaDiff = self.gettingEmaDiff(mute=False)
             # --------------------------- DOWN TREND ---------------------------
             status = self.checkBreakThrough(EmaDiff, 'down')
-            if status:
-                os.system(f"start C:/Users/Chris/projects/210215_mt5/mt5Server/Sounds/{self.symbol}.mp3")
-                print(status)
+            if status: return status
             # --------------------------- RISE TREND ---------------------------
             status = self.checkBreakThrough(EmaDiff, 'rise')
-            if status:
-                os.system(f"start C:/Users/Chris/projects/210215_mt5/mt5Server/Sounds/{self.symbol}.mp3")
-                print(status)
+            if status: return status
 
 # get live Data from MT5 Server
-mt5Controller = MT5Controller()
-swingScalping = SwingScalping(mt5Controller, 'USDJPY', breakThroughCondition='50')
-swingScalping.run()
+# mt5Controller = MT5Controller()
+# swingScalping = SwingScalping(mt5Controller, 'USDJPY', breakThroughCondition='50')
+# swingScalping.run()

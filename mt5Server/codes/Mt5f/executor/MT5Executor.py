@@ -16,7 +16,7 @@ class MT5Executor:
     def __init__(self, type_filling='ioc'):
         self.type_filling = type_filling
 
-    def request_format(self, symbol, deviation, lot):
+    def request_format(self, symbol, actionType, sl, tp, deviation, lot):
         """
         :param strategy_id: str, belong to specific strategy
         :param lots: [float]
@@ -34,10 +34,10 @@ class MT5Executor:
             tf = mt5.ORDER_FILLING_RETURN
 
         # building request format
-        if lot > 0:
+        if actionType == 'long':
             action_type = mt5.ORDER_TYPE_BUY  # int = 0
             price = mt5.symbol_info_tick(symbol).ask
-        elif lot < 0:
+        elif actionType == 'short':
             action_type = mt5.ORDER_TYPE_SELL  # int = 1
             price = mt5.symbol_info_tick(symbol).bid
             lot = -lot
@@ -49,6 +49,8 @@ class MT5Executor:
             'volume': float(lot),
             'type': action_type,
             'price': price,
+            'sl': sl,
+            'tp': tp,
             'deviation': deviation,  # indeed, the deviation is useless when it is marketing order, note 73d
             "type_time": mt5.ORDER_TIME_GTC,
             "type_filling": tf,

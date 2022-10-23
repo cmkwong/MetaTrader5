@@ -65,18 +65,18 @@ tech_params = {
 
 mt5Controller = MT5Controller(timezone=data_options['timezone'], deposit_currency=data_options['deposit_currency'])
 # get the loader
-Prices = mt5Controller.mt5PricesLoader.getPrices(symbols=data_options['symbols'],
-                                                 start=data_options['start'],
-                                                 end=data_options['end'],
-                                                 timeframe=data_options['timeframe']
-                                                 )
+Prices = mt5Controller.pricesLoader.getPrices(symbols=data_options['symbols'],
+                                              start=data_options['start'],
+                                              end=data_options['end'],
+                                              timeframe=data_options['timeframe']
+                                              )
 
 # split into train set and test set
-Train_Prices, Test_Prices = mt5Controller.mt5PricesLoader.split_Prices(Prices, percentage=data_options['trainTestSplit'])
+Train_Prices, Test_Prices = mt5Controller.pricesLoader.split_Prices(Prices, percentage=data_options['trainTestSplit'])
 
 # build the env (long)
 env = RL.envs.TechnicalForexEnv.TechnicalForexEnv(data_options['symbols'][0], Train_Prices, tech_params, True,
-                                                  mt5Controller.mt5PricesLoader.all_symbol_info, 0.05, 8, 15, random_ofs_on_reset=True, reset_on_close=True)
+                                                  mt5Controller.pricesLoader.all_symbol_info, 0.05, 8, 15, random_ofs_on_reset=True, reset_on_close=True)
 env_val = RL.envs.TechnicalForexEnv.TechnicalForexEnv(data_options['symbols'][0], Test_Prices, tech_params, True,
-                                                      mt5Controller.mt5PricesLoader.all_symbol_info, 0.05, 8, 15, random_ofs_on_reset=False, reset_on_close=False)
+                                                      mt5Controller.pricesLoader.all_symbol_info, 0.05, 8, 15, random_ofs_on_reset=False, reset_on_close=False)
 

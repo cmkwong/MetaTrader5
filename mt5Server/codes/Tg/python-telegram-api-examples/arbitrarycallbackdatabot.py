@@ -25,8 +25,8 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
 async def clear(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Clears the callback data cache"""
-    context.bot.callback_data_cache.clear_callback_data()
-    context.bot.callback_data_cache.clear_callback_queries()
+    context.tg.callback_data_cache.clear_callback_data()
+    context.tg.callback_data_cache.clear_callback_queries()
     await update.effective_message.reply_text("All clear!")
 
 
