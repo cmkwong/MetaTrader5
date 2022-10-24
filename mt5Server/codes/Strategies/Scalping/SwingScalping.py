@@ -112,7 +112,7 @@ class SwingScalping:
         statusTxt = f'{self.symbol}\n'
         for k, v in status.items():
             statusTxt += f"{k} {v}\n"
-        if self.tg: print_at(statusTxt, tg=self.tg, print_allowed=True, reply_markup=self.tg.actionKeyboard(self.symbol, status['sl'], status['tp'], deviation=5, lot=1, msg=statusTxt))
+        if self.tg: print_at(statusTxt, tg=self.tg, print_allowed=True, reply_markup=self.tg.actionKeyboard(self.symbol, status['sl'], status['tp'], deviation=5, lot=1))
 
     def run(self):
         while True:
@@ -120,7 +120,7 @@ class SwingScalping:
             # self.makeNotice(status)
             time.sleep(5)
             # getting the live price
-            EmaDiff = self.gettingEmaDiff(mute=False)
+            EmaDiff = self.gettingEmaDiff(mute=True)
             # --------------------------- DOWN TREND ---------------------------
             status = self.checkBreakThrough(EmaDiff, 'down')
             if status: return status

@@ -40,7 +40,7 @@ class MT5Executor:
         elif actionType == 'short':
             action_type = mt5.ORDER_TYPE_SELL  # int = 1
             price = mt5.symbol_info_tick(symbol).bid
-            lot = -lot
+            # lot = -lot
         else:
             raise Exception("The lot cannot be 0")  # if lot equal to 0, raise an Error
         request = {
