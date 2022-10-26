@@ -13,7 +13,7 @@ import time
 
 
 class SwingScalping:
-    def __init__(self, mt5Controller, symbol, *, diff_ema_100_50=45, diff_ema_50_25=30, ratio_sl_sp=1.5, breakThroughCondition='25', tg=None):
+    def __init__(self, mt5Controller, symbol, *, diff_ema_100_50=45, diff_ema_50_25=30, ratio_sl_sp=1.5, breakThroughCondition='25', auto=False, tg=None):
         # define the controller
         self.mt5Controller = mt5Controller
         self.symbol = symbol
@@ -24,13 +24,14 @@ class SwingScalping:
         # init the variables
         self.breakThroughTime = None
         self.breakThroughCondition, self.trendRangeCondition, self.breakThroughNoticed = False, False, False
+        # auto
+        self.auto = auto
         # define tg
         self.tg = tg
-        # self.loopAllow = True
 
     @property
     def getName(self):
-        return f"{self.__class__.__name__}_{self.symbol}"
+        return f"{self.__class__.__name__}_{self.symbol}: {self.DIFF_EMA_100_50} {self.DIFF_EMA_50_25} {self.RATIO_SL_SP} {self.BREAK_THROUGH_CONDITION}"
 
     def gettingEmaDiff(self, mute=False):
         # define the name tuple
@@ -98,7 +99,7 @@ class SwingScalping:
             # print(f'Trend({trendType})\n Time: {self.breakThroughTime}\n Stop loss: {stopLoss}\n Stop Profit: {stopProfit}\n\n')
             self.breakThroughNoticed = True
             status = {'type': trendType, 'time': self.breakThroughTime, 'sl': stopLoss, 'tp': takeProfit}
-            self.makeNotice(status)
+            self.makeAction(status)
             return status
 
         # reset the notice if in next time slot
@@ -107,12 +108,30 @@ class SwingScalping:
 
         return False
 
-    def makeNotice(self, status):
+    def makeAction(self, status):
         os.system(f"start C:/Users/Chris/projects/210215_mt5/mt5Server/Sounds/{self.symbol}.mp3")
         statusTxt = f'{self.symbol}\n'
         for k, v in status.items():
             statusTxt += f"{k} {v}\n"
-        if self.tg: print_at(statusTxt, tg=self.tg, print_allowed=True, reply_markup=self.tg.actionKeyboard(self.symbol, status['sl'], status['tp'], deviation=5, lot=1))
+        if not self.auto and self.tg:
+            print_at(statusTxt, tg=self.tg, print_allowed=True, reply_markup=self.tg.actionKeyboard(self.symbol, status['sl'], status['tp'], deviation=5, lot=1))
+        elif self.auto:
+            # define the action type
+            if status['type'] == 'rise':
+                actionType = 'long'
+            else:
+                actionType = 'short'
+            # build request format
+            request = self.mt5Controller.executor.request_format(
+                symbol=self.symbol,
+                actionType=actionType,
+                sl=float(status['sl']),
+                tp=float(status['tp']),
+                deviation=5,
+                lot=1
+            )
+            # execute request
+            self.mt5Controller.executor.request_execute(request)
 
     def run(self):
         while True:

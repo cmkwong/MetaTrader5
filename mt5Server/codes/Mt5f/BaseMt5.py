@@ -2,6 +2,7 @@ from mt5Server.codes.Backtest import timeModel
 import MetaTrader5 as mt5
 import collections
 import pandas as pd
+from datetime import datetime, timedelta
 
 
 class BaseMt5:
@@ -95,6 +96,24 @@ class BaseMt5:
             else:
                 symbols_info[symbol_name].pt_value = 1  # 1 dollar for quote per each point  (See note Stock Market - Knowledge - note 3)
         return symbols_info
+
+    def get_historical_deal(self, lastDays=10):
+        """
+        :return:
+        """
+        currentDate = datetime.today() # time object
+        fromDate = currentDate - timedelta(days=lastDays)
+        historicalDeal = mt5.history_deals_get(fromDate, currentDate)
+        return historicalDeal
+
+    def get_historical_order(self, lastDays=10):
+        """
+        :return:
+        """
+        currentDate = datetime.today() # time object
+        fromDate = currentDate - timedelta(days=lastDays)
+        historicalOrder = mt5.history_orders_get(fromDate, currentDate)
+        return historicalOrder
 
     def connect_server(self):
         # connect to MetaTrader 5

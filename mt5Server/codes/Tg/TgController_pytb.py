@@ -3,8 +3,6 @@ from telebot.callback_data import CallbackData, CallbackDataFilter
 from telebot.custom_filters import AdvancedCustomFilter
 from telebot import types
 
-import inspect
-
 from mt5Server.codes.Mt5f.MT5Controller import MT5Controller
 from mt5Server.codes.Strategies.StrategyController import StrategyController
 from myUtils import paramModel
@@ -100,19 +98,35 @@ class Telegram_Bot:
         # -------------------- Strategy --------------------
         @self.bot.message_handler(commands=['strategy'])
         def strategy_command_handler(message):
-            self.chat_id = message.chat.id
             self.bot.send_message(message.chat.id, "Strategies: ", reply_markup=self.listStrategyKeyboard())
 
         @self.bot.callback_query_handler(func=None, config=self.strategy_factory.filter())
         def choose_strategy_callback(call):
-            print('yeah')
             self.bot.answer_callback_query(callback_query_id=call.id, text='yeah', show_alert=True)
 
         @self.bot.message_handler(commands=['symbols'])
         def symbols_command_handler(message: types.Message):
             self.bot.send_message(message.chat.id, 'Symbols:', reply_markup=self.symbolKeyboard())
 
-        # -------------------- Action --------------------
+        # -------------------- Running Strategy List --------------------
+        @self.bot.message_handler(commands=['rl']) # running strategy list
+        def showRunStrategy_command_handler(message):
+            txt = ''
+            for i, strategy in enumerate(self.strategyController.runningStrategies):
+                txt += f"{i+1}. {strategy.getName}\n"
+            self.bot.send_message(message.chat.id, f"Running Strategy: \n{txt}")
+
+        # -------------------- Showing last deal result --------------------
+        @self.bot.message_handler(commands=['dl']) # historical deals list
+        def showHistoricalDeal_command_handler(message):
+            self.mt5Controller.get_historical_deal()
+
+        @self.bot.message_handler(commands=['ol'])  # historical orders list
+        def showHistoricalDeal_command_handler(message):
+            self.mt5Controller.get_historical_order()
+
+        # -------------------- Action Listener --------------------
+        # Cancel
         @self.bot.callback_query_handler(func=None, config=self.action_factory.filter(action_id='2'))  # CANCEL
         def choose_strategy_callback(call):
             # getting callback data
@@ -122,8 +136,8 @@ class Telegram_Bot:
             for k, v in callback_data.items():
                 msg += f"{k} {v}\n"
             self.bot.edit_message_text(chat_id=self.chat_id, message_id=call.message.message_id, text=msg + '\nDeal Cancelled')
-
-        @self.bot.callback_query_handler(func=None, config=self.action_factory.filter())  # LONG / SHORT
+        # LONG / SHORT
+        @self.bot.callback_query_handler(func=None, config=self.action_factory.filter())
         def choose_strategy_callback(call):
             # getting callback data
             callback_data: dict = self.action_factory.parse(callback_data=call.data)
@@ -154,15 +168,16 @@ class Telegram_Bot:
         @self.bot.message_handler(commands=['run'])
         def run_command_handler(message):
             self.chat_id = message.chat.id
-            self.strategyController.runThreadStrategy(0, 'GBPUSD', breakThroughCondition='50', diff_ema_100_50=45, diff_ema_50_25=50, tg=self)
-            self.strategyController.runThreadStrategy(0, 'CADJPY', breakThroughCondition='50', diff_ema_100_50=45, diff_ema_50_25=50, tg=self)
-            self.strategyController.runThreadStrategy(0, 'AUDJPY', breakThroughCondition='50', diff_ema_100_50=45, diff_ema_50_25=50, tg=self)
-            self.strategyController.runThreadStrategy(0, 'AUDUSD', breakThroughCondition='50', diff_ema_100_50=45, diff_ema_50_25=50, tg=self)
-            self.strategyController.runThreadStrategy(0, 'USDCAD', breakThroughCondition='50', diff_ema_100_50=45, diff_ema_50_25=50, tg=self)
-            self.strategyController.runThreadStrategy(0, 'USDJPY', breakThroughCondition='50', diff_ema_100_50=45, diff_ema_50_25=50, tg=self)
-            self.strategyController.runThreadStrategy(0, 'EURCAD', breakThroughCondition='50', diff_ema_100_50=45, diff_ema_50_25=50, tg=self)
-            self.strategyController.runThreadStrategy(0, 'EURUSD', breakThroughCondition='50', diff_ema_100_50=45, diff_ema_50_25=50, tg=self)
+            self.strategyController.runThreadStrategy(0, 'GBPUSD', breakThroughCondition='50', diff_ema_100_50=40, diff_ema_50_25=40, auto=True, tg=self)
+            self.strategyController.runThreadStrategy(0, 'CADJPY', breakThroughCondition='50', diff_ema_100_50=40, diff_ema_50_25=40, auto=True, tg=self)
+            self.strategyController.runThreadStrategy(0, 'AUDJPY', breakThroughCondition='50', diff_ema_100_50=40, diff_ema_50_25=40, auto=True, tg=self)
+            self.strategyController.runThreadStrategy(0, 'AUDUSD', breakThroughCondition='50', diff_ema_100_50=40, diff_ema_50_25=40, auto=True, tg=self)
+            self.strategyController.runThreadStrategy(0, 'USDCAD', breakThroughCondition='50', diff_ema_100_50=40, diff_ema_50_25=40, auto=True, tg=self)
+            self.strategyController.runThreadStrategy(0, 'USDJPY', breakThroughCondition='50', diff_ema_100_50=40, diff_ema_50_25=40, auto=True, tg=self)
+            self.strategyController.runThreadStrategy(0, 'EURCAD', breakThroughCondition='50', diff_ema_100_50=40, diff_ema_50_25=40, auto=True, tg=self)
+            self.strategyController.runThreadStrategy(0, 'EURUSD', breakThroughCondition='50', diff_ema_100_50=40, diff_ema_50_25=40, auto=True, tg=self)
             self.bot.send_message(message.chat.id, 'Strategy Running...')
+
         self.bot.add_custom_filter(StrategyCallbackFilter())
         self.bot.add_custom_filter(ActionCallbackFilter())
         self.bot.polling()
