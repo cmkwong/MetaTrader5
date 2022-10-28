@@ -4,7 +4,7 @@ import pandas as pd
 from myUtils.DfModel import DfModel
 
 # upload the forex loader
-class ServerConnector(DfModel):
+class NodejsServerController(DfModel):
 
     def __init__(self):
         self.mainUrl = "http://localhost:3002/"
@@ -20,7 +20,7 @@ class ServerConnector(DfModel):
         forexDf['datetime'] = forexDf.index
         forexDf['datetime'] = forexDf['datetime'].dt.strftime('%Y-%m-%d %H:%M:%S')
         listData = forexDf.to_dict('records')
-        r = requests.post(self.uploadForexDataUrl.format(tableName), json={'Data': listData})
+        r = requests.post(self.uploadForexDataUrl.format(tableName), json={'data': listData})
         if r.status_code != 200:
             print(r.text)
             return False

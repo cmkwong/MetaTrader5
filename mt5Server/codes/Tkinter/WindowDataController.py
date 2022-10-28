@@ -1,7 +1,7 @@
 from TkWindow import TkWindow
 from TkInitWidget import TkInitWidget
 from mt5Server.codes.AppStorage import AppData, AppClasses
-from mt5Server.codes.Data.ServerConnector import ServerConnector
+from mt5Server.codes.Data.NodejsServerController import NodejsServerController
 
 class WindowDataController(TkWindow):
 
@@ -29,4 +29,4 @@ class WindowDataController(TkWindow):
     def onUploadHistoryData(self, cat):
         tableName = self.getWidgetValue(cat, 'tableName')
         symbol = self.getWidgetValue(cat, 'historyUpload')
-        AppClasses[ServerConnector.__name__].uploadForexData(AppData['history'][symbol], tableName=tableName)
+        AppClasses[NodejsServerController.__name__].uploadForexData(AppData['history'][symbol], tableName=tableName)

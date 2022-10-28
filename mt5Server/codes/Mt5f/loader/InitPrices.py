@@ -8,7 +8,7 @@ class InitPrices:
     cc: pd.DataFrame
     ptDv: pd.DataFrame
     quote_exchg: pd.DataFrame
-    base_exchg: pd.DataFrame
+    base_exchg: pd.DataFrame = pd.DataFrame()
     o: pd.DataFrame = pd.DataFrame()
     h: pd.DataFrame = pd.DataFrame()
     l: pd.DataFrame = pd.DataFrame()

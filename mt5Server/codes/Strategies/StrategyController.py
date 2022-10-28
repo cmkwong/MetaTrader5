@@ -13,7 +13,7 @@ class StrategyController:
         self.listStrategies = [
             {'id': 0, 'name': SwingScalping.__name__, 'class': SwingScalping}
         ]
-        self.Sybmols = ['USDJPY', 'AUDUSD']
+        self.Sybmols = ['GBPUSD','CADJPY','AUDJPY','AUDUSD','USDCAD','USDJPY','EURCAD','EURUSD']
         self.tg = tg
 
     # get list of strategies text

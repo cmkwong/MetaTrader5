@@ -5,7 +5,8 @@ from telebot import types
 
 from mt5Server.codes.Mt5f.MT5Controller import MT5Controller
 from mt5Server.codes.Strategies.StrategyController import StrategyController
-from myUtils import paramModel
+from mt5Server.codes.Data.NodejsServerController import NodejsServerController
+from myUtils import paramType
 
 
 class StrategyCallbackFilter(AdvancedCustomFilter):
@@ -27,6 +28,7 @@ class Telegram_Bot:
         self.chat_id = False
         self.bot = telebot.TeleBot(token)
         self.mt5Controller = MT5Controller()
+        self.nodejsServerController = NodejsServerController()
         self.strategyController = StrategyController(self.mt5Controller, self.bot)
         self.strategy_factory = CallbackData('strategy_id', prefix='strategy')
         self.action_factory = CallbackData('action_id', 'symbol', 'sl', 'tp', 'deviation', 'lot', prefix='action')
@@ -62,7 +64,7 @@ class Telegram_Bot:
             ]
         )
 
-    def symbolKeyboard(self):
+    def listSymbolKeyboard(self):
         return types.InlineKeyboardMarkup(
             keyboard=[
                 [
@@ -106,24 +108,37 @@ class Telegram_Bot:
 
         @self.bot.message_handler(commands=['symbols'])
         def symbols_command_handler(message: types.Message):
-            self.bot.send_message(message.chat.id, 'Symbols:', reply_markup=self.symbolKeyboard())
+            self.bot.send_message(message.chat.id, 'Symbols:', reply_markup=self.listSymbolKeyboard())
 
         # -------------------- Running Strategy List --------------------
-        @self.bot.message_handler(commands=['rl']) # running strategy list
+        @self.bot.message_handler(commands=['rl'])  # running strategy list
         def showRunStrategy_command_handler(message):
             txt = ''
             for i, strategy in enumerate(self.strategyController.runningStrategies):
-                txt += f"{i+1}. {strategy.getName}\n"
+                txt += f"{i + 1}. {strategy.getName}\n"
             self.bot.send_message(message.chat.id, f"Running Strategy: \n{txt}")
 
         # -------------------- Showing last deal result --------------------
-        @self.bot.message_handler(commands=['dl']) # historical deals list
+        @self.bot.message_handler(commands=['dl'])  # historical deals list
         def showHistoricalDeal_command_handler(message):
             self.mt5Controller.get_historical_deal()
 
         @self.bot.message_handler(commands=['ol'])  # historical orders list
         def showHistoricalDeal_command_handler(message):
             self.mt5Controller.get_historical_order()
+
+        # -------------------- Upload forex data into database (nodejs) --------------------
+        @self.bot.message_handler(commands=['feed'])
+        def feedDataIntoForex_command_handler(message):
+            # select the symbol or all?
+            # self.bot.send_message(message.chat.id, f"Select the symbol:\n", reply_markup=self.listSymbolKeyboard())
+            requiredSymbols = ['AUDJPY', 'AUDCAD', 'AUDUSD', 'CADJPY', 'EURAUD', 'EURCAD', 'EURGBP', 'EURUSD', 'GBPUSD', 'USDCAD', 'USDJPY']
+            Prices = self.mt5Controller.pricesLoader.getPrices(symbols=requiredSymbols, start=(2022, 8, 31, 0, 0), end=(2022, 10, 27, 0, 0), timeframe='1min', count=0, ohlcvs='111111')
+            # get to upload the data
+            dfs = Prices.getOhlcvsFromPrices(requiredSymbols)
+            for symbol, df in dfs.items():
+                self.nodejsServerController.uploadForexData(df, tableName=symbol.lower() + '_1m')
+            pass
 
         # -------------------- Action Listener --------------------
         # Cancel
@@ -136,6 +151,7 @@ class Telegram_Bot:
             for k, v in callback_data.items():
                 msg += f"{k} {v}\n"
             self.bot.edit_message_text(chat_id=self.chat_id, message_id=call.message.message_id, text=msg + '\nDeal Cancelled')
+
         # LONG / SHORT
         @self.bot.callback_query_handler(func=None, config=self.action_factory.filter())
         def choose_strategy_callback(call):
@@ -176,6 +192,7 @@ class Telegram_Bot:
             self.strategyController.runThreadStrategy(0, 'USDJPY', breakThroughCondition='50', diff_ema_100_50=40, diff_ema_50_25=40, auto=True, tg=self)
             self.strategyController.runThreadStrategy(0, 'EURCAD', breakThroughCondition='50', diff_ema_100_50=40, diff_ema_50_25=40, auto=True, tg=self)
             self.strategyController.runThreadStrategy(0, 'EURUSD', breakThroughCondition='50', diff_ema_100_50=40, diff_ema_50_25=40, auto=True, tg=self)
+            self.strategyController.runThreadStrategy(0, 'USDCHF', breakThroughCondition='50', diff_ema_100_50=40, diff_ema_50_25=40, auto=True, tg=self)
             self.bot.send_message(message.chat.id, 'Strategy Running...')
 
         self.bot.add_custom_filter(StrategyCallbackFilter())
