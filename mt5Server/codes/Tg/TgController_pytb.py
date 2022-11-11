@@ -5,7 +5,7 @@ from telebot import types
 
 from mt5Server.codes.Mt5f.MT5Controller import MT5Controller
 from mt5Server.codes.Strategies.StrategyController import StrategyController
-from mt5Server.codes.Data.NodejsServerController import NodejsServerController
+from mt5Server.codes.Data.DataFeeder import DataFeeder
 from myUtils import paramType
 
 
@@ -28,7 +28,7 @@ class Telegram_Bot:
         self.chat_id = False
         self.bot = telebot.TeleBot(token)
         self.mt5Controller = MT5Controller()
-        self.nodejsServerController = NodejsServerController()
+        self.dataFeeder = DataFeeder(self.mt5Controller)
         self.strategyController = StrategyController(self.mt5Controller, self.bot)
         self.strategy_factory = CallbackData('strategy_id', prefix='strategy')
         self.action_factory = CallbackData('action_id', 'symbol', 'sl', 'tp', 'deviation', 'lot', prefix='action')
@@ -130,15 +130,8 @@ class Telegram_Bot:
         # -------------------- Upload forex data into database (nodejs) --------------------
         @self.bot.message_handler(commands=['feed'])
         def feedDataIntoForex_command_handler(message):
-            # select the symbol or all?
-            # self.bot.send_message(message.chat.id, f"Select the symbol:\n", reply_markup=self.listSymbolKeyboard())
-            requiredSymbols = ['AUDJPY', 'AUDCAD', 'AUDUSD', 'CADJPY', 'EURAUD', 'EURCAD', 'EURGBP', 'EURUSD', 'GBPUSD', 'USDCAD', 'USDJPY']
-            Prices = self.mt5Controller.pricesLoader.getPrices(symbols=requiredSymbols, start=(2022, 8, 31, 0, 0), end=(2022, 10, 27, 0, 0), timeframe='1min', count=0, ohlcvs='111111')
-            # get to upload the data
-            dfs = Prices.getOhlcvsFromPrices(requiredSymbols)
-            for symbol, df in dfs.items():
-                self.nodejsServerController.uploadForexData(df, tableName=symbol.lower() + '_1m')
-            pass
+            self.dataFeeder.uploadDatas(['AUDJPY', 'AUDCAD', 'AUDUSD', 'CADJPY', 'EURAUD', 'EURCAD', 'EURGBP', 'EURUSD', 'GBPUSD', 'USDCAD', 'USDJPY'],
+                                       startTime=(2022, 8, 31, 0, 0), endTime=(2022, 10, 31, 23, 59))
 
         # -------------------- Action Listener --------------------
         # Cancel

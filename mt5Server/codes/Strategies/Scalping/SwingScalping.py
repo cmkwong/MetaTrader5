@@ -3,8 +3,8 @@ import os
 
 sys.path.append('C:/Users/Chris/projects/210215_mt5')
 sys.path.append('C:/Users/Chris/projects/AtomLib')
-from mt5Server.codes.Mt5f.MT5Controller import MT5Controller
-from mt5Server.codes.Backtest import techModel
+from mt5Server.codes.Backtest.func import techModel
+from mt5Server.codes.Strategies.Scalping.Base_SwingScalping import Base_SwingScalping
 from myUtils.printModel import print_at
 
 import pandas as pd
@@ -12,15 +12,22 @@ import collections
 import time
 
 
-class SwingScalping:
-    def __init__(self, mt5Controller, symbol, *, diff_ema_100_50=45, diff_ema_50_25=30, ratio_sl_sp=1.5, breakThroughCondition='25', auto=False, tg=None):
-        # define the controller
-        self.mt5Controller = mt5Controller
+class SwingScalping(Base_SwingScalping):
+    def __init__(self, mt5Controller, symbol, *,
+                 diff_ema_100_50=45, diff_ema_50_25=30, ratio_sl_sp=1.5, breakThroughCondition='25',
+                 ema25Percent=25, ema50Percent=50, ema100Percent=100,
+                 lot=1,
+                 auto=False, tg=None):
+        super(SwingScalping, self).__init__(mt5Controller)
         self.symbol = symbol
         self.DIFF_EMA_100_50 = diff_ema_100_50
         self.DIFF_EMA_50_25 = diff_ema_50_25
         self.RATIO_SL_SP = ratio_sl_sp
         self.BREAK_THROUGH_CONDITION = breakThroughCondition  # 0 = 25; 1 = 50
+        self.ema25Percent = ema25Percent
+        self.ema50Percent = ema50Percent
+        self.ema100Percent = ema100Percent
+        self.LOT = lot
         # init the variables
         self.breakThroughTime = None
         self.breakThroughCondition, self.trendRangeCondition, self.breakThroughNoticed = False, False, False
@@ -37,7 +44,7 @@ class SwingScalping:
         # define the name tuple
         EmaDiff = collections.namedtuple('EmaDiff', ['currentTime', 'ema', 'ptDiff_100_50', 'ptDiff_50_25', 'latest3Close', 'latest2Close', 'latest1Close'])
 
-        # getting Prices
+        # getting latest Prices
         Prices = self.mt5Controller.pricesLoader.getPrices(symbols=[self.symbol],
                                                            start=None,
                                                            end=None,
@@ -51,9 +58,9 @@ class SwingScalping:
 
         # calculate the ema price: 25, 50, 100
         EmaDiff.ema = pd.DataFrame(index=Prices.c.index)
-        EmaDiff.ema['25'] = techModel.get_EMA(Prices.c, 25)
-        EmaDiff.ema['50'] = techModel.get_EMA(Prices.c, 50)
-        EmaDiff.ema['100'] = techModel.get_EMA(Prices.c, 100)
+        EmaDiff.ema['25'] = techModel.get_EMA(Prices.c, self.ema25Percent)
+        EmaDiff.ema['50'] = techModel.get_EMA(Prices.c, self.ema50Percent)
+        EmaDiff.ema['100'] = techModel.get_EMA(Prices.c, self.ema100Percent)
 
         # get latest 3 close price
         EmaDiff.latest3Close = close[-3]
@@ -62,10 +69,8 @@ class SwingScalping:
         # get latest close price
         EmaDiff.latest1Close = close[-1]
 
-        # calculate the ema difference
-        digits = self.mt5Controller.all_symbol_info[self.symbol].digits
-        EmaDiff.ptDiff_100_50 = (EmaDiff.ema['100'] - EmaDiff.ema['50']) * (10 ** digits)
-        EmaDiff.ptDiff_50_25 = (EmaDiff.ema['50'] - EmaDiff.ema['25']) * (10 ** digits)
+        # calculate the point difference
+        EmaDiff.ptDiff_100_50, EmaDiff.ptDiff_50_25 = self.getPointDiff(self.symbol, EmaDiff.ema['100'], EmaDiff.ema['50'], EmaDiff.ema['25'])
 
         if not mute:
             msg = ''
@@ -114,7 +119,7 @@ class SwingScalping:
         for k, v in status.items():
             statusTxt += f"{k} {v}\n"
         if not self.auto and self.tg:
-            print_at(statusTxt, tg=self.tg, print_allowed=True, reply_markup=self.tg.actionKeyboard(self.symbol, status['sl'], status['tp'], deviation=5, lot=1))
+            print_at(statusTxt, tg=self.tg, print_allowed=True, reply_markup=self.tg.actionKeyboard(self.symbol, status['sl'], status['tp'], deviation=5, lot=self.LOT))
         elif self.auto:
             # define the action type
             if status['type'] == 'rise':
@@ -128,7 +133,7 @@ class SwingScalping:
                 sl=float(status['sl']),
                 tp=float(status['tp']),
                 deviation=5,
-                lot=1
+                lot=self.LOT
             )
             # execute request
             self.mt5Controller.executor.request_execute(request)

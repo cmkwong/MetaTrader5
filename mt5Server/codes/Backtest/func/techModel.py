@@ -147,6 +147,8 @@ def get_EMA(close, timeperiod, smoothing=2):
     :param timeperiod: int
     :return: pd.DataFrame
     """
+    if not isinstance(close, pd.DataFrame):
+        close = pd.DataFrame(close, index=close.index)
     emaArr = [np.nan] * (timeperiod - 1)
     ema = [close[:timeperiod].sum().values[0] / timeperiod]
     for row in close[timeperiod:].iterrows():
@@ -154,7 +156,7 @@ def get_EMA(close, timeperiod, smoothing=2):
         ema.append((c * (smoothing / (1 + timeperiod))) + ema[-1] * (1 - (smoothing / (1 + timeperiod))))
     # build the full list
     emaArr.extend(ema)
-    return pd.DataFrame(emaArr, index=close.index)
+    return pd.DataFrame(emaArr, index=close.index).fillna(0)
 
 def get_tech_datas(Prices, params, tech_name):
     """

@@ -2,6 +2,7 @@ import requests
 import pandas as pd
 
 from myUtils.DfModel import DfModel
+from mt5Server.codes.Backtest.func import timeModel
 
 # upload the forex loader
 class NodejsServerController(DfModel):
@@ -12,7 +13,7 @@ class NodejsServerController(DfModel):
         self.downloadForexDataUrl = self.mainUrl + "api/v1/query/forexTable/download?tableName={}"
         self.createTableUrl = self.mainUrl + "api/v1/query/forexTable/create?tableName={}"
 
-    def uploadForexData(self, forexDf: pd.DataFrame, *, tableName: str):
+    def postForexData(self, forexDf: pd.DataFrame, *, tableName: str):
         """
         upload forex Data ohlcvs: open, high, low, close, volume, spread
         """
@@ -27,22 +28,30 @@ class NodejsServerController(DfModel):
         print(f"Data being uploaded: {len(listData)}")
         return True
 
-    def downloadForexData(self, *, tableName: str, dateFrom: str, dateTo: str):
+    def getForexData(self, *, tableName: str, dateFrom: tuple, dateTo: tuple):
         """
         download forex ohlcvs from server
+        :param tableName: str
+        :param dateFrom: (yyyy, mm, dd, HH, MM)
+        :param dateTo: (yyyy, mm, dd, HH, MM)
         :return pd.DataFrame with ohlcvs
         """
+        dateFromStr = timeModel.get_time_string(dateFrom, format='yyyy-mm-dd HH:MM:ss')
+        dateToStr = timeModel.get_time_string(dateTo, format='yyyy-mm-dd HH:MM:ss')
         body = {
-            'from': dateFrom,
-            'to': dateTo
+            'from': dateFromStr,
+            'to': dateToStr
         }
         r = requests.get(self.downloadForexDataUrl.format(tableName), json=body)
         res = r.json()
         if r.status_code != 200:
             print(r.text)
             return False
-        print(f"Data being downloaded: {len(res['Data'])}")
-        forexDf = pd.DataFrame.from_dict(res['Data']).set_index('datetime')
+        print(f"Data being downloaded: {len(res['data'])}")
+        # change to dataframe
+        forexDf = pd.DataFrame.from_dict(res['data']).set_index('datetime')
+        # change index into datetimeIndex
+        forexDf.index = pd.to_datetime(forexDf.index)
         return forexDf
 
     def createForexTable(self, *, tableName:str):

@@ -1,4 +1,4 @@
-from mt5Server.codes.Backtest import timeModel
+from mt5Server.codes.Backtest.func import timeModel
 import MetaTrader5 as mt5
 import collections
 import pandas as pd

@@ -1,4 +1,4 @@
-from mt5Server.codes.Backtest import timeModel, pointsModel, returnModel
+from mt5Server.codes.Backtest.func import returnModel, pointsModel, timeModel
 from mt5Server.codes.Mt5f.BaseMt5 import BaseMt5
 
 import MetaTrader5 as mt5

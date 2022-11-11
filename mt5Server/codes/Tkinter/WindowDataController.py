@@ -29,4 +29,4 @@ class WindowDataController(TkWindow):
     def onUploadHistoryData(self, cat):
         tableName = self.getWidgetValue(cat, 'tableName')
         symbol = self.getWidgetValue(cat, 'historyUpload')
-        AppClasses[NodejsServerController.__name__].uploadForexData(AppData['history'][symbol], tableName=tableName)
+        AppClasses[NodejsServerController.__name__].postForexData(AppData['history'][symbol], tableName=tableName)
