@@ -18,8 +18,7 @@ class SwingScalping(Base_SwingScalping):
                  ema25Percent=25, ema50Percent=50, ema100Percent=100,
                  lot=1,
                  auto=False, tg=None):
-        super(SwingScalping, self).__init__(mt5Controller)
-        self.symbol = symbol
+        super(SwingScalping, self).__init__(mt5Controller, symbol)
         self.DIFF_EMA_100_50 = diff_ema_100_50
         self.DIFF_EMA_50_25 = diff_ema_50_25
         self.RATIO_SL_SP = ratio_sl_sp
@@ -70,7 +69,7 @@ class SwingScalping(Base_SwingScalping):
         EmaDiff.latest1Close = close[-1]
 
         # calculate the point difference
-        EmaDiff.ptDiff_100_50, EmaDiff.ptDiff_50_25 = self.getPointDiff(self.symbol, EmaDiff.ema['100'], EmaDiff.ema['50'], EmaDiff.ema['25'])
+        EmaDiff.ptDiff_100_50, EmaDiff.ptDiff_50_25 = self.getRangePointDiff(EmaDiff.ema['100'], EmaDiff.ema['50'], EmaDiff.ema['25'])
 
         if not mute:
             msg = ''
