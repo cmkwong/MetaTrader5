@@ -17,8 +17,8 @@ class BackTest_SwingScalping(Base_SwingScalping):
         self.LOT = lot
         self.prepare1MinData(startTime, endTime)
 
-    def test(self, diff_ema_upper_middle=50, diff_ema_middle_lower=50, ratio_sl_sp=1.5,
-             lowerEma=25, middleEma=50, upperEma=100):
+    def test(self, diff_ema_upper_middle=20, diff_ema_middle_lower=20, ratio_sl_sp=1.2,
+             lowerEma=92, middleEma=95, upperEma=98):
         fetchData_cust = self.dataFeeder.downloadData(self.symbol, self.startTime, self.endTime, timeframe='5min')
 
         # get the master signal
@@ -29,67 +29,35 @@ class BackTest_SwingScalping(Base_SwingScalping):
 
         return masterSignal
 
-    def getHeader(self):
-        header = ['type', 'count', 'winRate', 'profit', 'ratio_sl_sp', 'diff_ema_middle_lower', 'diff_ema_upper_middle', 'upperEma', 'middleEma', 'lowerEma']
-        txt = ','.join(header)
-        txt += '\n'
-        return txt
-
-    def writeRowSummaryTxt(self, masterSignal, trendType='rise', *params):
-        # rise type
-        rowTxt = "{},".format(trendType)
-        # total trade
-        total = (masterSignal['earning_' + trendType] != 0).sum()
-        rowTxt += "{},".format(total)
-        if total == 0:
-            rowTxt += '\n'
-            return rowTxt
-        # winRate
+    # calculate the win rate
+    def getWinRate(self, masterSignal, trendType='rise'):
+        count = (masterSignal['earning_' + trendType] != 0).sum()
         positiveProfit = (masterSignal['earning_' + trendType] > 0).sum()
-        rowTxt += "{:.2f},".format((positiveProfit / total) * 100)
-        # profit
-        rowTxt += "{:.2f},".format(masterSignal['earning_' + trendType].sum())
-        # ratio_sl_sp
-        rowTxt += "{},".format(params[0])
-        # diff_ema_middle_lower
-        rowTxt += "{},".format(params[1])
-        # diff_ema_upper_middle
-        rowTxt += "{},".format(params[2])
-        # upperEma
-        rowTxt += "{},".format(params[3])
-        # middleEma
-        rowTxt += "{},".format(params[4])
-        # lowerEma
-        rowTxt += "{}\n".format(params[5])
-        return rowTxt
+        if count == 0:
+            winRate = 0.0
+        else:
+            winRate = "{:.2f},".format((positiveProfit / count) * 100)
+        return count, winRate
 
-    def writeRowSummary(self, masterSignal, trendType='rise', *params):
-        rowList = []
-        # rise type
-        rowList.append(trendType)
-        # total trade
-        total = (masterSignal['earning_' + trendType] != 0).sum()
-        rowList.append(total)
-        if total == 0:
-            return rowList
-        # winRate
-        positiveProfit = (masterSignal['earning_' + trendType] > 0).sum()
-        rowList.append("{:.2f}".format((positiveProfit / total) * 100))
-        # profit
-        rowList.append("{:.2f}".format(masterSignal['earning_' + trendType].sum()))
-        # ratio_sl_sp
-        rowList.append("{}".format(params[0]))
-        # diff_ema_middle_lower
-        rowList.append("{}".format(params[1]))
-        # diff_ema_upper_middle
-        rowList.append("{}".format(params[2]))
-        # upperEma
-        rowList.append("{}".format(params[3]))
-        # middleEma
-        rowList.append("{}".format(params[4]))
-        # lowerEma
-        rowList.append("{}".format(params[5]))
-        return rowList
+    # calculate the profit
+    def getProfit(self, masterSignal, trendType='rise'):
+        return "{:.2f}".format(masterSignal['earning_' + trendType].sum())
+
+    def getSummary(self, masterSignal, trendType='rise', *params):
+        count, winRate = self.getWinRate(masterSignal, trendType)
+        profit = self.getProfit(masterSignal, trendType)
+        summary = {'type': trendType,
+                   'count': count,
+                   'winRate': winRate,
+                   'profit': profit,
+                   'ratio_sl_sp': params[0],
+                   'diff_ema_middle_lower': params[1],
+                   'diff_ema_upper_middle': params[2],
+                   'upperEma': params[3],
+                   'middleEma': params[4],
+                   'lowerEma': params[5]
+                   }
+        return summary
 
     def loopRun(self):
         # define the writer
@@ -102,20 +70,26 @@ class BackTest_SwingScalping(Base_SwingScalping):
             for diff_ema_middle_lower in np.arange(20, 80, 2):
                 for diff_ema_upper_middle in np.arange(20, 80, 2):
                     for upperEma in reversed(np.arange(20, 100, 2)):
-                        for middleEma in reversed(np.arange(19, 99, 2)):
-                            for lowerEma in reversed(np.arange(18, 98, 2)):
+                        for middleEma in reversed(np.arange(19, upperEma - 1, 2)):
+                            for lowerEma in reversed(np.arange(18, middleEma - 1, 2)):
                                 # getting master signal
                                 masterSignal = self.getMasterSignal(fetchData_cust,
                                                                     lowerEma, middleEma, upperEma,
                                                                     diff_ema_upper_middle, diff_ema_middle_lower,
                                                                     ratio_sl_sp)
-                                with open(os.path.join(self.backTestDocPath, self.baclTestDocName), 'a', encoding='utf-8') as f:
+                                # build the dictionary
+                                riseSummary = self.getSummary(masterSignal, 'rise', ratio_sl_sp, diff_ema_middle_lower, diff_ema_upper_middle, upperEma, middleEma, lowerEma)
+                                downSummary = self.getSummary(masterSignal, 'down', ratio_sl_sp, diff_ema_middle_lower, diff_ema_upper_middle, upperEma, middleEma, lowerEma)
+                                with open(os.path.join(self.backTestDocPath, self.baclTestDocName), 'a', newline='', encoding='utf-8') as f:
+                                    writer = csv.writer(f)
                                     # write header
                                     if r == 0:
-                                        f.write(self.getHeader())
+                                        writer.writerow(riseSummary.keys())
                                     # write the rows
-                                    f.write(self.writeRowSummaryTxt(masterSignal, 'rise', ratio_sl_sp, diff_ema_middle_lower, diff_ema_upper_middle, upperEma, middleEma, lowerEma))
-                                    f.write(self.writeRowSummaryTxt(masterSignal, 'down', ratio_sl_sp, diff_ema_middle_lower, diff_ema_upper_middle, upperEma, middleEma, lowerEma))
+                                    writer.writerow(riseSummary.values())
+                                    writer.writerow(downSummary.values())
+                                    print(riseSummary)
+                                    print(downSummary)
                                     r += 2
 
 
