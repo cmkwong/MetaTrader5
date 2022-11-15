@@ -2,12 +2,15 @@ import pandas as pd
 import numpy as np
 import swifter
 
-from mt5Server.codes.Backtest.func import techModel
+from mt5Server.codes.Backtest.func import techModel, timeModel
 from mt5Server.codes.Data.DataFeeder import DataFeeder
 
 
 class Base_SwingScalping:
     def __init__(self, mt5Controller, symbol):
+        # define the path that store the result doc
+        self.backTestDocPath = "C:/Users/Chris/projects/210215_mt5/docs/backtest/swingScapling"
+        self.baclTestDocName = "result_" + timeModel.get_current_time_string() + ".csv"
         # define the controller
         self.mt5Controller = mt5Controller
         self.symbol = symbol
@@ -72,8 +75,13 @@ class Base_SwingScalping:
         # take profit
         signal['takeProfit'] = signal['open'] - (signal['upper'] - signal['open']) * ratio_sl_sp
 
+        # getting earning
+        signal['earning_rise'] = signal.apply(lambda r: self.getEarning(r.name, r['riseBreak'], r['riseRange'], r['open'], r['quote_exchg'], r['stopLoss'], r['takeProfit'], 'rise'), axis=1)
+        signal['earning_down'] = signal.apply(lambda r: self.getEarning(r.name, r['downBreak'], r['downRange'], r['open'], r['quote_exchg'], r['stopLoss'], r['takeProfit'], 'down'), axis=1)
+
         return signal
 
+    # calculate the earning
     def getEarning(self, currentTime, breakCondition, rangeCondition, actionPrice, quote_exchg: float, sl: float, tp: float, trendType='rise'):
         # if str(currentTime) == '2022-09-22 17:35:00' and trendType == 'down':
         #     print('debug')

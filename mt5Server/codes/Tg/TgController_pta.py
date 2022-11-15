@@ -81,7 +81,7 @@ class Telegram_Bot:
         # add the strategy in running strategy
         self.targetStrategy = self.idleStrategies[strategyName]
 
-        await self.targetStrategy.run(update, context)
+        await self.targetStrategy.test(update, context)
 
         return RUN
 

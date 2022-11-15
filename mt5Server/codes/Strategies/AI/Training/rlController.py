@@ -187,7 +187,7 @@ with common.RewardTracker(writer, np.inf, group_rewards=100) as reward_tracker:
             # writer.add_scalar("validation_episodes", validation_episodes, step_idx)
             val_epsilon = max(
                 0, RL_options['epsilon_start'] - step_idx * 0.75 / RL_options['epsilon_step'])
-            stats = validator.run(
+            stats = validator.test(
                 episodes=RL_options['validation_episodes'], step_idx=step_idx, epsilon=val_epsilon)
             common.valid_result_visualize(stats, writer, step_idx)
 
