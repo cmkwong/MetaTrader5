@@ -7,6 +7,7 @@ import os
 import csv
 import numpy as np
 
+
 class BackTest_SwingScalping(Base_SwingScalping):
     def __init__(self, mt5Controller, symbol, startTime, endTime, breakThroughCondition='50', lot=1):
         super(BackTest_SwingScalping, self).__init__(mt5Controller, symbol)
@@ -31,9 +32,10 @@ class BackTest_SwingScalping(Base_SwingScalping):
     def getHeader(self):
         header = ['type', 'count', 'winRate', 'profit', 'ratio_sl_sp', 'diff_ema_middle_lower', 'diff_ema_upper_middle', 'upperEma', 'middleEma', 'lowerEma']
         txt = ','.join(header)
+        txt += '\n'
         return txt
 
-    def writeRowSummaryTxt(self, masterSignal, trendType ='rise', *params):
+    def writeRowSummaryTxt(self, masterSignal, trendType='rise', *params):
         # rise type
         rowTxt = "{},".format(trendType)
         # total trade
@@ -61,7 +63,7 @@ class BackTest_SwingScalping(Base_SwingScalping):
         rowTxt += "{}\n".format(params[5])
         return rowTxt
 
-    def writeRowSummary(self, masterSignal, trendType = 'rise', *params):
+    def writeRowSummary(self, masterSignal, trendType='rise', *params):
         rowList = []
         # rise type
         rowList.append(trendType)
@@ -90,30 +92,31 @@ class BackTest_SwingScalping(Base_SwingScalping):
         return rowList
 
     def loopRun(self):
-        with open(os.path.join(self.backTestDocPath, self.baclTestDocName), 'w') as f:
-            # define the writer
-            writer = csv.writer(f, delimiter=",")
-            # write header
-            writer.writerow(['type', 'count'])
+        # define the writer
+        # writer = csv.writer(f, delimiter=",")
+        r = 0
+        # fetch data from database
+        fetchData_cust = self.dataFeeder.downloadData(self.symbol, self.startTime, self.endTime, timeframe='5min')
 
-            # fetch data from database
-            fetchData_cust = self.dataFeeder.downloadData(self.symbol, self.startTime, self.endTime, timeframe='5min')
-
-            for ratio_sl_sp in np.arange(1.2, 2.0, 0.1):
-                for diff_ema_middle_lower in np.arange(20, 80, 2):
-                    for diff_ema_upper_middle in np.arange(20, 80, 2):
-                        for upperEma in reversed(np.arange(20, 100, 2)):
-                            for middleEma in reversed(np.arange(19, 99, 2)):
-                                for lowerEma in reversed(np.arange(18, 98, 2)):
-
-                                    # getting master signal
-                                    masterSignal = self.getMasterSignal(fetchData_cust,
-                                                         lowerEma, middleEma, upperEma,
-                                                         diff_ema_upper_middle, diff_ema_middle_lower,
-                                                         ratio_sl_sp)
+        for ratio_sl_sp in np.arange(1.2, 2.0, 0.1):
+            for diff_ema_middle_lower in np.arange(20, 80, 2):
+                for diff_ema_upper_middle in np.arange(20, 80, 2):
+                    for upperEma in reversed(np.arange(20, 100, 2)):
+                        for middleEma in reversed(np.arange(19, 99, 2)):
+                            for lowerEma in reversed(np.arange(18, 98, 2)):
+                                # getting master signal
+                                masterSignal = self.getMasterSignal(fetchData_cust,
+                                                                    lowerEma, middleEma, upperEma,
+                                                                    diff_ema_upper_middle, diff_ema_middle_lower,
+                                                                    ratio_sl_sp)
+                                with open(os.path.join(self.backTestDocPath, self.baclTestDocName), 'a', encoding='utf-8') as f:
+                                    # write header
+                                    if r == 0:
+                                        f.write(self.getHeader())
                                     # write the rows
-                                    writer.writerow(self.writeRowSummary(masterSignal, 'rise', ratio_sl_sp, diff_ema_middle_lower, diff_ema_upper_middle, upperEma, middleEma, lowerEma))
-                                    writer.writerow(self.writeRowSummary(masterSignal, 'down', ratio_sl_sp, diff_ema_middle_lower, diff_ema_upper_middle, upperEma, middleEma, lowerEma))
+                                    f.write(self.writeRowSummaryTxt(masterSignal, 'rise', ratio_sl_sp, diff_ema_middle_lower, diff_ema_upper_middle, upperEma, middleEma, lowerEma))
+                                    f.write(self.writeRowSummaryTxt(masterSignal, 'down', ratio_sl_sp, diff_ema_middle_lower, diff_ema_upper_middle, upperEma, middleEma, lowerEma))
+                                    r += 2
 
 
 sybmols = ['GBPUSD', 'CADJPY', 'AUDJPY', 'AUDUSD', 'USDCAD', 'USDJPY', 'EURCAD', 'EURUSD']
