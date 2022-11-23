@@ -10,7 +10,7 @@ class Base_SwingScalping:
     def __init__(self, mt5Controller, symbol):
         # define the path that store the result doc
         self.backTestDocPath = "C:/Users/Chris/projects/210215_mt5/docs/backtest/swingScapling"
-        self.baclTestDocName = "result_" + timeModel.get_current_time_string() + ".csv"
+        self.baclTestDocName = "result_{}_{}.csv".format(symbol, timeModel.get_current_time_string())
         # define the controller
         self.mt5Controller = mt5Controller
         self.symbol = symbol
