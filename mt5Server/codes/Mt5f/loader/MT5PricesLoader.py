@@ -108,7 +108,7 @@ class MT5PricesLoader(BaseMT5PricesLoader):  # created note 86a
 
         # assign the column into each collection tuple
         Prices = InitPrices(
-            c=close_prices,
+            close=close_prices,
             cc=changes,
             ptDv=points_dff_values_df,
             quote_exchg=q2d_exchange_rate_df,
@@ -116,15 +116,15 @@ class MT5PricesLoader(BaseMT5PricesLoader):  # created note 86a
         )
         # get open prices
         if ohlcvs[0] == '1':
-            Prices.o = self._get_specific_from_prices(prices, symbols, ohlcvs='100000')
+            Prices.open = self._get_specific_from_prices(prices, symbols, ohlcvs='100000')
 
         # get the change of high price
         if ohlcvs[1] == '1':
-            Prices.h = self._get_specific_from_prices(prices, symbols, ohlcvs='010000')
+            Prices.high = self._get_specific_from_prices(prices, symbols, ohlcvs='010000')
 
         # get the change of low price
         if ohlcvs[2] == '1':
-            Prices.l = self._get_specific_from_prices(prices, symbols, ohlcvs='001000')
+            Prices.low = self._get_specific_from_prices(prices, symbols, ohlcvs='001000')
 
         # get the tick volume
         if ohlcvs[4] == '1':
@@ -156,7 +156,7 @@ class MT5PricesLoader(BaseMT5PricesLoader):  # created note 86a
             print("q2d_exchange_rate_df_o or q2d_exchange_rate_df_c length of Data is not equal to count")
             return False
 
-        Prices = InitPrices(c=close_prices,
+        Prices = InitPrices(close=close_prices,
                             cc=change_close_prices,
                             ptDv=points_dff_values_df,
                             quote_exchg=q2d_exchange_rate_df

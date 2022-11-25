@@ -23,10 +23,10 @@ class BackTest_SwingScalping(Base_SwingScalping):
 
     def test(self, diff_ema_upper_middle=20, diff_ema_middle_lower=20, ratio_sl_sp=1.2,
              lowerEma=92, middleEma=95, upperEma=98):
-        fetchData_cust = self.dataFeeder.downloadData(self.symbol, self.startTime, self.endTime, timeframe='5min')
+        ohlcvs = self.dataFeeder.downloadData(self.symbol, self.startTime, self.endTime, timeframe='5min')
 
         # get the master signal
-        masterSignal = self.getMasterSignal(fetchData_cust,
+        masterSignal = self.getMasterSignal(ohlcvs,
                                             lowerEma, middleEma, upperEma,
                                             diff_ema_upper_middle, diff_ema_middle_lower,
                                             ratio_sl_sp)
@@ -86,7 +86,7 @@ class BackTest_SwingScalping(Base_SwingScalping):
                                                                     diff_ema_upper_middle, diff_ema_middle_lower,
                                                                     ratio_sl_sp)
 
-                                # build the dictionary
+                                # build the dictionary to write into csv
                                 riseSummary = self.getSummary(masterSignal, 'rise', ratio_sl_sp, diff_ema_middle_lower, diff_ema_upper_middle, upperEma, middleEma, lowerEma)
                                 downSummary = self.getSummary(masterSignal, 'down', ratio_sl_sp, diff_ema_middle_lower, diff_ema_upper_middle, upperEma, middleEma, lowerEma)
 

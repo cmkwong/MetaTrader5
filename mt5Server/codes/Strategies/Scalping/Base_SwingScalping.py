@@ -35,7 +35,7 @@ class Base_SwingScalping:
         ema['downBreak'] = (ema['latest2Close'] > ema['middle']) & (ema['latest3Close'] < ema['middle'])
         return ema.loc[:, 'riseBreak'], ema.loc[:, 'downBreak']
 
-    def getMasterSignal(self, fetchData_cust, lowerEma, middleEma, upperEma, diff_ema_upper_middle, diff_ema_middle_lower, ratio_sl_sp):
+    def getMasterSignal(self, ohlcvs, lowerEma, middleEma, upperEma, diff_ema_upper_middle, diff_ema_middle_lower, ratio_sl_sp, needEarning=True):
         """
         :param ohlc: pd.DataFrame
         :param lowerEma: int
@@ -47,23 +47,21 @@ class Base_SwingScalping:
         :return: pd.DataFrame
         """
         signal = pd.DataFrame()
-        signal['open'] = fetchData_cust.open
-        signal['high'] = fetchData_cust.high
-        signal['low'] = fetchData_cust.low
-        signal['close'] = fetchData_cust.close
-        signal['quote_exchg'] = fetchData_cust.quote_exchg
-
+        signal['open'] = ohlcvs.open
+        signal['high'] = ohlcvs.high
+        signal['low'] = ohlcvs.low
+        signal['close'] = ohlcvs.close
 
         # calculate the ema bandwidth
-        signal['lower'] = techModel.get_EMA(fetchData_cust.close, lowerEma)
-        signal['middle'] = techModel.get_EMA(fetchData_cust.close, middleEma)
-        signal['upper'] = techModel.get_EMA(fetchData_cust.close, upperEma)
+        signal['lower'] = techModel.get_EMA(ohlcvs.close, lowerEma)
+        signal['middle'] = techModel.get_EMA(ohlcvs.close, middleEma)
+        signal['upper'] = techModel.get_EMA(ohlcvs.close, upperEma)
 
         # calculate the points difference
         signal['ptDiff_upper_middle'], signal['ptDiff_middle_lower'] = self.getRangePointDiff(signal['upper'], signal['middle'], signal['lower'])
 
         # get break through signal
-        signal['riseBreak'], signal['downBreak'] = self.getBreakThroughSignal(fetchData_cust.loc[:, ('open', 'high', 'low', 'close')], signal.loc[:, ('lower', 'middle', 'upper')])
+        signal['riseBreak'], signal['downBreak'] = self.getBreakThroughSignal(ohlcvs.loc[:, ('open', 'high', 'low', 'close')], signal.loc[:, ('lower', 'middle', 'upper')])
 
         # get trend range conditions
         signal['riseRange'] = (signal['ptDiff_upper_middle'] <= -diff_ema_upper_middle) & (signal['ptDiff_middle_lower'] <= -diff_ema_middle_lower)
@@ -76,8 +74,10 @@ class Base_SwingScalping:
         signal['takeProfit'] = signal['open'] - (signal['upper'] - signal['open']) * ratio_sl_sp
 
         # getting earning
-        signal['earning_rise'] = signal.apply(lambda r: self.getEarning(r.name, r['riseBreak'], r['riseRange'], r['open'], r['quote_exchg'], r['stopLoss'], r['takeProfit'], 'rise'), axis=1)
-        signal['earning_down'] = signal.apply(lambda r: self.getEarning(r.name, r['downBreak'], r['downRange'], r['open'], r['quote_exchg'], r['stopLoss'], r['takeProfit'], 'down'), axis=1)
+        if needEarning:
+            signal['quote_exchg'] = ohlcvs.quote_exchg
+            signal['earning_rise'] = signal.apply(lambda r: self.getEarning(r.name, r['riseBreak'], r['riseRange'], r['open'], r['quote_exchg'], r['stopLoss'], r['takeProfit'], 'rise'), axis=1)
+            signal['earning_down'] = signal.apply(lambda r: self.getEarning(r.name, r['downBreak'], r['downRange'], r['open'], r['quote_exchg'], r['stopLoss'], r['takeProfit'], 'down'), axis=1)
 
         return signal
 
