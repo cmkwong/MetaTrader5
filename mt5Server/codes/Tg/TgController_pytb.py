@@ -1,3 +1,7 @@
+import sys
+sys.path.append('C:/Users/Chris/projects/210215_mt5')
+sys.path.append('C:/Users/Chris/projects/AtomLib')
+
 import telebot
 from telebot.callback_data import CallbackData, CallbackDataFilter
 from telebot.custom_filters import AdvancedCustomFilter
@@ -177,29 +181,25 @@ class Telegram_Bot:
         @self.bot.message_handler(commands=['run'])
         def run_command_handler(message):
             self.chat_id = message.chat.id
-            # self.strategyController.runThreadStrategy(0, 'GBPUSD', breakThroughCondition='50', diff_ema_100_50=40, diff_ema_50_25=40, auto=True, tg=self)
-            # self.strategyController.runThreadStrategy(0, 'CADJPY', breakThroughCondition='50', diff_ema_100_50=40, diff_ema_50_25=40, auto=True, tg=self)
-            # self.strategyController.runThreadStrategy(0, 'AUDJPY', breakThroughCondition='50', diff_ema_100_50=40, diff_ema_50_25=40, auto=True, tg=self)
-            # self.strategyController.runThreadStrategy(0, 'AUDUSD', breakThroughCondition='50', diff_ema_100_50=40, diff_ema_50_25=40, auto=True, tg=self)
-            # self.strategyController.runThreadStrategy(0, 'USDCAD', breakThroughCondition='50', diff_ema_100_50=40, diff_ema_50_25=40, auto=True, tg=self)
-            # self.strategyController.runThreadStrategy(0, 'EURCAD', breakThroughCondition='50', diff_ema_100_50=40, diff_ema_50_25=40, auto=True, tg=self)
-            # self.strategyController.runThreadStrategy(0, 'EURUSD', breakThroughCondition='50', diff_ema_100_50=40, diff_ema_50_25=40, auto=True, tg=self)
-            # self.strategyController.runThreadStrategy(0, 'USDCHF', breakThroughCondition='50', diff_ema_100_50=40, diff_ema_50_25=40, auto=True, tg=self)
             self.strategyController.runThreadStrategy(0, 'GBPUSD',
-                                                      # rise
-                                                      rise_diff_ema_upper_middle=70, rise_diff_ema_middle_lower=60, rise_ratio_sl_sp=2.2,
-                                                      rise_lowerEma=18, rise_middleEma=55, rise_upperEma=92,
-                                                      # down
-                                                      down_diff_ema_upper_middle=30, down_diff_ema_middle_lower=30, down_ratio_sl_sp=2.2,
-                                                      down_lowerEma=22, down_middleEma=43, down_upperEma=92,
+                                                      diff_ema_upper_middle=70, diff_ema_middle_lower=60, ratio_sl_sp=2.2,
+                                                      lowerEma=18, middleEma=55, upperEma=92,
+                                                      trendType='rise',
+                                                      auto=True, tg=self)
+            self.strategyController.runThreadStrategy(0, 'GBPUSD',
+                                                      diff_ema_upper_middle=70, diff_ema_middle_lower=60, ratio_sl_sp=2.2,
+                                                      lowerEma=18, middleEma=55, upperEma=92,
+                                                      trendType='down',
                                                       auto=True, tg=self)
             self.strategyController.runThreadStrategy(0, 'USDJPY',
-                                                      # rise
-                                                      rise_diff_ema_upper_middle=42, rise_diff_ema_middle_lower=20, rise_ratio_sl_sp=1.2,
-                                                      rise_lowerEma=18, rise_middleEma=27, rise_upperEma=58,
-                                                      # down
-                                                      down_diff_ema_upper_middle=60, down_diff_ema_middle_lower=20, down_ratio_sl_sp=1.8,
-                                                      down_lowerEma=18, down_middleEma=27, down_upperEma=76,
+                                                      diff_ema_upper_middle=70, diff_ema_middle_lower=60, ratio_sl_sp=2.2,
+                                                      lowerEma=18, middleEma=55, upperEma=92,
+                                                      trendType='rise',
+                                                      auto=True, tg=self)
+            self.strategyController.runThreadStrategy(0, 'USDJPY',
+                                                      diff_ema_upper_middle=70, diff_ema_middle_lower=60, ratio_sl_sp=2.2,
+                                                      lowerEma=18, middleEma=55, upperEma=92,
+                                                      trendType='down',
                                                       auto=True, tg=self)
 
             self.bot.send_message(message.chat.id, 'Strategy Running...')

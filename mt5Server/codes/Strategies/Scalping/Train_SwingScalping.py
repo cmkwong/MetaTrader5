@@ -1,5 +1,5 @@
 import sys
-sys.path.append("C:/Users/Chris/projects/210215_mt5")
+sys.path.append("C:/Users/Chris/projects/210215_mt5/mt5Server")
 sys.path.append("C:/Users/Chris/projects/AtomLib")
 
 from mt5Server.codes.Backtest.func import timeModel
@@ -12,26 +12,25 @@ import csv
 import numpy as np
 import time
 
-class BackTest_SwingScalping(Base_SwingScalping):
-    def __init__(self, mt5Controller, symbol, startTime, endTime, breakThroughCondition='50', lot=1):
-        super(BackTest_SwingScalping, self).__init__(mt5Controller, symbol)
+class Train_SwingScalping(Base_SwingScalping):
+    def __init__(self, mt5Controller, symbol, startTime, endTime, lot=1):
+        super(Train_SwingScalping, self).__init__(mt5Controller, symbol)
         self.startTime = startTime
         self.endTime = endTime
-        self.breakThroughCondition = breakThroughCondition
         self.LOT = lot
         self.prepare1MinData(startTime, endTime)
 
-    def test(self, diff_ema_upper_middle=20, diff_ema_middle_lower=20, ratio_sl_sp=1.2,
-             lowerEma=92, middleEma=95, upperEma=98):
-        ohlcvs = self.dataFeeder.downloadData(self.symbol, self.startTime, self.endTime, timeframe='5min')
-
-        # get the master signal
-        masterSignal = self.getMasterSignal(ohlcvs,
-                                            lowerEma, middleEma, upperEma,
-                                            diff_ema_upper_middle, diff_ema_middle_lower,
-                                            ratio_sl_sp)
-
-        return masterSignal
+    # def test(self, diff_ema_upper_middle=20, diff_ema_middle_lower=20, ratio_sl_sp=1.2,
+    #          lowerEma=92, middleEma=95, upperEma=98):
+    #     ohlcvs = self.dataFeeder.downloadData(self.symbol, self.startTime, self.endTime, timeframe='5min')
+    #
+    #     # get the master signal
+    #     masterSignal = self.getMasterSignal(ohlcvs,
+    #                                         lowerEma, middleEma, upperEma,
+    #                                         diff_ema_upper_middle, diff_ema_middle_lower,
+    #                                         ratio_sl_sp)
+    #
+    #     return masterSignal
 
     # calculate the win rate
     def getWinRate(self, masterSignal, trendType='rise'):
@@ -65,7 +64,6 @@ class BackTest_SwingScalping(Base_SwingScalping):
 
     def loopRun(self):
         # define the writer
-        # writer = csv.writer(f, delimiter=",")
         r = 0
         # fetch data from database
         fetchData_cust = self.dataFeeder.downloadData(self.symbol, self.startTime, self.endTime, timeframe='5min')
@@ -106,7 +104,7 @@ class BackTest_SwingScalping(Base_SwingScalping):
 
 
 sybmols = ['GBPUSD', 'CADJPY', 'AUDJPY', 'AUDUSD', 'USDCAD', 'USDJPY', 'EURCAD', 'EURUSD']
-mT5Controller = MT5Controller()
-backTest_SwingScalping = BackTest_SwingScalping(mT5Controller, 'AUDUSD', (2022, 8, 31, 0, 0), (2022, 10, 27, 0, 0))
+mt5Controller = MT5Controller()
+backTest_SwingScalping = Train_SwingScalping(mt5Controller, 'EURUSD', (2022, 8, 31, 0, 0), (2022, 10, 27, 0, 0))
 # backTest_SwingScalping.test()
 backTest_SwingScalping.loopRun()

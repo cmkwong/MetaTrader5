@@ -4,7 +4,7 @@ import threading
 import asyncio
 
 from mt5Server.codes.Mt5f.MT5Controller import MT5Controller
-from mt5Server.codes.Strategies.Scalping.SwingScalping import SwingScalping
+from mt5Server.codes.Strategies.Scalping.Live_SwingScalping import Live_SwingScalping
 from mt5Server.codes import config
 
 SET_SYMBOL, SET_STRATEGY = map(chr, range(2))
@@ -17,7 +17,7 @@ class Telegram_Bot:
         self.application = Application.builder().token(token).arbitrary_callback_data(True).build()  # different token means different symbol
         self.mt5Controller = MT5Controller()
         self.SYBMOLS = ['USDJPY', 'USDCAD', 'AUDJPY', 'AUDUSD']
-        self.STRATEGIES = [SwingScalping]
+        self.STRATEGIES = [Live_SwingScalping]
         self.STRATEGIES_RUNNING = []
         self.tg_available = False
         self.idleStrategies = {}  # idle strategy: {strategy_name: class object}

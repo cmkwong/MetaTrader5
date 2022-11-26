@@ -1,5 +1,5 @@
 from myUtils.printModel import print_at
-from mt5Server.codes.Strategies.Scalping.SwingScalping import SwingScalping
+from mt5Server.codes.Strategies.Scalping.Live_SwingScalping import Live_SwingScalping
 
 from mt5Server.codes.Mt5f.MT5Controller import MT5Controller
 # from mt5Server.codes.Tg.TgController_pytb import Telegram_Bot
@@ -11,7 +11,7 @@ class StrategyController:
         self.runningStrategies = []
         self.idleStrategies = {}
         self.listStrategies = [
-            {'id': 0, 'name': SwingScalping.__name__, 'class': SwingScalping}
+            {'id': 0, 'name': Live_SwingScalping.__name__, 'class': Live_SwingScalping}
         ]
         self.Sybmols = ['GBPUSD','CADJPY','AUDJPY','AUDUSD','USDCAD','USDJPY','EURCAD','EURUSD']
         self.tg = tg

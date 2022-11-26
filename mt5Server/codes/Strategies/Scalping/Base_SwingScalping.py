@@ -18,8 +18,13 @@ class Base_SwingScalping:
         self.digits = self.mt5Controller.all_symbol_info[symbol].digits
         self.pt_value = self.mt5Controller.all_symbol_info[symbol].pt_value
 
-    # prepare for 1-minute data for further analysis
+    # prepare for 1-minute data for further analysis (from mySQL database)
     def prepare1MinData(self, startTime, endTime):
+        """
+        :param startTime:
+        :param endTime:
+        :return: pd.DataFrame(open, high, low, close)
+        """
         self.fetchData_min = self.dataFeeder.downloadData(self.symbol, startTime, endTime, timeframe='1min')
 
     # calculate the ema difference
@@ -93,11 +98,14 @@ class Base_SwingScalping:
             last_sl = (self.fetchData_min.low <= sl)
         # down trend
         else:
-            last_tp = self.fetchData_min.low <= tp
-            last_sl = self.fetchData_min.high >= sl
+            last_tp = (self.fetchData_min.low <= tp)
+            last_sl = (self.fetchData_min.high >= sl)
+        # find the index firstly occurred
         tpTime = last_tp[currentTime:].eq(True).idxmax()
         slTime = last_sl[currentTime:].eq(True).idxmax()
+        # if take-profit time occurred earlier than stop-loss time, then assign take-profit
         if tpTime < slTime and tpTime != currentTime:
             return np.abs(tp - actionPrice) * (10 ** self.digits) * quote_exchg * self.pt_value
+        # if stop-loss time occurred earlier or equal than stop-loss time, then assign stop-loss
         else:
             return -np.abs(sl - actionPrice) * (10 ** self.digits) * quote_exchg * self.pt_value
