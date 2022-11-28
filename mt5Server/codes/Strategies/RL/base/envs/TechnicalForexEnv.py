@@ -1,17 +1,17 @@
 import numpy as np
 import pandas as pd
 
-from RL.envs.State import State
-from backtest import techModel
-from mt5f.mt5utils import integration
+from mt5Server.codes.Strategies.RL.base.envs.State import State
+from mt5Server.codes.Backtest.func import techModel
+from mt5Server.codes.Mt5f.mt5utils import integration
 
 
 class TechnicalForexEnv:
     def __init__(self, symbol, Prices, tech_params, long_mode, all_symbols_info, time_cost_pt, commission_pt, spread_pt, random_ofs_on_reset, reset_on_close):
         self.Prices = Prices
         self.tech_params = tech_params  # pd.DataFrame
-        self.dependent_datas = pd.concat([self._get_tech_df(), Prices.o, Prices.h, Prices.l, Prices.c], axis=1, join='outer').fillna(0)
-        self._state = State(symbol, Prices.c, Prices.quote_exchg, self.dependent_datas, Prices.c.index,
+        self.dependent_datas = pd.concat([self._get_tech_df(), Prices.open, Prices.high, Prices.low, Prices.close], axis=1, join='outer').fillna(0)
+        self._state = State(symbol, Prices.close, Prices.quote_exchg, self.dependent_datas, Prices.close.index,
                             time_cost_pt, commission_pt, spread_pt, long_mode, all_symbols_info, reset_on_close)
         self.random_ofs_on_reset = random_ofs_on_reset
 
@@ -33,7 +33,7 @@ class TechnicalForexEnv:
         if not self.random_ofs_on_reset:
             self._state.reset(0)
         else:
-            random_offset = np.random.randint(len(self.Prices.o) - 10)  # minus a buffer, because draw at the end of loader sometimes, then it will be bug
+            random_offset = np.random.randint(len(self.Prices.open) - 10)  # minus a buffer, because draw at the end of loader sometimes, then it will be bug
             self._state.reset(random_offset)
         obs = self._state.encode()
         return obs

@@ -1,5 +1,5 @@
-from backtest import pointsModel, indexModel
-from strategies.Cointegration import coinModel
+from mt5Server.codes.Backtest.func import pointsModel, indexModel
+from mt5Server.codes.Strategies.Cointegration import coinModel
 from datetime import timedelta
 import pandas as pd
 import numpy as np

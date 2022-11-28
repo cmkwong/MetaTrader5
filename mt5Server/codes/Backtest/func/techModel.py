@@ -168,15 +168,15 @@ def get_tech_datas(Prices, params, tech_name):
     datas = {}
     for param in params:
         if tech_name == 'ma':
-            datas[param] = get_moving_average(Prices.c, param)
+            datas[param] = get_moving_average(Prices.close, param)
         elif tech_name == 'bb':
-            datas[param] = get_bollinger_band(Prices.c, *param)
+            datas[param] = get_bollinger_band(Prices.close, *param)
         elif tech_name == 'std':
-            datas[param] = get_standard_deviation(Prices.c, *param)
+            datas[param] = get_standard_deviation(Prices.close, *param)
         elif tech_name == 'rsi':
-            datas[param] = get_rsi(Prices.c, param)
+            datas[param] = get_rsi(Prices.close, param)
         elif tech_name == 'stocOsci':
-            datas[param] = get_stochastic_oscillator(Prices.h, Prices.l, Prices.c, *param)
+            datas[param] = get_stochastic_oscillator(Prices.high, Prices.low, Prices.close, *param)
         elif tech_name == 'macd':
-            datas[param] = get_macd(Prices.c, *param)
+            datas[param] = get_macd(Prices.close, *param)
     return datas

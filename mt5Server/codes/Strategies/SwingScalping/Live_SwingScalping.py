@@ -4,7 +4,7 @@ import os
 sys.path.append('C:/Users/Chris/projects/210215_mt5')
 sys.path.append('C:/Users/Chris/projects/AtomLib')
 from mt5Server.codes.Backtest.func import techModel
-from mt5Server.codes.Strategies.Scalping.Base_SwingScalping import Base_SwingScalping
+from mt5Server.codes.Strategies.SwingScalping.Base_SwingScalping import Base_SwingScalping
 from myUtils.printModel import print_at
 
 import pandas as pd

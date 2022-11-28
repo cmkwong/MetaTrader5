@@ -2,8 +2,8 @@ import copy
 import numpy as np
 import torch
 from torch import nn
-from RL.agents.BaseAgent import BaseAgent
-from RL.agents.preprocessor import default_states_preprocessor, attention_states_preprocessor
+from mt5Server.codes.Strategies.RL.base.agents.BaseAgent import BaseAgent
+from mt5Server.codes.Strategies.RL.base.agents.preprocessor import default_states_preprocessor, attention_states_preprocessor
 
 class DQNAgent(BaseAgent):
     """

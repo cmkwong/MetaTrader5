@@ -1,6 +1,7 @@
 import sys
-
 sys.path.append('C:/Users/Chris/projects/210215_mt5')
+sys.path.append('C:/Users/Chris/projects/AtomLib')
+
 from mt5Server.codes import config
 from mt5Server.codes.Strategies.AI import common
 from datetime import datetime
@@ -11,13 +12,13 @@ import torch
 import torch.optim as optim
 import numpy as np
 
-from mt5Server.codes.Strategies.RL.agents.DQNAgent import DQNAgentAttn
-from mt5Server.codes.Strategies.RL.agents import Actions
-from mt5Server.codes.Strategies.RL.envs.technicalForexAttnEnv_series.commit_current.TechnicalForexAttnEnv import TechnicalForexAttnEnv
-from mt5Server.codes.Strategies.RL.experience.ExperienceSource import ExperienceSourceFirstLast
-from mt5Server.codes.Strategies.RL.experience.ExperienceReplayBuffer import ExperienceReplayBuffer
-from mt5Server.codes.Strategies.RL.criterion.Validator import Validator
-from mt5Server.codes.Strategies.RL.models.attensionsSeries.commit_current.AttentionTimeSeries import AttentionTimeSeries
+from mt5Server.codes.Strategies.RL.base.agents.DQNAgent import DQNAgentAttn
+from mt5Server.codes.Strategies.RL.base.agents import Actions
+from mt5Server.codes.Strategies.RL.base.envs.technicalForexAttnEnv_series.commit_current.TechnicalForexAttnEnv import TechnicalForexAttnEnv
+from mt5Server.codes.Strategies.RL.base.experience.ExperienceSource import ExperienceSourceFirstLast
+from mt5Server.codes.Strategies.RL.base.experience.ExperienceReplayBuffer import ExperienceReplayBuffer
+from mt5Server.codes.Strategies.RL.base.criterion.Validator import Validator
+from mt5Server.codes.Strategies.RL.base.models.attensionsSeries.commit_current.AttentionTimeSeries import AttentionTimeSeries
 from mt5Server.codes.Mt5f.MT5Controller import MT5Controller
 
 now = datetime.now()

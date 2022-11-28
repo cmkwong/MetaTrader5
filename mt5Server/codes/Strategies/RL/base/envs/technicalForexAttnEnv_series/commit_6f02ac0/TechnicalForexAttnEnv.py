@@ -1,7 +1,7 @@
 import numpy as np
 
-from RL.envs.TechnicalForexEnv import TechnicalForexEnv
-from RL.envs.attnState_series.commit_6f02ac0.AttnState import AttnState
+from mt5Server.codes.Strategies.RL.base.envs.TechnicalForexEnv import TechnicalForexEnv
+from mt5Server.codes.Strategies.RL.base.envs.attnState_series.commit_6f02ac0.AttnState import AttnState
 
 
 class TechnicalForexAttnEnv(TechnicalForexEnv):

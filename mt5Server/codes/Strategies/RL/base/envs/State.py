@@ -1,8 +1,7 @@
-from backtest import pointsModel, returnModel
-from strategies.Cointegration import coinModel
+from mt5Server.codes.Backtest.func import pointsModel, returnModel
+from mt5Server.codes.Strategies.Cointegration import coinModel
 
 import numpy as np
-
 
 class State:
     def __init__(self, symbol, close_price, quote_exchg, dependent_datas, date, time_cost_pt, commission_pt, spread_pt, long_mode, all_symbols_info, reset_on_close):

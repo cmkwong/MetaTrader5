@@ -1,6 +1,6 @@
 import sys
 
-sys.path.append('C:/Users/Chris/projects/210215_mt5')
+sys.path.append('/')
 import config
 from strategies.AI import common
 from datetime import datetime

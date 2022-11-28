@@ -201,6 +201,36 @@ class Telegram_Bot:
                                                       lowerEma=18, middleEma=55, upperEma=92,
                                                       trendType='down',
                                                       auto=True, tg=self)
+            self.strategyController.runThreadStrategy(0, 'AUDJPY',
+                                                      diff_ema_upper_middle=40, diff_ema_middle_lower=20, ratio_sl_sp=2,
+                                                      lowerEma=18, middleEma=39, upperEma=96,
+                                                      trendType='rise',
+                                                      auto=True, tg=self)
+            self.strategyController.runThreadStrategy(0, 'AUDJPY',
+                                                      diff_ema_upper_middle=30, diff_ema_middle_lower=40, ratio_sl_sp=2.2,
+                                                      lowerEma=26, middleEma=47, upperEma=88,
+                                                      trendType='down',
+                                                      auto=True, tg=self)
+            self.strategyController.runThreadStrategy(0, 'CADJPY',
+                                                      diff_ema_upper_middle=70, diff_ema_middle_lower=20, ratio_sl_sp=2,
+                                                      lowerEma=18, middleEma=31, upperEma=84,
+                                                      trendType='rise',
+                                                      auto=True, tg=self)
+            self.strategyController.runThreadStrategy(0, 'CADJPY',
+                                                      diff_ema_upper_middle=20, diff_ema_middle_lower=20, ratio_sl_sp=1.8,
+                                                      lowerEma=18, middleEma=47, upperEma=92,
+                                                      trendType='down',
+                                                      auto=True, tg=self)
+            self.strategyController.runThreadStrategy(0, 'AUDUSD',
+                                                      diff_ema_upper_middle=70, diff_ema_middle_lower=20, ratio_sl_sp=2,
+                                                      lowerEma=18, middleEma=31, upperEma=84,
+                                                      trendType='rise',
+                                                      auto=True, tg=self)
+            self.strategyController.runThreadStrategy(0, 'AUDUSD',
+                                                      diff_ema_upper_middle=50, diff_ema_middle_lower=20, ratio_sl_sp=1.8,
+                                                      lowerEma=18, middleEma=27, upperEma=56,
+                                                      trendType='down',
+                                                      auto=True, tg=self)
 
             self.bot.send_message(message.chat.id, 'Strategy Running...')
 
