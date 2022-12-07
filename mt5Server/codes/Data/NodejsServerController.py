@@ -1,11 +1,10 @@
 import requests
 import pandas as pd
 
-from myUtils.DfModel import DfModel
-from mt5Server.codes.Backtest.func import timeModel
+from myBacktest import timeModel
 
 # upload the forex loader
-class NodejsServerController(DfModel):
+class NodejsServerController:
 
     def __init__(self):
         self.mainUrl = "http://localhost:3002/"

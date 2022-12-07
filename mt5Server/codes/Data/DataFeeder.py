@@ -1,4 +1,3 @@
-from myUtils.DfModel import DfModel
 from mt5Server.codes.Data.NodejsServerController import NodejsServerController
 from mt5Server.codes.Mt5f.MT5Controller import MT5Controller
 

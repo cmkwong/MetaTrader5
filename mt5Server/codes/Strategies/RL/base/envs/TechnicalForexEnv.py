@@ -3,7 +3,8 @@ import pandas as pd
 
 from mt5Server.codes.Strategies.RL.base.envs.State import State
 from mt5Server.codes.Backtest.func import techModel
-from mt5Server.codes.Mt5f.mt5utils import integration
+
+from myUtils import dicModel
 
 
 class TechnicalForexEnv:
@@ -19,7 +20,7 @@ class TechnicalForexEnv:
         tech_df = pd.DataFrame()
         for tech_name in self.tech_params.keys():
             data = techModel.get_tech_datas(self.Prices, self.tech_params[tech_name], tech_name)
-            tech_df = integration.append_dict_df(data, tech_df, join='outer', filled=0)
+            tech_df = dicModel.append_dict_df(data, tech_df, join='outer', filled=0)
         return tech_df
 
     def get_obs_len(self):

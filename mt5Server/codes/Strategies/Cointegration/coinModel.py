@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
-from mt5Server.codes.Mt5f.mt5utils import maths
 
+from myUtils import mathsModel
 
 def get_modified_coefficient_vector(coefficient_vector, long_mode, lot_times=1):
     """
@@ -50,7 +50,7 @@ def get_coin_data(inputs, coefficient_vector, mean_window, std_window):
     coin_data['predict'] = get_predicted_arr(inputs.iloc[:, :-1].values, coefficient_vector)
     spread = coin_data['real'] - coin_data['predict']
     coin_data['spread'] = spread
-    coin_data['z_score'] = maths.z_score_with_rolling_mean(spread.values, mean_window, std_window)
+    coin_data['z_score'] = mathsModel.z_score_with_rolling_mean(spread.values, mean_window, std_window)
     return coin_data
 
 def get_strategy_id(train_options):

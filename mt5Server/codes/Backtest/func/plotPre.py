@@ -3,11 +3,11 @@ import numpy as np
 import collections
 import os
 
-from production.codes.strategies.MovingAverage import maModel
-from production.codes.strategies.Cointegration import coinModel
-from production.codes.backtest import timeModel, exchgModel, signalModel, returnModel
-from production.codes.views import statModel
-from production.codes.utils import maths
+from mt5Server.codes.strategies.MovingAverage import maModel
+from mt5Server.codes.strategies.Cointegration import coinModel
+from mt5Server.codes.views import statModel
+from mt5Server.codes.utils import maths
+from myBacktest import timeModel, exchgModel, signalModel, returnModel
 
 
 def _get_format_plot_data(df=None, hist=None, text=None, equation=None, height=2):

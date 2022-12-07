@@ -1,7 +1,8 @@
-from mt5Server.codes.Backtest.func import exchgModel, pointsModel
 from mt5Server.codes.Mt5f.loader.BaseMT5PricesLoader import BaseMT5PricesLoader
-from mt5Server.codes.Mt5f.mt5utils import segregation
 from mt5Server.codes.Mt5f.loader.InitPrices import InitPrices
+
+from myBacktest import exchgModel, pointsModel
+from myUtils import dfModel
 
 import collections
 
@@ -59,7 +60,7 @@ class MT5PricesLoader(BaseMT5PricesLoader):  # created note 86a
         prices = collections.namedtuple("prices", keys)
         train_list, test_list = [], []
         for key, df in Prices.__dict__.items():
-            train, test = segregation.split_df(df, percentage)
+            train, test = dfModel.split_df(df, percentage)
             train_list.append(train)
             test_list.append(test)
         Train_Prices = prices._make(train_list)

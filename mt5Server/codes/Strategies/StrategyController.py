@@ -9,7 +9,7 @@ class StrategyController:
     def __init__(self, mt5Controller, tg=None):
         self.mt5Controller = mt5Controller
         self.runningStrategies = []
-        self.idleStrategies = {}
+        self.idleStrategies = {}    # ['name', 'strategy id']
         self.listStrategies = [
             {'id': 0, 'name': Live_SwingScalping.__name__, 'class': Live_SwingScalping}
         ]

@@ -3,22 +3,6 @@ import numpy as np
 import os
 from mt5Server.codes import config
 
-def _get_names_and_usecols(ohlc):
-    """
-    note 84e
-    :param ohlc: str, eg: '1001'
-    :return:    names, [str], names assigned to columns
-                usecols, int that column will be used
-    """
-    type_names = ['open', 'high', 'low', 'close']
-    names = ['time']
-    usecols = [0]
-    for i, code in enumerate(ohlc):
-        if code == '1':
-           names.append(type_names[i])
-           usecols.append(i+1)
-    return names, usecols
-
 def read_MyCSV(symbol_path, file_name, data_time_difference_to_UTC, names, usecols):
     """
     the timezone is Eastern Standard Time (EST) time-zone WITHOUT Day Light Savings adjustments
@@ -43,6 +27,23 @@ def read_symbol_price(data_path, symbol, data_time_difference_to_UTC, ohlcvs='10
     :param ohlcvs: str, '1001'
     :return: pd.DataFrame, symbol_prices
     """
+
+    def _get_names_and_usecols(ohlc):
+        """
+        note 84e
+        :param ohlc: str, eg: '1001'
+        :return:    names, [str], names assigned to columns
+                    usecols, int that column will be used
+        """
+        type_names = ['open', 'high', 'low', 'close']
+        names = ['time']
+        usecols = [0]
+        for i, code in enumerate(ohlc):
+            if code == '1':
+                names.append(type_names[i])
+                usecols.append(i + 1)
+        return names, usecols
+
     symbol_prices = None
     names, usecols = _get_names_and_usecols(ohlcvs)
     symbol_path = os.path.join(data_path, symbol)
