@@ -1,7 +1,7 @@
 from myUtils.printModel import print_at
 from mt5Server.codes.Strategies.SwingScalping.Live_SwingScalping import Live_SwingScalping
 
-from mt5Server.codes.Mt5f.MT5Controller import MT5Controller
+from myDataFeed.myMt5.MT5Controller import MT5Controller
 # from mt5Server.codes.Tg.TgController_pytb import Telegram_Bot
 import threading
 

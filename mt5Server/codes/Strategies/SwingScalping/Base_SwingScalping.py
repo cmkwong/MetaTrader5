@@ -2,8 +2,8 @@ import pandas as pd
 import numpy as np
 import swifter
 
-from mt5Server.codes.Backtest.func import techModel, timeModel
-from mt5Server.codes.Data.DataFeeder import DataFeeder
+from myBacktest import techModel, timeModel
+from myDataFeed.myNodeJs.DataFeeder import DataFeeder
 
 
 class Base_SwingScalping:

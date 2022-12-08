@@ -7,9 +7,9 @@ from telebot.callback_data import CallbackData, CallbackDataFilter
 from telebot.custom_filters import AdvancedCustomFilter
 from telebot import types
 
-from mt5Server.codes.Mt5f.MT5Controller import MT5Controller
+from myDataFeed.myMt5.MT5Controller import MT5Controller
 from mt5Server.codes.Strategies.StrategyController import StrategyController
-from mt5Server.codes.Data.DataFeeder import DataFeeder
+from myDataFeed.myNodeJs.DataFeeder import DataFeeder
 from myUtils import paramType
 
 
