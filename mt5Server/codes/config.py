@@ -1,7 +1,7 @@
 import MetaTrader5 as mt5
 import os
 from datetime import datetime
-from mt5Server.codes.Mt5f.mt5utils import tools
+from myUtils import sysModel
 
 now = datetime.now()
 DT_STRING = now.strftime("%y%m%d%H%M%S")
@@ -42,7 +42,7 @@ CSV_FILE_NAME = "T{}_{}_Frame-{}_Long-{}_Limit-{}_From-{}-to-{}_result.csv".form
     END_STRING)
 
 # relative path for different computer
-PROJECT_PATH = tools.find_required_path(os.getcwd(), '210215_mt5')
+PROJECT_PATH = sysModel.find_required_path(os.getcwd(), '210215_mt5')
 
 # TG token
 TG_TOKEN_AUDUSD = ''

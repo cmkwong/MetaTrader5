@@ -10,7 +10,6 @@ from telebot import types
 from myDataFeed.myMt5.MT5Controller import MT5Controller
 from mt5Server.codes.Strategies.StrategyController import StrategyController
 from myDataFeed.myNodeJs.DataFeeder import DataFeeder
-from myUtils import paramType
 
 
 class StrategyCallbackFilter(AdvancedCustomFilter):

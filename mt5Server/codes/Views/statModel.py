@@ -1,6 +1,5 @@
 import numpy as np
-from production.codes.backtest import indexModel, returnModel
-from production.codes.utils import tools
+from myBacktest import returnModel
 
 # def get_action_total(signal):
 #     """
@@ -22,7 +21,7 @@ def get_stat(ret_list, earning_list):
     # earning
     stat['earning'] = {}
     stat['earning']['count'] = len(earning_list)
-    stat['earning']["accuracy"] = tools.get_accuracy(earning_list, 0.0) # calculate the accuracy separately, note 46a
+    stat['earning']["accuracy"] = np.sum([c > 0.0 for c in earning_list]) / len(earning_list) # calculate the accuracy separately, note 46a
     stat['earning']["total"] = total_earning
     stat['earning']["mean"] = np.mean(earning_list)
     stat['earning']["max"] = np.max(earning_list)
@@ -32,7 +31,7 @@ def get_stat(ret_list, earning_list):
     # return
     stat['ret'] = {}
     stat['ret']['count'] = len(earning_list)
-    stat['ret']["accuracy"] = tools.get_accuracy(ret_list, 1.0) # calculate the accuracy separately, note 46a
+    stat['ret']["accuracy"] = np.sum([c > 1.0 for c in ret_list]) / len(ret_list) # calculate the accuracy separately, note 46a
     stat['ret']["total"] = total_ret
     stat['ret']["mean"] = np.mean(ret_list)
     stat['ret']["max"] = np.max(ret_list)

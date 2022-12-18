@@ -1,8 +1,10 @@
 import numpy as np
 import pandas as pd
-from production.codes.backtest import techModel, signalModel, plotPre
-from production.codes.views import printStat
-from production.codes.utils import tools
+
+from mt5Server.codes.Views import plotPre
+
+from myBacktest import techModel, signalModel
+from myUtils import printModel, dicModel
 
 def get_optimize_moving_average_csv_text(Prices, limit_unit, max_index=201):
     long_stat_csv_txt, short_stat_csv_txt = '', ''
@@ -24,13 +26,13 @@ def get_optimize_moving_average_csv_text(Prices, limit_unit, max_index=201):
             long_stat['limit_unit'], long_stat['slow'], long_stat['fast'] = limit_unit, slow_index, fast_index
             short_stat['limit_unit'], short_stat['slow'], short_stat['fast'] = limit_unit, slow_index, fast_index
 
-            if long_stat["total"] > 0: long_stat_csv_txt = tools.append_dict_into_text(long_stat, long_stat_csv_txt)
-            if short_stat["total"] > 0: short_stat_csv_txt = tools.append_dict_into_text(short_stat, short_stat_csv_txt)
+            if long_stat["total"] > 0: long_stat_csv_txt = dicModel.append_dictValues_into_text(long_stat, long_stat_csv_txt)
+            if short_stat["total"] > 0: short_stat_csv_txt = dicModel.append_dictValues_into_text(short_stat, short_stat_csv_txt)
 
             # # print results
             print("\nlimit unit: {}; slow index: {}; fast index: {}".format(limit_unit, slow_index, fast_index))
-            printStat.print_dict(long_stat)
-            printStat.print_dict(short_stat)
+            printModel.print_dict(long_stat)
+            printModel.print_dict(short_stat)
     # added to header to the text
     long_stat_csv_txt = ','.join(list(long_stat.keys())) + '\n' + long_stat_csv_txt
     short_stat_csv_txt = ','.join(list(short_stat.keys())) + '\n' + short_stat_csv_txt

@@ -1,14 +1,12 @@
 import sys
 
-import mt5Server.codes.Mt5f.executor.CsvWriterHelper
-
 sys.path.append('C:/Users/Chris/projects/210215_mt5')
 from mt5Server.codes.Strategies.AI.CointegrationNN import coinNNModel
-from mt5Server.codes.Mt5f.executor import Trader
-from mt5Server.codes.backtest import plotPre
-from mt5Server.codes.Mt5f.loader import MT5PricesLoader, batches, files
-from mt5Server.codes.Views import printStat, plotView
-from  mt5Server.codes import config
+from mt5Server.codes.Views import plotView, plotPre
+from mt5Server.codes import config
+from myUtils import printModel
+from myDataFeed.myMt5 import MT5PricesLoader
+from myUtils import batchModel, fileModel
 
 from torch import optim
 from torch.utils.tensorboard import SummaryWriter
@@ -94,20 +92,20 @@ with mt5f.executor.CsvWriterHelper.CsvWriterHelper():
 
     episode = 1
     while True:
-        train_batch = batches.get_batches(dependent_variable.values, seq_len=data_options['seq_len'], batch_size=data_options['batch_size'], shuffle=data_options['shuffle'])
+        train_batch = batchModel.get_batches(dependent_variable.values, seq_len=data_options['seq_len'], batch_size=data_options['batch_size'], shuffle=data_options['shuffle'])
         train_loss = trainer.run(train_batch.input, train_batch.target, train_mode=True)
-        printStat.loss_status(writer, train_loss, episode, mode='train')
+        printModel.loss_status(writer, train_loss, episode, mode='train')
 
         if episode % data_options['test_epiosdes'] == -1:
-            test_batch = batches.get_batches(Test_Prices.c.values, seq_len=data_options['seq_len'], batch_size=data_options['batch_size'], shuffle=data_options['shuffle'])
+            test_batch = batchModel.get_batches(Test_Prices.c.values, seq_len=data_options['seq_len'], batch_size=data_options['batch_size'], shuffle=data_options['shuffle'])
             test_loss = trainer.run(test_batch.input, test_batch.target, train_mode=False)
-            printStat.loss_status(writer, test_loss, episode, mode='test')
+            printModel.loss_status(writer, test_loss, episode, mode='test')
 
         if episode % data_options['check_price_plot'] == 0:
 
             coefficient_vector = coinNNModel.get_coefficient_vector(myModel) # coefficient_vector got from neural network
 
-            files.clear_files(data_options['extra_path'])  # clear the files
+            fileModel.clearFiles(data_options['extra_path'])  # clear the files
             train_plt_datas = plotPre.get_coin_NN_plt_datas(Train_Prices, prices_loader.min_Prices, coefficient_vector, train_options['upper_th'], train_options['lower_th'],
                                                             train_options['z_score_mean_window'], train_options['z_score_std_window'], train_options['close_change'],
                                                             train_options['slsp'], data_options['timeframe'],
