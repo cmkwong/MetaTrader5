@@ -47,7 +47,9 @@ class Live_SwingScalping(Base_SwingScalping):
 
     def checkValidAction(self, masterSignal, trendType='rise'):
         lastRow = masterSignal.iloc[-1, :]
-        if (lastRow[trendType + 'Break'] and lastRow[trendType + 'Range'] and not self.inPosition):
+        currentIndex = masterSignal.index[-1]
+        # meet the conditions and have not trade that before and not in-position
+        if (lastRow[trendType + 'Break'] and lastRow[trendType + 'Range'] and currentIndex != self.breakThroughTime and not self.inPosition):
             print(f'{self.symbol} {self.trendType} action going ... ')
             self.status = {'type': trendType, 'time': self.breakThroughTime, 'sl': lastRow['stopLoss'], 'tp': lastRow['takeProfit']}
             print(self.status)
@@ -79,8 +81,9 @@ class Live_SwingScalping(Base_SwingScalping):
         # reset the notice if in next time slot
         if self.inPosition:
             lastPrice = masterSignal.iloc[-1]['close']
-            if (self.trendType == 'rise' and (lastPrice >= self.status['tp'] or lastPrice <= self.status['sl'])) or (self.trendType == 'down' and (lastPrice <= self.status['tp'] or lastPrice >= self.status['sl'])):
-                self.inPosition = False
+            if (self.breakThroughTime != masterSignal.index[-1]): # not at the same time
+                if (self.trendType == 'rise' and (lastPrice >= self.status['tp'] or lastPrice <= self.status['sl'])) or (self.trendType == 'down' and (lastPrice <= self.status['tp'] or lastPrice >= self.status['sl'])):
+                    self.inPosition = False
 
     def run(self):
         while True:

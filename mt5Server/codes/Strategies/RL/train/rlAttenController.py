@@ -17,7 +17,7 @@ from mt5Server.codes.Strategies.RL.base.agents import Actions
 from mt5Server.codes.Strategies.RL.base.envs.technicalForexAttnEnv_series.commit_current.TechnicalForexAttnEnv import TechnicalForexAttnEnv
 from mt5Server.codes.Strategies.RL.base.experience.ExperienceSource import ExperienceSourceFirstLast
 from mt5Server.codes.Strategies.RL.base.experience.ExperienceReplayBuffer import ExperienceReplayBuffer
-from mt5Server.codes.Strategies.RL.base.criterion.Validator import Validator
+from mt5Server.codes.Strategies.RL.base.criterion.StockValidator import StockValidator
 from mt5Server.codes.Strategies.RL.base.models.attensionsSeries.commit_current.AttentionTimeSeries import AttentionTimeSeries
 from mt5Server.codes.Mt5f.MT5Controller import MT5Controller
 
@@ -139,7 +139,7 @@ best_mean_val = None
 
 # create the validator
 # TODO - need to modified the validator
-validator = Validator(env_val, agent, save_path=os.path.join(*[RL_options['val_save_path']]), comission=0.1)
+validator = StockValidator(env_val, agent, save_path=os.path.join(*[RL_options['val_save_path']]), comission=0.1)
 
 # create the monitor
 monitor = common.monitor(buffer, os.path.join(*[RL_options['buffer_save_path']]))

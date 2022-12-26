@@ -134,7 +134,7 @@ class Telegram_Bot:
         @self.bot.message_handler(commands=['feed'])
         def feedDataIntoForex_command_handler(message):
             self.dataFeeder.uploadDatas(['AUDJPY', 'AUDCAD', 'AUDUSD', 'CADJPY', 'EURAUD', 'EURCAD', 'EURGBP', 'EURUSD', 'GBPUSD', 'USDCAD', 'USDJPY'],
-                                        startTime=(2022, 8, 31, 0, 0), endTime=(2022, 10, 31, 23, 59))
+                                        startTime=(2022, 10, 25, 0, 0), endTime=(2022, 12, 18, 23, 59))
 
         # -------------------- Action Listener --------------------
         # Cancel

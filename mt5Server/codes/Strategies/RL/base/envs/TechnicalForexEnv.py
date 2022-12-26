@@ -2,8 +2,8 @@ import numpy as np
 import pandas as pd
 
 from mt5Server.codes.Strategies.RL.base.envs.State import State
-from mt5Server.codes.Backtest.func import techModel
 
+from myBacktest import techModel
 from myUtils import dicModel
 
 

@@ -1,4 +1,4 @@
-from mt5Server.codes.Backtest.func import pointsModel, returnModel
+from myBacktest import pointsModel, returnModel
 from mt5Server.codes.Strategies.Cointegration import coinModel
 
 import numpy as np
@@ -17,7 +17,6 @@ class State:
         self.all_symbols_info = all_symbols_info
         self.reset_on_close = reset_on_close
         self._init_action_space()
-
         self.deal_step = 0.0  # step counter from buy to sell (buy date = step 1, if sell date = 4, time cost = 3)
 
     def reset(self, new_offset):

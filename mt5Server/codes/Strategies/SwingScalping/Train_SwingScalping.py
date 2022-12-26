@@ -2,10 +2,8 @@ import sys
 sys.path.append("C:/Users/Chris/projects/210215_mt5/mt5Server")
 sys.path.append("C:/Users/Chris/projects/AtomLib")
 
-from mt5Server.codes.Backtest.func import timeModel
-from mt5Server.codes.Mt5f.MT5Controller import MT5Controller
-from mt5Server.codes.Backtest.func import techModel
-from mt5Server.codes.Strategies.Scalping.Base_SwingScalping import Base_SwingScalping
+from myDataFeed.myMt5.MT5Controller import MT5Controller
+from mt5Server.codes.Strategies.SwingScalping.Base_SwingScalping import Base_SwingScalping
 
 import os
 import csv
